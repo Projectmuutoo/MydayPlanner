@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "773568755866",
+    "project_id": "mydayplanner-a6270",
+    "storage_bucket": "mydayplanner-a6270.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773568755866:android:2d9a6c41d0ad844a828723",
+        "android_client_info": {
+          "package_name": "com.example.demomydayplanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "773568755866-e4t9lp0g4blt2qplifr8bnlftti19rnb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.demomydayplanner",
+            "certificate_hash": "a5d383c208b4707e566bf35adb974c05a43bb934"
+          }
+        },
+        {
+          "client_id": "773568755866-9idgfuo0urn10frmsth4acjols7p291h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzyP8oUyoXWAws_xVg-NAcBRM6jySa0Nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773568755866-9idgfuo0urn10frmsth4acjols7p291h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
