@@ -50,10 +50,17 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text(
+                  context.read<Appdata>().idBoard.idBoard,
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontFamily: 'mali',
+                  ),
+                ),
                 FilledButton(
                   onPressed: () {},
                   child: Text(
-                    'ปุ่มหยังวะ',
+                    'ปุ่ม',
                     style: TextStyle(
                       fontSize: Get.textTheme.titleLarge!.fontSize,
                       fontFamily: 'mali',
@@ -61,19 +68,11 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
                   ),
                 ),
                 FilledButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.back();
+                  },
                   child: Text(
-                    'ปุ่มหยังวะ',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      fontFamily: 'mali',
-                    ),
-                  ),
-                ),
-                FilledButton(
-                  onPressed: () {},
-                  child: Text(
-                    'ปุ่มหยังวะ',
+                    'กลับ',
                     style: TextStyle(
                       fontSize: Get.textTheme.titleLarge!.fontSize,
                       fontFamily: 'mali',

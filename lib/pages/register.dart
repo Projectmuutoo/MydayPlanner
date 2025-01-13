@@ -19,72 +19,72 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
 
-  // late final WebViewController _controller;
+  late final WebViewController _controller;
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _controller = WebViewController()
-  //     ..setJavaScriptMode(JavaScriptMode.unrestricted)
-  //     ..setNavigationDelegate(NavigationDelegate(
-  //       onPageFinished: (String url) async {
-  //         // Inject JavaScript after the page loads
-  //         await _controller.runJavaScript('''
-  //           function callback(token) {
-  //             window.captchaToken.postMessage(token);
-  //           }
-  //         ''');
-  //       },
-  //     ))
-  //     ..addJavaScriptChannel(
-  //       'captchaToken',
-  //       onMessageReceived: (JavaScriptMessage message) {
-  //         final token = message.message;
-  //         verifyCaptcha(token);
-  //       },
-  //     )
-  //     ..loadHtmlString(_getCaptchaHTML());
-  // }
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (String url) async {
+          // Inject JavaScript after the page loads
+          await _controller.runJavaScript('''
+            function callback(token) {
+              window.captchaToken.postMessage(token);
+            }
+          ''');
+        },
+      ))
+      ..addJavaScriptChannel(
+        'captchaToken',
+        onMessageReceived: (JavaScriptMessage message) {
+          final token = message.message;
+          verifyCaptcha(token);
+        },
+      )
+      ..loadHtmlString(_getCaptchaHTML());
+  }
 
-  // String _getCaptchaHTML() {
-  //   const siteKey = "0x4AAAAAAA32owLAsiPwHqRs"; // ใส่ Site Key ของคุณ
-  //   return '''
-  //   <html>
-  //     <head>
-  //       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  //     </head>
-  //     <body>
-  //       <div class="cf-turnstile"
-  //            data-sitekey="$siteKey"
-  //            data-theme="light"
-  //            data-callback="callback"></div>
-  //     </body>
-  //   </html>
-  // ''';
-  // }
+  String _getCaptchaHTML() {
+    const siteKey = "0x4AAAAAAA5OH3kmFH-8vNiE"; // ใส่ Site Key ของคุณ
+    return '''
+    <html>
+      <head>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      </head>
+      <body>
+        <div class="cf-turnstile"
+             data-sitekey="$siteKey"
+             data-theme="light"
+             data-callback="callback"></div>
+      </body>
+    </html>
+  ''';
+  }
 
-  // Future<void> verifyCaptcha(String token) async {
-  //   const secretKey =
-  //       "0x4AAAAAAA32oxxNMA5xRXmQoiovLvIr_U8"; // Secret Key ของคุณ
-  //   final url =
-  //       Uri.parse('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+  Future<void> verifyCaptcha(String token) async {
+    const secretKey =
+        "0x4AAAAAAA5OH1P-KkXIm1cemQGvx1vnPQU"; // Secret Key ของคุณ
+    final url =
+        Uri.parse('https://challenges.cloudflare.com/turnstile/v0/siteverify');
 
-  //   final response = await http.post(url, body: {
-  //     'secret': secretKey,
-  //     'response': token,
-  //   });
+    final response = await http.post(url, body: {
+      'secret': secretKey,
+      'response': token,
+    });
 
-  //   if (response.statusCode == 200) {
-  //     final data = jsonDecode(response.body);
-  //     if (data['success']) {
-  //       print("CAPTCHA Verified Successfully");
-  //     } else {
-  //       print("CAPTCHA Verification Failed: ${data['error-codes']}");
-  //     }
-  //   } else {
-  //     print("Error verifying CAPTCHA: ${response.statusCode}");
-  //   }
-  // }
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success']) {
+        print("CAPTCHA Verified Successfully");
+      } else {
+        print("CAPTCHA Verification Failed: ${data['error-codes']}");
+      }
+    } else {
+      print("Error verifying CAPTCHA: ${response.statusCode}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: width * 0.05,
+              vertical: height * 0.05,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.max,
@@ -134,7 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         Image.asset(
                           "assets/images/LogoApp.png",
-                          height: height * 0.08,
+                          height: height * 0.06,
                           fit: BoxFit.contain,
                         ),
                       ],
@@ -175,7 +176,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 SizedBox(
-                  height: height * 0.03,
+                  height: height * 0.02,
                 ),
                 Column(
                   children: [
@@ -235,9 +236,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      height: height * 0.01,
-                    ),
                     Row(
                       children: [
                         Padding(
@@ -293,9 +291,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: height * 0.01,
                     ),
                     Row(
                       children: [
@@ -366,9 +361,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: height * 0.01,
                     ),
                     Row(
                       children: [
@@ -442,14 +434,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     SizedBox(
-                      height: height * 0.03,
+                      height: height * 0.02,
                     ),
-                    // SizedBox(
-                    //   height: width * 0.2,
-                    //   child: WebViewWidget(controller: _controller),
-                    // ),
                     SizedBox(
-                      height: height * 0.03,
+                      height: width * 0.2,
+                      child: WebViewWidget(controller: _controller),
+                    ),
+                    SizedBox(
+                      height: height * 0.02,
                     ),
                     ElevatedButton(
                       onPressed: () {},

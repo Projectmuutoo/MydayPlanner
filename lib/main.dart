@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:demomydayplanner/pages/login.dart';
 import 'package:demomydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:demomydayplanner/pages/pageMember/navBar.dart';
+import 'package:demomydayplanner/pages/splash_page.dart';
 import 'package:demomydayplanner/shared/firebase_options.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,6 +33,17 @@ void main() async {
     );
   });
 }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       home: SplashPage(),
+//     );
+//   }
+// }
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -71,14 +83,11 @@ class MainApp extends StatelessWidget {
 
   GetMaterialApp buildAppWithHome(Widget home) {
     return GetMaterialApp(
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [
+        Locale('en', 'US'), // English
+        Locale('th', 'TH'), // Thai
       ],
-      // supportedLocales: const [
-      //   Locale('en', 'US'), // English
-      //   Locale('th', 'TH'), // Thai
-      // ],
       title: 'MyDayPlanner',
       theme: ThemeData(
         useMaterial3: false,

@@ -21,7 +21,7 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
   @override
   void initState() {
     NavBarSelectedPage keep = NavBarSelectedPage();
-    keep.selectedPage = 2;
+    keep.selectedPage = 1;
     context.read<Appdata>().navBarPage = keep;
     pageOptions = [
       ReportPage(),

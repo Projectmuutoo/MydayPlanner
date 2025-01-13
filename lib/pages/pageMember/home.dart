@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:demomydayplanner/config/config.dart';
+import 'package:demomydayplanner/models/request/createBoardListsPostRequest.dart';
 import 'package:demomydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:demomydayplanner/models/response/boardCreateByIdUserGetResponse.dart';
 import 'package:demomydayplanner/models/response/getUserByEmailPostResponst.dart';
@@ -25,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   late Future<void> loadData;
   var box = GetStorage();
   String name = '';
+  int userId = 0;
+  TextEditingController boardCtl = TextEditingController();
   List<BoardCreateByIdUserGetResponse> boards = [];
   List<BoardCreateByIdUserGetResponse> boardsWorkSpaces = [];
   bool displayFormat = false;
@@ -35,6 +38,8 @@ class _HomePageState extends State<HomePage> {
   FontWeight listsFontWeight = FontWeight.w600;
   FontWeight workspacesFontWeight = FontWeight.w500;
   FontWeight priorityFontWeight = FontWeight.w500;
+  bool isTyping = false;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -60,7 +65,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadDataAsync() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
-    log(box.read('email'));
+
     GetUserByEmailPostRequest jsonPostuser = GetUserByEmailPostRequest(
       email: box.read('email'),
     );
@@ -76,11 +81,11 @@ class _HomePageState extends State<HomePage> {
         GetUserByEmailPostResponst responst =
             getUserByEmailPostResponstFromJson(value.body);
         name = responst.name;
+        userId = responst.userId;
 
-        log(box.read('email'));
         var board = await http
             .get(Uri.parse("$url/board/boardCreateby/${responst.userId}"));
-        // boards = boardCreateByIdUserGetResponseFromJson(board.body);
+        boards = boardCreateByIdUserGetResponseFromJson(board.body);
         // boardsWorkSpaces = boards.where((i) => i.isGroup == 1).toList();
         setState(() {});
       }
@@ -115,8 +120,10 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xffCDBEAE),
                 onRefresh: loadDataAsync,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: width * 0.05,
+                  padding: EdgeInsets.only(
+                    right: width * 0.05,
+                    left: width * 0.05,
+                    top: height * 0.05,
                   ),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -130,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 SvgPicture.string(
                                   '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
-                                  height: height * 0.08,
+                                  height: height * 0.07,
                                   fit: BoxFit.contain,
                                 ),
                                 Column(
@@ -140,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                                       'Hello, $name',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get.textTheme.titleSmall!.fontSize,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -183,88 +190,93 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(
                           height: height * 0.01,
                         ),
-                        Container(
-                          width: width,
-                          height: height * 0.12,
-                          decoration: const BoxDecoration(
-                            color: Color(0xffF5EBE0),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(40),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                offset: Offset(0, 1),
-                                blurRadius: 1,
-                                spreadRadius: 0,
-                              ),
-                            ],
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
                           ),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: width * 0.08,
-                              vertical: height * 0.005,
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'is comming!!',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      'To day',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.string(
-                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
-                                          height: height * 0.01,
-                                          fit: BoxFit.contain,
-                                          color: Colors.white,
-                                        ),
-                                        SizedBox(
-                                          width: width * 0.01,
-                                        ),
-                                        Text(
-                                          'ไปกินข้าว',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme.titleSmall!.fontSize,
-                                            fontWeight: FontWeight.normal,
-                                            fontFamily: 'mali',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      '10m',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                          child: Container(
+                            width: width,
+                            height: height * 0.12,
+                            decoration: const BoxDecoration(
+                              color: Color(0xffF5EBE0),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(40),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  offset: Offset(0, 1),
+                                  blurRadius: 1,
+                                  spreadRadius: 0,
                                 ),
                               ],
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.08,
+                                vertical: height * 0.005,
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'is comming!!',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleLarge!.fontSize,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        'To day',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleLarge!.fontSize,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
+                                            height: height * 0.01,
+                                            fit: BoxFit.contain,
+                                            color: Colors.white,
+                                          ),
+                                          SizedBox(
+                                            width: width * 0.01,
+                                          ),
+                                          Text(
+                                            'ไปกินข้าว',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .labelMedium!.fontSize,
+                                              fontWeight: FontWeight.normal,
+                                              fontFamily: 'mali',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '10m',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.labelMedium!.fontSize,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -454,9 +466,9 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Container(
                               width: width,
-                              height: height * 0.54,
+                              height: height * 0.53,
                               decoration: const BoxDecoration(
-                                color: Colors.transparent,
+                                color: Color.fromARGB(0, 0, 0, 0),
                               ),
                             ),
                             AnimatedPositioned(
@@ -483,7 +495,7 @@ class _HomePageState extends State<HomePage> {
                                 right: 0,
                                 child: Container(
                                   width: width,
-                                  height: height * 0.52,
+                                  height: height * 0.5,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: width * 0.01,
                                     vertical: height * 0.01,
@@ -511,7 +523,7 @@ class _HomePageState extends State<HomePage> {
                                                   children: [
                                                     InkWell(
                                                       onTap: () => goToMyList(
-                                                          board.boardId
+                                                          board.boardName
                                                               .toString()),
                                                       child: Container(
                                                         width: width * 0.4,
@@ -563,9 +575,7 @@ class _HomePageState extends State<HomePage> {
                                             child: Column(
                                               children: [
                                                 InkWell(
-                                                  onTap: () {
-                                                    log('Create new board');
-                                                  },
+                                                  onTap: createNewBoard,
                                                   child: Container(
                                                     width: width * 0.4,
                                                     height: height * 0.15,
@@ -616,7 +626,7 @@ class _HomePageState extends State<HomePage> {
                                 right: 0,
                                 child: Container(
                                   width: width,
-                                  height: height * 0.52,
+                                  height: height * 0.5,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: width * 0.01,
                                     vertical: height * 0.01,
@@ -642,7 +652,7 @@ class _HomePageState extends State<HomePage> {
                                               bottom: height * 0.01),
                                           child: InkWell(
                                             onTap: () => goToMyList(
-                                                board.boardId.toString()),
+                                                board.boardName.toString()),
                                             child: Container(
                                               width: width,
                                               height: height * 0.06,
@@ -677,9 +687,7 @@ class _HomePageState extends State<HomePage> {
                                       } else {
                                         // ปุ่มสร้างบอร์ดใหม่
                                         return InkWell(
-                                          onTap: () {
-                                            log('Create new board');
-                                          },
+                                          onTap: createNewBoard,
                                           child: Container(
                                             width: width,
                                             height: height * 0.06,
@@ -723,6 +731,165 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void createNewBoard() async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            double width = MediaQuery.of(context).size.width;
+            double height = MediaQuery.of(context).size.height;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: width * 0.05,
+                right: width * 0.05,
+                top: height * 0.03,
+                bottom: height * 0.03,
+              ),
+              child: SizedBox(
+                height: height * 0.3,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'New Board',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.headlineMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                              ),
+                              child: Text(
+                                'Name board',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextField(
+                          controller: boardCtl,
+                          keyboardType: TextInputType.emailAddress,
+                          cursorColor: Colors.black,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: isTyping ? '' : 'Enter your board name',
+                            hintStyle: TextStyle(
+                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            ),
+                            prefixIcon: IconButton(
+                              onPressed: null,
+                              icon: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M19.937 8.68c-.011-.032-.02-.063-.033-.094a.997.997 0 0 0-.196-.293l-6-6a.997.997 0 0 0-.293-.196c-.03-.014-.062-.022-.094-.033a.991.991 0 0 0-.259-.051C13.04 2.011 13.021 2 13 2H6c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2V9c0-.021-.011-.04-.013-.062a.99.99 0 0 0-.05-.258zM16.586 8H14V5.414L16.586 8zM6 20V4h6v5a1 1 0 0 0 1 1h5l.002 10H6z"></path></svg>',
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            constraints: BoxConstraints(
+                              maxHeight: height * 0.05,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            loadingDialog();
+                            var responseCreateBorad = await http.post(
+                                Uri.parse("$url/board/createBoard"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: createBoardListsPostRequestToJson(
+                                  CreateBoardListsPostRequest(
+                                    boardName: boardCtl.text,
+                                    createBy: userId,
+                                    isGroup: 0,
+                                  ),
+                                ));
+                            if (responseCreateBorad.statusCode == 201) {
+                              Get.back();
+                              Get.back();
+                              loadDataAsync();
+                              boardCtl.clear();
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(
+                              width,
+                              height * 0.06,
+                            ),
+                            backgroundColor: const Color(0xff0D0C0C),
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Create New Board',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -817,5 +984,33 @@ class _HomePageState extends State<HomePage> {
         Get.to(() => const SettingsPage());
       } else if (value == 'report') {}
     });
+  }
+
+  void loadingDialog() {
+    setState(() {
+      isLoading = true;
+    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Container(
+          color: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xffCDBEAE),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

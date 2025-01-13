@@ -1,9 +1,14 @@
 import 'dart:developer';
 
 import 'package:demomydayplanner/config/config.dart';
+import 'package:demomydayplanner/models/request/adminVerifyPutRequest.dart';
+import 'package:demomydayplanner/models/request/createAdminPostRequest.dart';
 import 'package:demomydayplanner/models/request/editActiveUserPutRequest.dart';
+import 'package:demomydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:demomydayplanner/models/response/allUserGetResponse.dart';
+import 'package:demomydayplanner/models/response/sendOTPPostResponst.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -21,6 +26,7 @@ class _UserPageState extends State<UserPage> {
   bool isTyping = false;
   TextEditingController emailCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
+  TextEditingController otpCtl = TextEditingController();
   late List<User> allUsers = [];
   bool isCheckedPassword = false;
   List<User> filteredUsers = [];
@@ -29,6 +35,8 @@ class _UserPageState extends State<UserPage> {
   bool isDropdownOpenUser = false;
   Map<String, bool> isDropdownOpenUserMap = {};
   bool isLoading = false;
+  String textNotification = '';
+  String warning = '';
 
   @override
   void initState() {
@@ -683,18 +691,10 @@ class _UserPageState extends State<UserPage> {
   }
 
   void createAdmin() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
-
-    //horizontal left right
-    double width = MediaQuery.of(context).size.width;
-    //vertical tob bottom
-    double height = MediaQuery.of(context).size.height;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      isDismissible: true,
+      isDismissible: false,
       enableDrag: true,
       builder: (BuildContext context) {
         return StatefulBuilder(
@@ -706,163 +706,276 @@ class _UserPageState extends State<UserPage> {
               padding: EdgeInsets.only(
                 left: width * 0.05,
                 right: width * 0.05,
-                top: height * 0.03,
-                bottom: height * 0.03,
+                top: height * 0.05,
+                bottom: height * 0.05,
               ),
-              child: SizedBox(
-                height: height,
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Add Admin',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.headlineMedium!.fontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Text(
+                              'Email',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextField(
+                        controller: emailCtl,
+                        keyboardType: TextInputType.emailAddress,
+                        cursorColor: Colors.black,
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: isTyping ? '' : 'Enter your email address…',
+                          hintStyle: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontWeight: FontWeight.normal,
+                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                          ),
+                          prefixIcon: IconButton(
+                            onPressed: null,
+                            icon: SvgPicture.string(
+                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                              color: const Color(0xff7B7B7B),
+                            ),
+                          ),
+                          constraints: BoxConstraints(
+                            maxHeight: height * 0.05,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              width: 0.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: height * 0.01,
+                      ),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Text(
+                              'Password',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextField(
+                        controller: passwordCtl,
+                        keyboardType: TextInputType.visiblePassword,
+                        obscureText: !isCheckedPassword,
+                        cursorColor: Colors.black,
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: isTyping ? '' : 'Enter your password',
+                          hintStyle: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontWeight: FontWeight.normal,
+                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                          ),
+                          prefixIcon: IconButton(
+                            onPressed: null,
+                            icon: SvgPicture.string(
+                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                              color: const Color(0xff7B7B7B),
+                            ),
+                          ),
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                isCheckedPassword = !isCheckedPassword;
+                              });
+                            },
+                            icon: Icon(
+                              isCheckedPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: const Color(0xff7B7B7B),
+                            ),
+                          ),
+                          constraints: BoxConstraints(
+                            maxHeight: height * 0.05,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              width: 0.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: height * 0.01,
+                      ),
+                      if (textNotification.isNotEmpty)
                         Text(
-                          'Add Admin',
+                          textNotification,
                           style: TextStyle(
-                            fontSize: Get.textTheme.headlineMedium!.fontSize,
-                            fontWeight: FontWeight.w500,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.red, // สีสำหรับแจ้งเตือน
                           ),
                         ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: checkAndContinue,
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: Size(
+                            width,
+                            height * 0.04,
                           ),
-                          child: Text(
-                            'Email',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextField(
-                      controller: emailCtl,
-                      keyboardType: TextInputType.emailAddress,
-                      cursorColor: Colors.black,
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: isTyping ? '' : 'Enter your email address…',
-                        hintStyle: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
-                          fontWeight: FontWeight.normal,
-                          color: const Color.fromRGBO(0, 0, 0, 0.3),
-                        ),
-                        prefixIcon: IconButton(
-                          onPressed: null,
-                          icon: SvgPicture.string(
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                            color: const Color(0xff7B7B7B),
+                          backgroundColor: const Color(0xffD5843D),
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        constraints: BoxConstraints(
-                          maxHeight: height * 0.05,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: width * 0.02,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            width: 0.5,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            width: 0.5,
+                        child: Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontWeight: FontWeight.normal,
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: height * 0.01,
-                    ),
-                    Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                          ),
-                          child: Text(
-                            'Password',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextField(
-                      controller: passwordCtl,
-                      keyboardType: TextInputType.visiblePassword,
-                      obscureText: !isCheckedPassword,
-                      cursorColor: Colors.black,
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: isTyping ? '' : 'Enter your password',
-                        hintStyle: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
-                          fontWeight: FontWeight.normal,
-                          color: const Color.fromRGBO(0, 0, 0, 0.3),
-                        ),
-                        prefixIcon: IconButton(
-                          onPressed: null,
-                          icon: SvgPicture.string(
-                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                            color: const Color(0xff7B7B7B),
-                          ),
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              isCheckedPassword = !isCheckedPassword;
-                            });
-                          },
-                          icon: Icon(
-                            isCheckedPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: const Color(0xff7B7B7B),
-                          ),
-                        ),
-                        constraints: BoxConstraints(
-                          maxHeight: height * 0.05,
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: width * 0.02,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            width: 0.5,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            width: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             );
           },
         );
       },
     );
+  }
+
+  void checkAndContinue() async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+
+    if (emailCtl.text.isEmpty) {
+      showNotification('Email address is required');
+      return;
+    }
+
+    if (!isValidEmail(emailCtl.text)) {
+      showNotification('Invalid email address');
+      return;
+    }
+
+    if (passwordCtl.text.isEmpty || passwordCtl.text.isEmpty) {
+      showNotification('Password fields cannot be empty');
+      return;
+    }
+
+    loadingDialog();
+    var responseCreate = await http.post(
+      Uri.parse("$url/admin/api/create_acc"),
+      headers: {"Content-Type": "application/json; charset=utf-8"},
+      body: createAdminPostRequestToJson(
+        CreateAdminPostRequest(
+          email: emailCtl.text,
+          hashedPassword: passwordCtl.text,
+        ),
+      ),
+    );
+
+    if (responseCreate.statusCode == 201) {
+      Get.back();
+      setState(() {
+        isLoading = false;
+      });
+
+      loadingDialog();
+      var responseOtp = await http.post(
+        Uri.parse("$url/otp/api/otp"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: sendOtpPostRequestToJson(
+          SendOtpPostRequest(
+            recipient: emailCtl.text,
+          ),
+        ),
+      );
+
+      if (responseOtp.statusCode == 200) {
+        Get.back();
+        isLoading = false;
+        showNotification('');
+
+        SendOtpPostResponst sendOTPResponse =
+            sendOtpPostResponstFromJson(responseOtp.body);
+        //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+        verifyOTP(
+          emailCtl.text,
+          sendOTPResponse.otp,
+          sendOTPResponse.ref,
+        );
+      }
+    }
+  }
+
+  void showNotification(String message) {
+    textNotification = message;
+    setState(() {});
+  }
+
+  bool isValidEmail(String email) {
+    return email.contains('@') && email.contains('.');
   }
 
   void disableUser(String email, String isActive) async {
@@ -919,6 +1032,7 @@ class _UserPageState extends State<UserPage> {
                   Get.back();
                   Get.back();
                   loadDataAsync();
+                  selectedRole = 'All';
                   setState(() {
                     isLoading = false;
                   });
@@ -1070,5 +1184,366 @@ class _UserPageState extends State<UserPage> {
         ),
       ),
     );
+  }
+
+  void verifyOTP(String email, String codeOTP, String ref) async {
+    // สร้าง FocusNodes สำหรับทุกช่อง
+    final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
+    final otpControllers = List<TextEditingController>.generate(
+        6, (index) => TextEditingController());
+
+    if (mounted) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (BuildContext bc) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              double width = MediaQuery.of(context).size.width;
+              double height = MediaQuery.of(context).size.height;
+
+              return WillPopScope(
+                onWillPop: () async => false,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.04,
+                    vertical: height * 0.06,
+                  ),
+                  child: SizedBox(
+                    height: height,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Verification Code',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.headlineMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              'We have send the OTP code verification to',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              obfuscateEmail(email),
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        Form(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              6,
+                              (index) {
+                                return SizedBox(
+                                  height: height * 0.08,
+                                  width: width * 0.14,
+                                  child: TextFormField(
+                                    focusNode: focusNodes[index],
+                                    controller: otpControllers[index],
+                                    cursorColor: Color(0xffB0A4A4),
+                                    onChanged: (value) {
+                                      if (value.length == 1) {
+                                        if (index < 5) {
+                                          focusNodes[index + 1]
+                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                        } else {
+                                          FocusScope.of(context)
+                                              .unfocus(); // ปิดคีย์บอร์ด
+                                          verifyEnteredOTP(
+                                            otpControllers,
+                                            codeOTP,
+                                            email,
+                                          ); // ตรวจสอบ OTP
+                                        }
+                                      } else if (value.isEmpty && index > 0) {
+                                        focusNodes[index - 1]
+                                            .requestFocus(); // กลับไปช่องก่อนหน้า
+                                      }
+                                    },
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(1),
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: InputDecoration(
+                                      focusColor: Colors.black,
+                                      filled: true,
+                                      fillColor: Colors.white, // สีพื้นหลัง
+                                      contentPadding:
+                                          EdgeInsets.all(8), // ระยะห่างภายใน
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            12), // มุมโค้ง
+                                        borderSide: BorderSide(
+                                          color: Colors.grey, // สีกรอบปกติ
+                                          width: 2, // ความหนาของกรอบ
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey
+                                              .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
+                                          width: 2,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: warning.isNotEmpty
+                                              ? Color(int.parse('0xff$warning'))
+                                              : Color(0xffB0A4A4),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      hintText: "-", // ข้อความตัวอย่าง
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        if (warning.isNotEmpty)
+                          SizedBox(
+                            height: height * 0.02,
+                          ),
+                        if (warning.isNotEmpty)
+                          Text(
+                            'OTP code is invalid',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.red,
+                            ),
+                          ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'OTP copied',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            SizedBox(
+                              width: width * 0.01,
+                            ),
+                            InkWell(
+                              onTap: () async {
+                                // ดึงข้อความจาก Clipboard
+                                ClipboardData? data =
+                                    await Clipboard.getData('text/plain');
+                                if (data != null && data.text != null) {
+                                  String copiedText = data.text!;
+                                  if (copiedText.length == 6) {
+                                    // ใส่ข้อความลงใน TextControllers
+                                    for (int i = 0;
+                                        i < copiedText.length;
+                                        i++) {
+                                      otpControllers[i].text = copiedText[i];
+                                      // โฟกัสไปยังช่องสุดท้าย
+                                      if (i == 5) {
+                                        focusNodes[i].requestFocus();
+                                      }
+                                    }
+                                    verifyEnteredOTP(
+                                      otpControllers,
+                                      codeOTP,
+                                      email,
+                                    ); // ตรวจสอบ OTP
+                                  } else {
+                                    warning = 'F21F1F';
+                                    setState(() {});
+                                  }
+                                }
+                              },
+                              child: Text(
+                                'Paste',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'ref: $ref',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+  }
+
+  // ฟังก์ชันตรวจสอบ OTP
+  void verifyEnteredOTP(
+    List<TextEditingController> otpControllers,
+    String codeOTP,
+    String email,
+  ) async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+    String enteredOTP = otpControllers
+        .map((controller) => controller.text)
+        .join(); // รวมค่าที่ป้อน
+    if (enteredOTP == codeOTP) {
+      // แสดง Loading Dialog
+      loadingDialog();
+      var responseIsverify = await http.put(
+        Uri.parse("$url/admin/api/is_verify"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: adminVerifyPutRequestToJson(
+          AdminVerifyPutRequest(
+            email: email,
+          ),
+        ),
+      );
+
+      if (responseIsverify.statusCode == 200) {
+        Get.back();
+        Get.back();
+        Get.back();
+        emailCtl.text = '';
+        passwordCtl.text = '';
+        loadDataAsync();
+        setState(() {
+          isLoading = false;
+        });
+        double width = MediaQuery.of(context).size.width;
+        double height = MediaQuery.of(context).size.height;
+        Get.defaultDialog(
+          title: "",
+          barrierDismissible: true,
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Color(0xff494949),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: width * 0.02,
+            vertical: height * 0.02,
+          ),
+          content: Column(
+            children: [
+              Text(
+                'Create account successfully.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(
+                height: height * 0.02,
+              )
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(
+                      MediaQuery.of(context).size.width * 0.3,
+                      MediaQuery.of(context).size.height * 0.05,
+                    ),
+                    backgroundColor: const Color(0xffD5843D),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'Ok',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      } else {
+        Get.back();
+        setState(() {
+          isLoading = false;
+        });
+      }
+      warning = '';
+      setState(() {});
+    } else {
+      warning = 'F21F1F';
+      setState(() {});
+    }
+  }
+
+  String obfuscateEmail(String email) {
+    // แยกส่วนก่อนและหลัง '@'
+    int atIndex = email.indexOf('@');
+
+    String localPart = email.substring(0, atIndex); // ส่วนก่อน '@'
+    String domainPart = email.substring(atIndex); // ส่วนหลัง '@'
+
+    // กำหนดจำนวนตัวอักษรที่จะแสดงเป็นปกติ (3 ตัว)
+    int visibleChars = localPart.length > 3 ? 3 : localPart.length;
+
+    // แสดงตัวอักษรต้น
+    String visiblePart = localPart.substring(0, visibleChars);
+    // แปลงตัวอักษรที่เหลือเป็น '*'
+    String obfuscatedPart = '*' * (localPart.length - visibleChars);
+
+    // รวมข้อความที่แปลงแล้ว
+    return visiblePart + obfuscatedPart + domainPart;
   }
 }
