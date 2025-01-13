@@ -832,13 +832,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void verifyOTP(String email, String codeOTP, String ref) async {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-
     // สร้าง FocusNodes สำหรับทุกช่อง
     final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
     final otpControllers = List<TextEditingController>.generate(
         6, (index) => TextEditingController());
+
     if (mounted) {
       showModalBottomSheet(
         context: context,
@@ -846,214 +844,225 @@ class _LoginPageState extends State<LoginPage> {
         isDismissible: false,
         enableDrag: false,
         builder: (BuildContext bc) {
-          return WillPopScope(
-            onWillPop: () async => false,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: width * 0.04,
-                vertical: height * 0.06,
-              ),
-              child: SizedBox(
-                height: height,
-                child: Column(
-                  children: [
-                    Row(
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              double width = MediaQuery.of(context).size.width;
+              double height = MediaQuery.of(context).size.height;
+
+              return WillPopScope(
+                onWillPop: () async => false,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.04,
+                    vertical: height * 0.06,
+                  ),
+                  child: SizedBox(
+                    height: height,
+                    child: Column(
                       children: [
-                        Text(
-                          'Verification Code',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.headlineMedium!.fontSize,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          'We have send the OTP code verification to',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          obfuscateEmail(email),
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: height * 0.02,
-                    ),
-                    Form(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          6,
-                          (index) {
-                            return SizedBox(
-                              height: height * 0.08,
-                              width: width * 0.14,
-                              child: TextFormField(
-                                focusNode: focusNodes[index],
-                                controller: otpControllers[index],
-                                cursorColor: Color(0xffB0A4A4),
-                                onChanged: (value) {
-                                  if (value.length == 1) {
-                                    if (index < 5) {
-                                      focusNodes[index + 1]
-                                          .requestFocus(); // โฟกัสไปยังช่องถัดไป
-                                    } else {
-                                      FocusScope.of(context)
-                                          .unfocus(); // ปิดคีย์บอร์ด
-                                      verifyEnteredOTP(
-                                        otpControllers,
-                                        codeOTP,
-                                        email,
-                                      ); // ตรวจสอบ OTP
-                                    }
-                                  } else if (value.isEmpty && index > 0) {
-                                    focusNodes[index - 1]
-                                        .requestFocus(); // กลับไปช่องก่อนหน้า
-                                  }
-                                },
-                                style:
-                                    Theme.of(context).textTheme.headlineMedium,
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(1),
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
-                                decoration: InputDecoration(
-                                  focusColor: Colors.black,
-                                  filled: true,
-                                  fillColor: Colors.white, // สีพื้นหลัง
-                                  contentPadding:
-                                      EdgeInsets.all(8), // ระยะห่างภายใน
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(12), // มุมโค้ง
-                                    borderSide: BorderSide(
-                                      color: Colors.grey, // สีกรอบปกติ
-                                      width: 2, // ความหนาของกรอบ
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey
-                                          .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
-                                      width: 2,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: warning.isNotEmpty
-                                          ? Color(int.parse('0xff$warning'))
-                                          : Color(0xffB0A4A4),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  hintText: "-", // ข้อความตัวอย่าง
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey,
-                                  ),
-                                ),
+                        Row(
+                          children: [
+                            Text(
+                              'Verification Code',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.headlineMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
                               ),
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    if (warning.isNotEmpty)
-                      SizedBox(
-                        height: height * 0.02,
-                      ),
-                    if (warning.isNotEmpty)
-                      Text(
-                        'OTP code is invalid',
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.red,
+                        Row(
+                          children: [
+                            Text(
+                              'We have send the OTP code verification to',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    SizedBox(
-                      height: height * 0.02,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'OTP copied',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              obfuscateEmail(email),
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(
-                          width: width * 0.01,
+                          height: height * 0.02,
                         ),
-                        InkWell(
-                          onTap: () async {
-                            // ดึงข้อความจาก Clipboard
-                            ClipboardData? data =
-                                await Clipboard.getData('text/plain');
-                            if (data != null && data.text != null) {
-                              String copiedText = data.text!;
-                              if (copiedText.length == 6) {
-                                // ใส่ข้อความลงใน TextControllers
-                                for (int i = 0; i < copiedText.length; i++) {
-                                  otpControllers[i].text = copiedText[i];
-                                  // โฟกัสไปยังช่องสุดท้าย
-                                  if (i == 5) {
-                                    focusNodes[i].requestFocus();
-                                  }
-                                }
-                                verifyEnteredOTP(
-                                  otpControllers,
-                                  codeOTP,
-                                  email,
-                                ); // ตรวจสอบ OTP
-                              } else {
-                                warning = 'F21F1F';
-                                setState(() {});
-                              }
-                            }
-                          },
-                          child: Text(
-                            'Paste',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
+                        Form(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              6,
+                              (index) {
+                                return SizedBox(
+                                  height: height * 0.08,
+                                  width: width * 0.14,
+                                  child: TextFormField(
+                                    focusNode: focusNodes[index],
+                                    controller: otpControllers[index],
+                                    cursorColor: Color(0xffB0A4A4),
+                                    onChanged: (value) {
+                                      if (value.length == 1) {
+                                        if (index < 5) {
+                                          focusNodes[index + 1]
+                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                        } else {
+                                          FocusScope.of(context)
+                                              .unfocus(); // ปิดคีย์บอร์ด
+                                          verifyEnteredOTP(
+                                            otpControllers,
+                                            codeOTP,
+                                            email,
+                                          ); // ตรวจสอบ OTP
+                                        }
+                                      } else if (value.isEmpty && index > 0) {
+                                        focusNodes[index - 1]
+                                            .requestFocus(); // กลับไปช่องก่อนหน้า
+                                      }
+                                    },
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(1),
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: InputDecoration(
+                                      focusColor: Colors.black,
+                                      filled: true,
+                                      fillColor: Colors.white, // สีพื้นหลัง
+                                      contentPadding:
+                                          EdgeInsets.all(8), // ระยะห่างภายใน
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            12), // มุมโค้ง
+                                        borderSide: BorderSide(
+                                          color: Colors.grey, // สีกรอบปกติ
+                                          width: 2, // ความหนาของกรอบ
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey
+                                              .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
+                                          width: 2,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: warning.isNotEmpty
+                                              ? Color(int.parse('0xff$warning'))
+                                              : Color(0xffB0A4A4),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      hintText: "-", // ข้อความตัวอย่าง
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
+                        if (warning.isNotEmpty)
+                          SizedBox(
+                            height: height * 0.02,
+                          ),
+                        if (warning.isNotEmpty)
+                          Text(
+                            'OTP code is invalid',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.red,
+                            ),
+                          ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'OTP copied',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            SizedBox(
+                              width: width * 0.01,
+                            ),
+                            InkWell(
+                              onTap: () async {
+                                // ดึงข้อความจาก Clipboard
+                                ClipboardData? data =
+                                    await Clipboard.getData('text/plain');
+                                if (data != null && data.text != null) {
+                                  String copiedText = data.text!;
+                                  if (copiedText.length == 6) {
+                                    // ใส่ข้อความลงใน TextControllers
+                                    for (int i = 0;
+                                        i < copiedText.length;
+                                        i++) {
+                                      otpControllers[i].text = copiedText[i];
+                                      // โฟกัสไปยังช่องสุดท้าย
+                                      if (i == 5) {
+                                        focusNodes[i].requestFocus();
+                                      }
+                                    }
+                                    verifyEnteredOTP(
+                                      otpControllers,
+                                      codeOTP,
+                                      email,
+                                    ); // ตรวจสอบ OTP
+                                  } else {
+                                    warning = 'F21F1F';
+                                    setState(() {});
+                                  }
+                                }
+                              },
+                              child: Text(
+                                'Paste',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'ref: $ref',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
                       ],
                     ),
-                    Text(
-                      'ref: $ref',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleSmall!.fontSize,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       );

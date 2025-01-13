@@ -75,10 +75,10 @@ class MainApp extends StatelessWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en', 'US'), // English
-        Locale('th', 'TH'), // Thai
-      ],
+      // supportedLocales: const [
+      //   Locale('en', 'US'), // English
+      //   Locale('th', 'TH'), // Thai
+      // ],
       title: 'MyDayPlanner',
       theme: ThemeData(
         useMaterial3: false,
