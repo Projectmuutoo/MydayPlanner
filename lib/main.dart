@@ -1,8 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:demomydayplanner/pages/login.dart';
-import 'package:demomydayplanner/pages/pageAdmin/navBarAdmin.dart';
-import 'package:demomydayplanner/pages/pageMember/navBar.dart';
-import 'package:demomydayplanner/pages/splash_page.dart';
+import 'package:demomydayplanner/pages/splash.dart';
 import 'package:demomydayplanner/shared/firebase_options.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,54 +31,11 @@ void main() async {
   });
 }
 
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       home: SplashPage(),
-//     );
-//   }
-// }
-
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: getUserStatusStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return buildAppWithHome(
-            Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          );
-        } else if (snapshot.hasData) {
-          final data = snapshot.data?.data();
-          if (data != null) {
-            if (data['active'] == 0) {
-              return buildAppWithHome(LoginPage());
-            }
-            if (data['login'] == 1) {
-              return buildAppWithHome(
-                data['role'] == "admin" ? NavbaradminPage() : NavbarPage(),
-              );
-            }
-          }
-        }
-        return buildAppWithHome(LoginPage());
-      },
-    );
-  }
-
-  GetMaterialApp buildAppWithHome(Widget home) {
     return GetMaterialApp(
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [
@@ -94,19 +48,7 @@ class MainApp extends StatelessWidget {
         fontFamily: 'baloo',
         scaffoldBackgroundColor: const Color(0xFFF3F3F3),
       ),
-      home: home,
+      home: SplashPage(),
     );
   }
-}
-
-Stream<DocumentSnapshot<Map<String, dynamic>>>? getUserStatusStream() {
-  final box = GetStorage();
-  final email = box.read('email');
-  if (email != null && email.isNotEmpty) {
-    return FirebaseFirestore.instance
-        .collection('usersLogin')
-        .doc(email)
-        .snapshots();
-  }
-  return null;
 }

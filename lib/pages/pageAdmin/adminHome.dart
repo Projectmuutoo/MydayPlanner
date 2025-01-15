@@ -20,7 +20,6 @@ class AdminhomePage extends StatefulWidget {
 }
 
 class _AdminhomePageState extends State<AdminhomePage> {
-  bool isLoading = false;
   var box = GetStorage();
   final GoogleSignIn googleSignIn = GoogleSignIn();
 
@@ -80,27 +79,15 @@ class _AdminhomePageState extends State<AdminhomePage> {
   }
 
   void loadingDialog() {
-    setState(() {
-      isLoading = true;
-    });
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        content: Container(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xffCDBEAE),
-                  ),
-                ),
-            ],
+        content: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xffCDBEAE),
           ),
         ),
       ),
@@ -155,9 +142,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
             );
             if (responseLogot.statusCode == 200) {
               Get.back();
-              setState(() {
-                isLoading = false;
-              });
+
               LogoutUserPostResponse response =
                   logoutUserPostResponseFromJson(responseLogot.body);
               await googleSignIn.signOut();

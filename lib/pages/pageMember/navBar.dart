@@ -23,10 +23,11 @@ class _NavbarPageState extends State<NavbarPage> {
 
   @override
   void initState() {
+    super.initState();
+
     NavBarSelectedPage keeps = NavBarSelectedPage();
     keeps.selectedPage = 0;
     context.read<Appdata>().navBarPage = keeps;
-    super.initState();
     pageOptions = [
       HomePage(),
       TodayPage(),
@@ -134,9 +135,8 @@ class _NavbarPageState extends State<NavbarPage> {
         ],
         currentIndex: context.read<Appdata>().navBarPage.selectedPage,
         onTap: (index) {
-          setState(() {
-            context.read<Appdata>().navBarPage.selectedPage = index;
-          });
+          context.read<Appdata>().navBarPage.selectedPage = index;
+          setState(() {});
         },
         selectedLabelStyle: TextStyle(
           fontSize: Get.textTheme.titleSmall!.fontSize,

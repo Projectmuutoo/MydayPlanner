@@ -20,8 +20,8 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
 
   @override
   void initState() {
-    loadData = loadDataAsync();
     super.initState();
+    loadData = loadDataAsync();
   }
 
   Future<void> loadDataAsync() async {

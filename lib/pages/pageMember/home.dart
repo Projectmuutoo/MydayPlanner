@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:demomydayplanner/config/config.dart';
@@ -14,6 +15,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,64 +34,57 @@ class _HomePageState extends State<HomePage> {
   List<BoardCreateByIdUserGetResponse> boardsWorkSpaces = [];
   bool displayFormat = false;
   GlobalKey listKey = GlobalKey();
-  GlobalKey workspacesKey = GlobalKey();
+  GlobalKey groupKey = GlobalKey();
   GlobalKey priorityKey = GlobalKey();
-  double slider = 10;
+  double slider = 0;
   FontWeight listsFontWeight = FontWeight.w600;
-  FontWeight workspacesFontWeight = FontWeight.w500;
+  FontWeight groupFontWeight = FontWeight.w500;
   FontWeight priorityFontWeight = FontWeight.w500;
   bool isTyping = false;
-  bool isLoading = false;
+  int itemCount = 1;
+  bool isLoadings = true;
+  bool showShimmer = true;
 
   @override
   void initState() {
-    if (box.read('grid') == null) {
-      box.write('grid', true);
-      box.write('list', false);
-    }
-    if (box.read('list')) {
-      if (!displayFormat) {
-        displayFormat = true;
-      }
-    }
-    if (box.read('grid')) {
-      if (!displayFormat) {
-        displayFormat = false;
-      }
-    }
-
-    loadData = loadDataAsync();
     super.initState();
+
+    showDisplays();
+    loadData = loadDataAsync();
   }
 
   Future<void> loadDataAsync() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    GetUserByEmailPostRequest jsonPostuser = GetUserByEmailPostRequest(
-      email: box.read('email'),
-    );
-
-    http
-        .post(
+    var responseGetUser = await http.post(
       Uri.parse("$url/user/api/get_user"),
       headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: getUserByEmailPostRequestToJson(jsonPostuser),
-    )
-        .then((value) async {
-      if (value.statusCode == 200) {
-        GetUserByEmailPostResponst responst =
-            getUserByEmailPostResponstFromJson(value.body);
-        name = responst.name;
-        userId = responst.userId;
+      body: getUserByEmailPostRequestToJson(
+        GetUserByEmailPostRequest(
+          email: box.read('email'),
+        ),
+      ),
+    );
 
-        var board = await http
-            .get(Uri.parse("$url/board/boardCreateby/${responst.userId}"));
-        boards = boardCreateByIdUserGetResponseFromJson(board.body);
-        // boardsWorkSpaces = boards.where((i) => i.isGroup == 1).toList();
+    if (responseGetUser.statusCode == 200) {
+      GetUserByEmailPostResponst responst =
+          getUserByEmailPostResponstFromJson(responseGetUser.body);
+      name = responst.name;
+      userId = responst.userId;
+
+      var board = await http
+          .get(Uri.parse("$url/board/boardCreateby/${responst.userId}"));
+      boards = boardCreateByIdUserGetResponseFromJson(board.body);
+
+      isLoadings = false;
+      setState(() {});
+
+      Timer(Duration(seconds: 2), () {
+        showShimmer = false;
         setState(() {});
-      }
-    }).catchError((err) {});
+      });
+    }
   }
 
   @override
@@ -102,15 +97,15 @@ class _HomePageState extends State<HomePage> {
     return FutureBuilder(
       future: loadData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return Container(
-            color: Colors.white,
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
+        if (snapshot.connectionState == ConnectionState.done) {
+          Future.delayed(Duration(seconds: 1), () {
+            if (mounted) {
+              setState(() {
+                itemCount = boards.isEmpty ? 1 : boards.length;
+              });
+            }
+          });
         }
-
         return PopScope(
           canPop: false,
           child: Scaffold(
@@ -143,14 +138,28 @@ class _HomePageState extends State<HomePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Hello, $name',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    isLoadings || showShimmer
+                                        ? Shimmer.fromColors(
+                                            baseColor: Colors.grey[300]!,
+                                            highlightColor: Colors.grey[100]!,
+                                            child: Container(
+                                              width: _calculateTextWidth(
+                                                  'Hello, $name',
+                                                  Get.textTheme.titleSmall!
+                                                      .fontSize!),
+                                              height: Get.textTheme.titleSmall!
+                                                  .fontSize,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Hello, $name',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleSmall!.fontSize,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                     Text(
                                       'you can do it!',
                                       style: TextStyle(
@@ -280,18 +289,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          height: height * 0.01,
-                        ),
                         Padding(
                           padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
+                            vertical: height * 0.01,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'My Tasks',
+                                'My Boards',
                                 style: TextStyle(
                                   fontSize:
                                       Get.textTheme.headlineSmall!.fontSize,
@@ -306,11 +312,8 @@ class _HomePageState extends State<HomePage> {
                                         // log('list ยังไม่กด');
                                         box.write('list', true);
                                         box.write('grid', false);
-                                        if (mounted) {
-                                          setState(() {
-                                            displayFormat = true;
-                                          });
-                                        }
+                                        displayFormat = true;
+                                        setState(() {});
                                       },
                                       child: SvgPicture.string(
                                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm16-8V6H8.023v2H18.8zM8 11h12v2H8zm0 5h12v2H8z"></path></svg>',
@@ -325,11 +328,8 @@ class _HomePageState extends State<HomePage> {
                                         box.write('list', true);
                                         box.write('grid', false);
                                         if (!displayFormat) {
-                                          if (mounted) {
-                                            setState(() {
-                                              displayFormat = false;
-                                            });
-                                          }
+                                          displayFormat = false;
+                                          setState(() {});
                                         }
                                       },
                                       child: SvgPicture.string(
@@ -348,11 +348,8 @@ class _HomePageState extends State<HomePage> {
                                         // log('grid ไม่กด');
                                         box.write('grid', true);
                                         box.write('list', false);
-                                        if (mounted) {
-                                          setState(() {
-                                            displayFormat = false;
-                                          });
-                                        }
+                                        displayFormat = false;
+                                        setState(() {});
                                       },
                                       child: SvgPicture.string(
                                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zm5 2h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm1-6h4v4h-4V5zM3 20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6zm2-5h4v4H5v-4zm8 5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6zm2-5h4v4h-4v-4z"></path></svg>',
@@ -367,11 +364,8 @@ class _HomePageState extends State<HomePage> {
                                         box.write('grid', true);
                                         box.write('list', false);
                                         if (!displayFormat) {
-                                          if (mounted) {
-                                            setState(() {
-                                              displayFormat = false;
-                                            });
-                                          }
+                                          displayFormat = false;
+                                          setState(() {});
                                         }
                                       },
                                       child: SvgPicture.string(
@@ -387,25 +381,25 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const Divider(
                           thickness: 1,
+                          height: 0,
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.03,
+                          padding: EdgeInsets.only(
+                            left: width * 0.03,
+                            right: width * 0.03,
+                            top: height * 0.01,
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               InkWell(
                                 key: listKey,
                                 onTap: () {
-                                  if (mounted) {
-                                    setState(() {
-                                      moveSliderToKey(listKey);
-                                      listsFontWeight = FontWeight.w600;
-                                      workspacesFontWeight = FontWeight.w500;
-                                      priorityFontWeight = FontWeight.w500;
-                                    });
-                                  }
+                                  moveSliderToKey(listKey);
+                                  listsFontWeight = FontWeight.w600;
+                                  groupFontWeight = FontWeight.w500;
+                                  priorityFontWeight = FontWeight.w500;
+                                  setState(() {});
                                 },
                                 child: Text(
                                   'Lists',
@@ -417,47 +411,44 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                               InkWell(
-                                key: workspacesKey,
+                                key: groupKey,
                                 onTap: () {
-                                  if (mounted) {
-                                    setState(() {
-                                      moveSliderToKey(workspacesKey);
-                                      listsFontWeight = FontWeight.w500;
-                                      workspacesFontWeight = FontWeight.w600;
-                                      priorityFontWeight = FontWeight.w500;
-                                    });
-                                  }
+                                  moveSliderToKey(groupKey);
+                                  listsFontWeight = FontWeight.w500;
+                                  groupFontWeight = FontWeight.w600;
+                                  priorityFontWeight = FontWeight.w500;
+                                  setState(() {});
                                 },
                                 child: Text(
-                                  'Work spaces',
+                                  'Groups',
                                   style: TextStyle(
                                     fontSize:
                                         Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: workspacesFontWeight,
+                                    fontWeight: groupFontWeight,
                                   ),
                                 ),
                               ),
-                              InkWell(
-                                key: priorityKey,
-                                onTap: () {
-                                  if (mounted) {
-                                    setState(() {
-                                      moveSliderToKey(priorityKey);
-                                      listsFontWeight = FontWeight.w500;
-                                      workspacesFontWeight = FontWeight.w500;
-                                      priorityFontWeight = FontWeight.w600;
-                                    });
-                                  }
-                                },
-                                child: Text(
-                                  'Priority',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: priorityFontWeight,
-                                  ),
-                                ),
-                              ),
+                              // InkWell(
+                              //   key: priorityKey,
+                              //   onTap: () {
+                              //     if (mounted) {
+                              //       setState(() {
+                              //         moveSliderToKey(priorityKey);
+                              //         listsFontWeight = FontWeight.w500;
+                              //         groupFontWeight = FontWeight.w500;
+                              //         priorityFontWeight = FontWeight.w600;
+                              //       });
+                              //     }
+                              //   },
+                              //   child: Text(
+                              //     'Priority',
+                              //     style: TextStyle(
+                              //       fontSize:
+                              //           Get.textTheme.titleLarge!.fontSize,
+                              //       fontWeight: priorityFontWeight,
+                              //     ),
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
@@ -466,7 +457,7 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Container(
                               width: width,
-                              height: height * 0.53,
+                              height: height * 0.54,
                               decoration: const BoxDecoration(
                                 color: Color.fromARGB(0, 0, 0, 0),
                               ),
@@ -495,7 +486,7 @@ class _HomePageState extends State<HomePage> {
                                 right: 0,
                                 child: Container(
                                   width: width,
-                                  height: height * 0.5,
+                                  height: height * 0.52,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: width * 0.01,
                                     vertical: height * 0.01,
@@ -515,73 +506,19 @@ class _HomePageState extends State<HomePage> {
                                       child: Wrap(
                                         spacing: width * 0.02,
                                         runSpacing: width * 0.03,
-                                        children: [
-                                          ...boards.map(
-                                            (board) {
-                                              return SizedBox(
-                                                child: Column(
-                                                  children: [
-                                                    InkWell(
-                                                      onTap: () => goToMyList(
-                                                          board.boardName
-                                                              .toString()),
-                                                      child: Container(
-                                                        width: width * 0.4,
-                                                        height: height * 0.15,
-                                                        decoration:
-                                                            const BoxDecoration(
-                                                          color:
-                                                              Color(0xffEFEEEC),
-                                                          borderRadius:
-                                                              BorderRadius.all(
-                                                            Radius.circular(12),
-                                                          ),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              offset:
-                                                                  Offset(0, 1),
-                                                              blurRadius: 1,
-                                                              spreadRadius: 0,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        child: Center(
-                                                          child: Text(
-                                                            board.boardName,
-                                                            style: TextStyle(
-                                                              fontSize: Get
-                                                                  .textTheme
-                                                                  .titleLarge!
-                                                                  .fontSize,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color:
-                                                                  Colors.black,
-                                                            ),
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                          // ปุ่มสร้างบอร์ดใหม่
-                                          SizedBox(
-                                            child: Column(
-                                              children: [
-                                                InkWell(
-                                                  onTap: createNewBoard,
+                                        children: isLoadings || showShimmer
+                                            ? List.generate(
+                                                itemCount,
+                                                (index) => Shimmer.fromColors(
+                                                  baseColor: Colors.grey[300]!,
+                                                  highlightColor:
+                                                      Colors.grey[100]!,
                                                   child: Container(
                                                     width: width * 0.4,
                                                     height: height * 0.15,
                                                     decoration:
                                                         const BoxDecoration(
-                                                      color: Color(0xffCFCFCF),
+                                                      color: Color(0xffEFEEEC),
                                                       borderRadius:
                                                           BorderRadius.all(
                                                         Radius.circular(12),
@@ -594,26 +531,127 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ],
                                                     ),
-                                                    child: Center(
-                                                      child: Text(
-                                                        '+',
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .headlineSmall!
-                                                              .fontSize,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Colors.white,
+                                                  ),
+                                                ),
+                                              )
+                                            : [
+                                                ...boards.map(
+                                                  (board) {
+                                                    return SizedBox(
+                                                      child: Column(
+                                                        children: [
+                                                          InkWell(
+                                                            onTap: () =>
+                                                                goToMyList(board
+                                                                    .boardName
+                                                                    .toString()),
+                                                            child: Container(
+                                                              width:
+                                                                  width * 0.4,
+                                                              height:
+                                                                  height * 0.15,
+                                                              decoration:
+                                                                  const BoxDecoration(
+                                                                color: Color(
+                                                                    0xffEFEEEC),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .all(
+                                                                  Radius
+                                                                      .circular(
+                                                                          12),
+                                                                ),
+                                                                boxShadow: [
+                                                                  BoxShadow(
+                                                                    offset:
+                                                                        Offset(
+                                                                            0,
+                                                                            1),
+                                                                    blurRadius:
+                                                                        1,
+                                                                    spreadRadius:
+                                                                        0,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              child: Center(
+                                                                child: Text(
+                                                                  board
+                                                                      .boardName,
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize: Get
+                                                                        .textTheme
+                                                                        .titleLarge!
+                                                                        .fontSize,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                    color: Colors
+                                                                        .black,
+                                                                  ),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                                // ปุ่มสร้างบอร์ดใหม่
+                                                SizedBox(
+                                                  child: Column(
+                                                    children: [
+                                                      InkWell(
+                                                        onTap: createNewBoard,
+                                                        child: Container(
+                                                          width: width * 0.4,
+                                                          height: height * 0.15,
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                            color: Color(
+                                                                0xffCFCFCF),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .all(
+                                                              Radius.circular(
+                                                                  12),
+                                                            ),
+                                                            boxShadow: [
+                                                              BoxShadow(
+                                                                offset: Offset(
+                                                                    0, 1),
+                                                                blurRadius: 1,
+                                                                spreadRadius: 0,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              '+',
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .headlineSmall!
+                                                                    .fontSize,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
+                                                    ],
                                                   ),
                                                 ),
                                               ],
-                                            ),
-                                          ),
-                                        ],
                                       ),
                                     ),
                                   ),
@@ -626,7 +664,7 @@ class _HomePageState extends State<HomePage> {
                                 right: 0,
                                 child: Container(
                                   width: width,
-                                  height: height * 0.5,
+                                  height: height * 0.52,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: width * 0.01,
                                     vertical: height * 0.01,
@@ -645,11 +683,41 @@ class _HomePageState extends State<HomePage> {
                                     itemCount: boards.length +
                                         1, // +1 สำหรับปุ่มสร้างบอร์ดใหม่
                                     itemBuilder: (context, index) {
+                                      if (isLoadings || showShimmer) {
+                                        return Shimmer.fromColors(
+                                          baseColor: const Color.fromRGBO(
+                                              224, 224, 224, 1),
+                                          highlightColor: Colors.grey[100]!,
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: height * 0.01,
+                                            ),
+                                            child: Container(
+                                              width: width,
+                                              height: height * 0.06,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xffEFEEEC),
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(12),
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    offset: Offset(0, 1),
+                                                    blurRadius: 1,
+                                                    spreadRadius: 0,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
                                       if (index < boards.length) {
                                         final board = boards[index];
                                         return Padding(
                                           padding: EdgeInsets.only(
-                                              bottom: height * 0.01),
+                                            bottom: height * 0.01,
+                                          ),
                                           child: InkWell(
                                             onTap: () => goToMyList(
                                                 board.boardName.toString()),
@@ -736,13 +804,75 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void showDisplays() {
+    if (box.read('listsTF') == null) {
+      box.write('listsTF', true);
+      box.write('groupTF', false);
+      box.write('PriorityTF', false);
+    }
+    if (box.read('grid') == null) {
+      box.write('grid', true);
+      box.write('list', false);
+    }
+    if (box.read('listsTF')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        moveSliderToKey(listKey);
+      });
+      listsFontWeight = FontWeight.w600;
+      groupFontWeight = FontWeight.w500;
+      priorityFontWeight = FontWeight.w500;
+    } else if (box.read('groupTF')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        moveSliderToKey(groupKey);
+      });
+      listsFontWeight = FontWeight.w500;
+      groupFontWeight = FontWeight.w600;
+      priorityFontWeight = FontWeight.w500;
+    } else if (box.read('PriorityTF')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        moveSliderToKey(priorityKey);
+      });
+      listsFontWeight = FontWeight.w500;
+      groupFontWeight = FontWeight.w500;
+      priorityFontWeight = FontWeight.w600;
+    }
+
+    if (box.read('list')) {
+      if (!displayFormat) {
+        displayFormat = true;
+      }
+    }
+    if (box.read('grid')) {
+      if (!displayFormat) {
+        displayFormat = false;
+      }
+    }
+  }
+
+  double _calculateTextWidth(String text, double fontSize) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return textPainter.width;
+  }
+
   void createNewBoard() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
+    String textError = '';
+
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
       builder: (BuildContext context) {
@@ -755,13 +885,14 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.only(
                 left: width * 0.05,
                 right: width * 0.05,
-                top: height * 0.03,
-                bottom: height * 0.03,
+                top: height * 0.02,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
               child: SizedBox(
                 height: height * 0.3,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Column(
                       children: [
@@ -795,7 +926,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         TextField(
                           controller: boardCtl,
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.text,
                           cursorColor: Colors.black,
                           style: TextStyle(
                             fontSize: Get.textTheme.titleLarge!.fontSize,
@@ -836,10 +967,24 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
+                    if (textError.isNotEmpty)
+                      Text(
+                        textError,
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleSmall!.fontSize,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.red,
+                        ),
+                      ),
                     Column(
                       children: [
                         ElevatedButton(
                           onPressed: () async {
+                            if (boardCtl.text.isEmpty) {
+                              textError = 'Please enter your board name';
+                              setState(() {});
+                              return;
+                            }
                             loadingDialog();
                             var responseCreateBorad = await http.post(
                                 Uri.parse("$url/board/createBoard"),
@@ -859,9 +1004,12 @@ class _HomePageState extends State<HomePage> {
                               Get.back();
                               loadDataAsync();
                               boardCtl.clear();
-                              setState(() {
-                                isLoading = false;
-                              });
+                              textError = '';
+                              setState(() {});
+                            } else {
+                              Get.back();
+                              textError = 'Error!';
+                              setState(() {});
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -907,13 +1055,10 @@ class _HomePageState extends State<HomePage> {
     final RenderBox renderBox =
         key.currentContext!.findRenderObject() as RenderBox;
     final Offset position = renderBox.localToGlobal(Offset.zero);
-    if (mounted) {
-      setState(() {
-        slider = position.dx +
-            (renderBox.size.width / 2) -
-            (MediaQuery.of(context).size.width * 0.1);
-      });
-    }
+    slider = position.dx +
+        (renderBox.size.width / 2) -
+        (MediaQuery.of(context).size.width * 0.1);
+    setState(() {});
   }
 
   void showPopupMenu(BuildContext context) {
@@ -987,27 +1132,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   void loadingDialog() {
-    setState(() {
-      isLoading = true;
-    });
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        content: Container(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xffCDBEAE),
-                  ),
-                ),
-            ],
+        content: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xffCDBEAE),
           ),
         ),
       ),

@@ -19,14 +19,12 @@ class BoardCreateByIdUserGetResponse {
   String boardName;
   DateTime createAt;
   int createBy;
-  int isGroup;
 
   BoardCreateByIdUserGetResponse({
     required this.boardId,
     required this.boardName,
     required this.createAt,
     required this.createBy,
-    required this.isGroup,
   });
 
   factory BoardCreateByIdUserGetResponse.fromJson(Map<String, dynamic> json) =>
@@ -35,7 +33,6 @@ class BoardCreateByIdUserGetResponse {
         boardName: json["board_name"],
         createAt: DateTime.parse(json["create_at"]),
         createBy: json["create_by"],
-        isGroup: json["is_group"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +40,5 @@ class BoardCreateByIdUserGetResponse {
         "board_name": boardName,
         "create_at": createAt.toIso8601String(),
         "create_by": createBy,
-        "is_group": isGroup,
       };
 }

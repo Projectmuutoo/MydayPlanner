@@ -42,7 +42,6 @@ class _LoginPageState extends State<LoginPage> {
   String textNotification = '';
   final GoogleSignIn googleSignIn = GoogleSignIn();
   String warning = '';
-  bool isLoading = false;
   var box = GetStorage();
 
   @override
@@ -225,9 +224,8 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             suffixIcon: IconButton(
                               onPressed: () {
-                                setState(() {
-                                  isCheckedPassword = !isCheckedPassword;
-                                });
+                                isCheckedPassword = !isCheckedPassword;
+                                setState(() {});
                               },
                               icon: Icon(
                                 isCheckedPassword
@@ -417,7 +415,6 @@ class _LoginPageState extends State<LoginPage> {
     // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
     if (googleUser == null) {
       Get.back();
-      isLoading = false;
       setState(() {});
       return;
     }
@@ -449,7 +446,6 @@ class _LoginPageState extends State<LoginPage> {
 
     if (responseGetUser.statusCode == 200) {
       Get.back();
-      isLoading = false;
       showNotification('');
 
       GetUserByEmailPostResponst getUserByEmailPostResponst =
@@ -509,7 +505,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   if (responseOtp.statusCode == 200) {
                     Get.back();
-                    isLoading = false;
+
                     showNotification('');
                     SendOtpPostResponst sendOTPResponse =
                         sendOtpPostResponstFromJson(responseOtp.body);
@@ -574,7 +570,7 @@ class _LoginPageState extends State<LoginPage> {
           .get();
       var data = result.data();
       if (data != null) {
-        if (data['active'] != 1) {
+        if (data['active'] != '1') {
           googleUser = null;
           showNotification('Your account has been disabled');
           return;
@@ -592,7 +588,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (responseLoginGoogle.statusCode == 200) {
         Get.back();
-        isLoading = false;
+
         showNotification('');
 
         GoogleLoginUserPostResponse responseGoogleLogin =
@@ -610,7 +606,6 @@ class _LoginPageState extends State<LoginPage> {
       }
     } else {
       Get.back();
-      isLoading = false;
       showNotification('');
       //กรณีไม่มี email และทำการสมัครให้
       // แสดง Loading Dialog
@@ -623,7 +618,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (responseLoginGoogle.statusCode == 201) {
         Get.back();
-        isLoading = false;
+
         showNotification('');
 
         GoogleLoginUserPostResponse responseLoginGoogleUser =
@@ -645,7 +640,7 @@ class _LoginPageState extends State<LoginPage> {
 
           if (responseOtp.statusCode == 200) {
             Get.back();
-            isLoading = false;
+
             showNotification('');
 
             SendOtpPostResponst sendOTPResponse =
@@ -660,7 +655,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         Get.back();
-        isLoading = false;
         showNotification('error!');
         googleUser = null;
         return;
@@ -673,27 +667,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void loadingDialog() {
-    setState(() {
-      isLoading = true;
-    });
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        content: Container(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xffCDBEAE),
-                  ),
-                ),
-            ],
+        content: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xffCDBEAE),
           ),
         ),
       ),
@@ -733,7 +715,6 @@ class _LoginPageState extends State<LoginPage> {
 
     if (responseGetuser.statusCode == 200) {
       Get.back();
-      isLoading = false;
       showNotification('');
 
       GetUserByEmailPostResponst responseGetUserByEmail =
@@ -759,7 +740,7 @@ class _LoginPageState extends State<LoginPage> {
           .get();
       var data = result.data();
       if (data != null) {
-        if (data['active'] != 1) {
+        if (data['active'] != '1') {
           passwordCtl.text = '';
           isCheckedEmail = false;
           showNotification('Your account has been disabled');
@@ -794,7 +775,6 @@ class _LoginPageState extends State<LoginPage> {
           );
           if (responseLogin.statusCode == 200) {
             Get.back();
-            isLoading = false;
             showNotification('');
 
             SignInUserPostResponst getUserByEmailResponse =
@@ -1089,9 +1069,8 @@ class _LoginPageState extends State<LoginPage> {
 
       if (responseIsverify.statusCode == 200) {
         Get.back();
-        setState(() {
-          isLoading = false;
-        });
+
+        setState(() {});
 
         loadingDialog();
         var responseGetuser = await http.post(
@@ -1105,9 +1084,8 @@ class _LoginPageState extends State<LoginPage> {
         );
         if (responseGetuser.statusCode == 200) {
           Get.back();
-          setState(() {
-            isLoading = false;
-          });
+
+          setState(() {});
 
           GetUserByEmailPostResponst responseGetUserByEmail =
               getUserByEmailPostResponstFromJson(responseGetuser.body);
@@ -1123,9 +1101,8 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         Get.back();
-        setState(() {
-          isLoading = false;
-        });
+
+        setState(() {});
       }
 
       warning = '';

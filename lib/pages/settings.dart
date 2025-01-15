@@ -4,6 +4,8 @@ import 'package:demomydayplanner/config/config.dart';
 import 'package:demomydayplanner/models/request/logoutUserPostRequest.dart';
 import 'package:demomydayplanner/models/response/logoutUserPostResponse.dart';
 import 'package:demomydayplanner/pages/login.dart';
+import 'package:demomydayplanner/pages/pageMember/home.dart';
+import 'package:demomydayplanner/pages/pageMember/navBar.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,17 +24,46 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool isLoading = false;
   var box = GetStorage();
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  int lists = 400;
+  int group = 200;
+  int priority = 200;
 
   @override
   void initState() {
+    super.initState();
+    firstPageShow();
     var re = box.getKeys();
     for (var i in re) {
       log(i);
     }
-    super.initState();
+  }
+
+  void firstPageShow() {
+    if (box.read('listsTF')) {
+      box.write('groupTF', false);
+      box.write('PriorityTF', false);
+      lists = 400;
+      group = 200;
+      priority = 200;
+    } else if (box.read('groupTF')) {
+      box.write('listsTF', false);
+      box.write('PriorityTF', false);
+      lists = 200;
+      group = 400;
+      priority = 200;
+    } else if (box.read('PriorityTF')) {
+      box.write('listsTF', false);
+      box.write('groupTF', false);
+      lists = 200;
+      group = 200;
+      priority = 400;
+    }
+    setState(() {});
+    BackPageSettingToHome keep = BackPageSettingToHome();
+    keep.keepPage = false;
+    context.read<Appdata>().keepPage = keep;
   }
 
   @override
@@ -58,11 +89,18 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   InkWell(
                     onTap: () {
-                      Get.back();
+                      if (context.read<Appdata>().keepPage.keepPage) {
+                        BackPageSettingToHome keep = BackPageSettingToHome();
+                        keep.keepPage = false;
+                        context.read<Appdata>().keepPage = keep;
+                        Get.to(() => NavbarPage());
+                      } else {
+                        Get.back();
+                      }
                     },
                     child: Padding(
                       padding: EdgeInsets.symmetric(
-                        horizontal: width * 0.01,
+                        horizontal: width * 0.02,
                         vertical: height * 0.01,
                       ),
                       child: SvgPicture.string(
@@ -161,12 +199,116 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                   ),
-                  Text(
-                    'List',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          if (mounted) {
+                            BackPageSettingToHome keep =
+                                BackPageSettingToHome();
+                            keep.keepPage = true;
+                            context.read<Appdata>().keepPage = keep;
+                            box.write('listsTF', true);
+                            box.write('groupTF', false);
+                            box.write('PriorityTF', false);
+
+                            lists = 400;
+                            group = 200;
+                            priority = 200;
+                            setState(() {});
+                          }
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[lists],
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(12),
+                            ),
+                            border: box.read('listsTF') ? Border.all() : null,
+                          ),
+                          child: Text(
+                            'Lists',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: width * 0.01),
+                      InkWell(
+                        onTap: () {
+                          if (mounted) {
+                            BackPageSettingToHome keep =
+                                BackPageSettingToHome();
+                            keep.keepPage = true;
+                            context.read<Appdata>().keepPage = keep;
+                            box.write('listsTF', false);
+                            box.write('groupTF', true);
+                            box.write('PriorityTF', false);
+
+                            lists = 200;
+                            group = 400;
+                            priority = 200;
+                            setState(() {});
+                          }
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[group],
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(12),
+                            ),
+                            border: box.read('groupTF') ? Border.all() : null,
+                          ),
+                          child: Text(
+                            'Groups',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // InkWell(
+                      //   onTap: () {
+                      //     if (mounted) {
+                      //       box.write('listsTF', false);
+                      //       box.write('groupTF', false);
+                      //       box.write('PriorityTF', true);
+                      //       setState(() {
+                      //         lists = 200;
+                      //         group = 200;
+                      //         priority = 400;
+                      //       });
+                      //     }
+                      //   },
+                      //   child: Container(
+                      //     padding: EdgeInsets.symmetric(
+                      //       horizontal: width * 0.02,
+                      //     ),
+                      //     decoration: BoxDecoration(
+                      //       color: Colors.grey[priority],
+                      //       borderRadius: BorderRadius.all(
+                      //         Radius.circular(8),
+                      //       ),
+                      //     ),
+                      //     child: Text(
+                      //       'Priority',
+                      //       style: TextStyle(
+                      //         fontSize: Get.textTheme.titleSmall!.fontSize,
+                      //         fontWeight: FontWeight.normal,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
                   ),
                 ],
               ),
@@ -227,27 +369,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void loadingDialog() {
-    setState(() {
-      isLoading = true;
-    });
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        content: Container(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xffCDBEAE),
-                  ),
-                ),
-            ],
+        content: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xffCDBEAE),
           ),
         ),
       ),
@@ -302,9 +432,7 @@ class _SettingsPageState extends State<SettingsPage> {
             );
             if (responseLogot.statusCode == 200) {
               Get.back();
-              setState(() {
-                isLoading = false;
-              });
+
               LogoutUserPostResponse response =
                   logoutUserPostResponseFromJson(responseLogot.body);
               await googleSignIn.signOut();

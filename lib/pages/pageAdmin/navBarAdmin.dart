@@ -20,6 +20,7 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
 
   @override
   void initState() {
+    super.initState();
     NavBarSelectedPage keep = NavBarSelectedPage();
     keep.selectedPage = 1;
     context.read<Appdata>().navBarPage = keep;
@@ -28,7 +29,6 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
       AdminhomePage(),
       UserPage(),
     ];
-    super.initState();
   }
 
   @override
@@ -95,9 +95,8 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
         ],
         currentIndex: context.read<Appdata>().navBarPage.selectedPage,
         onTap: (index) {
-          setState(() {
-            context.read<Appdata>().navBarPage.selectedPage = index;
-          });
+          context.read<Appdata>().navBarPage.selectedPage = index;
+          setState(() {});
         },
         selectedLabelStyle: TextStyle(
           fontSize: Get.textTheme.titleSmall!.fontSize,

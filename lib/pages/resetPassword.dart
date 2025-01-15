@@ -30,7 +30,6 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   TextEditingController passwordCtl = TextEditingController();
   TextEditingController confirmPasswordCtl = TextEditingController();
   String textNotification = '';
-  bool isLoading = false;
   String otp = '';
 
   @override
@@ -300,9 +299,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           ),
                           suffixIcon: IconButton(
                             onPressed: () {
-                              setState(() {
-                                isCheckedPassword = !isCheckedPassword;
-                              });
+                              isCheckedPassword = !isCheckedPassword;
+                              setState(() {});
                             },
                             icon: Icon(
                               isCheckedPassword
@@ -395,10 +393,9 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           ),
                           suffixIcon: IconButton(
                             onPressed: () {
-                              setState(() {
-                                isCheckedConfirmPassword =
-                                    !isCheckedConfirmPassword;
-                              });
+                              isCheckedConfirmPassword =
+                                  !isCheckedConfirmPassword;
+                              setState(() {});
                             },
                             icon: Icon(
                               isCheckedConfirmPassword
@@ -556,7 +553,6 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
       }
     } finally {
       Get.back();
-      isLoading = false;
     }
   }
 
@@ -589,13 +585,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         var sendOTPResponse = sendOtpPostResponstFromJson(responseOtp.body);
         otp = sendOTPResponse.otp;
         showNotification('ref: ${sendOTPResponse.ref}');
-        setState(() {
-          step = 2;
-        });
+
+        step = 2;
+        setState(() {});
       }
     } else {
       Get.back();
-      isLoading = false;
     }
   }
 
@@ -606,10 +601,9 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     }
 
     if (otpCtl.text.trim() == otp.trim()) {
-      setState(() {
-        textNotification = '';
-        step = 3;
-      });
+      textNotification = '';
+      step = 3;
+      setState(() {});
     } else {
       showNotification('OTP code is invalid');
     }
@@ -638,10 +632,10 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     );
 
     if (response.statusCode == 200) {
-      setState(() {
-        step = 1;
-        textNotification = '';
-      });
+      step = 1;
+      textNotification = '';
+      setState(() {});
+
       Future.delayed(
         Duration.zero,
         () {
@@ -708,27 +702,15 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   }
 
   void loadingDialog() {
-    setState(() {
-      isLoading = true;
-    });
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        content: Container(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xffCDBEAE),
-                  ),
-                ),
-            ],
+        content: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xffCDBEAE),
           ),
         ),
       ),

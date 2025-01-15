@@ -18,73 +18,94 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
+//   late final WebViewController _controller;
 
-  late final WebViewController _controller;
+//   @override
+//   void initState() {
+//     super.initState();
+//     _controller = WebViewController()
+//       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+//       ..setNavigationDelegate(NavigationDelegate(
+//         onPageFinished: (String url) async {
+//           // Inject JavaScript after the page loads
+//           await _controller.runJavaScript('''
+//           function callback(token) {
+//             window.captchaToken.postMessage(token);
+//           }
+//         ''');
+//         },
+//       ))
+//       ..addJavaScriptChannel(
+//         'captchaToken',
+//         onMessageReceived: (JavaScriptMessage message) {
+//           final token = message.message;
+//           verifyCaptcha(token);
+//         },
+//       )
+//       ..loadRequest(Uri.dataFromString(_getCaptchaHTML(),
+//           mimeType: 'text/html', encoding: Encoding.getByName('utf-8')));
+//   }
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (String url) async {
-          // Inject JavaScript after the page loads
-          await _controller.runJavaScript('''
-            function callback(token) {
-              window.captchaToken.postMessage(token);
-            }
-          ''');
-        },
-      ))
-      ..addJavaScriptChannel(
-        'captchaToken',
-        onMessageReceived: (JavaScriptMessage message) {
-          final token = message.message;
-          verifyCaptcha(token);
-        },
-      )
-      ..loadHtmlString(_getCaptchaHTML());
-  }
+//   String _getCaptchaHTML() {
+//     const siteKey = "6LcCdrcqAAAAANQwZUDTgZrQtwNk3DG_jeIsmLNF"; // Your site key
+//     return '''
+//     <html>
+//   <head>
+//     <title>reCAPTCHA</title>
+//     <script src="https://www.google.com/recaptcha/api.js" async defer>
+// </script>
+//   </head>
+//   <body style='background-color: aqua;'>
+//     <div style='height: 60px;'></div>
+//     <form action="?" method="POST">
+//       <div class="g-recaptcha"
+//         data-sitekey="6LcCdrcqAAAAANQwZUDTgZrQtwNk3DG_jeIsmLNF"
+//         data-callback="captchaCallback"></div>
 
-  String _getCaptchaHTML() {
-    const siteKey = "0x4AAAAAAA5OH3kmFH-8vNiE"; // ใส่ Site Key ของคุณ
-    return '''
-    <html>
-      <head>
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-      </head>
-      <body>
-        <div class="cf-turnstile"
-             data-sitekey="$siteKey"
-             data-theme="light"
-             data-callback="callback"></div>
-      </body>
-    </html>
-  ''';
-  }
+//     </form>
+//     <script>
+//       function captchaCallback(response){
+//         //console.log(response);
+//         alert(response);
+//         if(typeof Captcha!=="undefined"){
+//           Captcha.postMessage(response);
+//         }
+//       }
+//     </script>
+//   </body>
+// </html>
+//   ''';
+//   }
 
-  Future<void> verifyCaptcha(String token) async {
-    const secretKey =
-        "0x4AAAAAAA5OH1P-KkXIm1cemQGvx1vnPQU"; // Secret Key ของคุณ
-    final url =
-        Uri.parse('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+//   Future<void> verifyCaptcha(String token) async {
+//     const secretKey =
+//         "AIzaSyAu9PKmAA8rsdcMxxqyo_W31t361WVkEEc"; // Your secret key
+//     final url = Uri.parse(
+//         'https://recaptchaenterprise.googleapis.com/v1/projects/mydayplanner-1735045952562/assessments?key=$secretKey');
 
-    final response = await http.post(url, body: {
-      'secret': secretKey,
-      'response': token,
-    });
+//     final response = await http.post(url,
+//         body: jsonEncode({
+//           "event": {
+//             "token": token,
+//             "expectedAction": "USER_ACTION",
+//             "siteKey": "6LeR1aQqAAAAAEJvvUUB7X_mLDSLqyF_mUEvF99I"
+//           }
+//         }),
+//         headers: {
+//           'Content-Type': 'application/json',
+//         });
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['success']) {
-        print("CAPTCHA Verified Successfully");
-      } else {
-        print("CAPTCHA Verification Failed: ${data['error-codes']}");
-      }
-    } else {
-      print("Error verifying CAPTCHA: ${response.statusCode}");
-    }
-  }
+//     if (response.statusCode == 200) {
+//       final data = jsonDecode(response.body);
+//       if (data['success']) {
+//         print("CAPTCHA Verified Successfully");
+//       } else {
+//         print("CAPTCHA Verification Failed: ${data['error-codes']}");
+//       }
+//     } else {
+//       print("Error verifying CAPTCHA: ${response.statusCode}");
+//     }
+//   }
 
   @override
   Widget build(BuildContext context) {
@@ -331,9 +352,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         suffixIcon: IconButton(
                           onPressed: () {
-                            setState(() {
-                              isCheckedPassword = !isCheckedPassword;
-                            });
+                            isCheckedPassword = !isCheckedPassword;
+                            setState(() {});
                           },
                           icon: Icon(
                             isCheckedPassword
@@ -401,10 +421,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         suffixIcon: IconButton(
                           onPressed: () {
-                            setState(() {
-                              isCheckedConfirmPassword =
-                                  !isCheckedConfirmPassword;
-                            });
+                            isCheckedConfirmPassword =
+                                !isCheckedConfirmPassword;
+                            setState(() {});
                           },
                           icon: Icon(
                             isCheckedConfirmPassword
@@ -436,10 +455,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     SizedBox(
                       height: height * 0.02,
                     ),
-                    SizedBox(
-                      height: width * 0.2,
-                      child: WebViewWidget(controller: _controller),
-                    ),
+                    // SizedBox(
+                    //   height: width * 0.2,
+                    //   child: WebViewWidget(controller: _controller),
+                    // ),
                     SizedBox(
                       height: height * 0.02,
                     ),
