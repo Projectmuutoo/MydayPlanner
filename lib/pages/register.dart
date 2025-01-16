@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:recaptcha_enterprise_flutter/recaptcha_action.dart';
+import 'package:recaptcha_enterprise_flutter/recaptcha_enterprise.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -18,94 +20,114 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
-//   late final WebViewController _controller;
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     _controller = WebViewController()
-//       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-//       ..setNavigationDelegate(NavigationDelegate(
-//         onPageFinished: (String url) async {
-//           // Inject JavaScript after the page loads
-//           await _controller.runJavaScript('''
-//           function callback(token) {
-//             window.captchaToken.postMessage(token);
-//           }
-//         ''');
-//         },
-//       ))
-//       ..addJavaScriptChannel(
-//         'captchaToken',
-//         onMessageReceived: (JavaScriptMessage message) {
-//           final token = message.message;
-//           verifyCaptcha(token);
-//         },
-//       )
-//       ..loadRequest(Uri.dataFromString(_getCaptchaHTML(),
-//           mimeType: 'text/html', encoding: Encoding.getByName('utf-8')));
-//   }
+  void initCaptchaClient() async {
+    try {
+      // เรียกใช้ initClient เพื่อเริ่มต้น reCAPTCHA client
+      bool isInitialized = await RecaptchaEnterprise.initClient(
+        "6Lf2E7kqAAAAAJePsWz4AmOKvx4UuPHIdTmmgLwQ", // ใส่ Site Key ของคุณ
+      );
 
-//   String _getCaptchaHTML() {
-//     const siteKey = "6LcCdrcqAAAAANQwZUDTgZrQtwNk3DG_jeIsmLNF"; // Your site key
-//     return '''
-//     <html>
-//   <head>
-//     <title>reCAPTCHA</title>
-//     <script src="https://www.google.com/recaptcha/api.js" async defer>
-// </script>
-//   </head>
-//   <body style='background-color: aqua;'>
-//     <div style='height: 60px;'></div>
-//     <form action="?" method="POST">
-//       <div class="g-recaptcha"
-//         data-sitekey="6LcCdrcqAAAAANQwZUDTgZrQtwNk3DG_jeIsmLNF"
-//         data-callback="captchaCallback"></div>
+      if (isInitialized) {
+        print("reCAPTCHA Client Initialized Successfully");
+        executeCaptcha(); // เรียกใช้ executeCaptcha เมื่อ client ถูก initialize สำเร็จ
+      } else {
+        print("Failed to initialize reCAPTCHA Client");
+      }
+    } catch (e) {
+      print("Error initializing reCAPTCHA Client: $e");
+    }
+  }
 
-//     </form>
-//     <script>
-//       function captchaCallback(response){
-//         //console.log(response);
-//         alert(response);
-//         if(typeof Captcha!=="undefined"){
-//           Captcha.postMessage(response);
-//         }
-//       }
-//     </script>
-//   </body>
-// </html>
-//   ''';
-//   }
+  void executeCaptcha() async {
+    try {
+      final token = await RecaptchaEnterprise.execute(RecaptchaAction.LOGIN());
+      print("CAPTCHA Token: $token");
 
-//   Future<void> verifyCaptcha(String token) async {
-//     const secretKey =
-//         "AIzaSyAu9PKmAA8rsdcMxxqyo_W31t361WVkEEc"; // Your secret key
-//     final url = Uri.parse(
-//         'https://recaptchaenterprise.googleapis.com/v1/projects/mydayplanner-1735045952562/assessments?key=$secretKey');
+      // ส่ง Token ไปตรวจสอบกับ Backend
+    } catch (e) {
+      print("Error executing reCAPTCHA: $e");
+    }
+  }
 
-//     final response = await http.post(url,
-//         body: jsonEncode({
-//           "event": {
-//             "token": token,
-//             "expectedAction": "USER_ACTION",
-//             "siteKey": "6LeR1aQqAAAAAEJvvUUB7X_mLDSLqyF_mUEvF99I"
-//           }
-//         }),
-//         headers: {
-//           'Content-Type': 'application/json',
-//         });
+  late final WebViewController _controller;
 
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-//       if (data['success']) {
-//         print("CAPTCHA Verified Successfully");
-//       } else {
-//         print("CAPTCHA Verification Failed: ${data['error-codes']}");
-//       }
-//     } else {
-//       print("Error verifying CAPTCHA: ${response.statusCode}");
-//     }
-//   }
+  @override
+  void initState() {
+    super.initState();
+    initCaptchaClient();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'captchaToken',
+        onMessageReceived: (JavaScriptMessage message) {
+          verifyCaptcha(message.message);
+        },
+      )
+      ..loadRequest(Uri.dataFromString(
+        _getCaptchaHTML(),
+        mimeType: 'text/html',
+        encoding: Encoding.getByName('utf-8'),
+      ));
+  }
+
+  String _getCaptchaHTML() {
+    return '''
+  <html>
+<head>
+  <title>reCAPTCHA demo: Simple page</title>
+  <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
+  <script>
+    function onSubmit(token) {
+      window.captchaToken.postMessage(token);
+    }
+  </script>
+</head>
+<body>
+  <div class="g-recaptcha" 
+       data-sitekey="6Lf2E7kqAAAAAJePsWz4AmOKvx4UuPHIdTmmgLwQ" 
+       data-callback="onSubmit" 
+       data-action="LOGIN">
+  </div>
+</body>
+</html>
+  ''';
+  }
+
+  Future<void> verifyCaptcha(String token) async {
+    const secretKey =
+        "6Ld4gbkqAAAAAK-xGtmr41Sv4r-5Reux1Um9A72L"; // Your secret key
+    final url = Uri.parse(
+        'https://recaptchaenterprise.googleapis.com/v1/projects/mydayplanner-a6270/assessments?key=API_KEY$secretKey');
+
+    final response = await http.post(url,
+        body: jsonEncode({
+          "event": {
+            "token": token,
+            "expectedAction": "USER_ACTION",
+            "siteKey": "6Lf2E7kqAAAAAJePsWz4AmOKvx4UuPHIdTmmgLwQ"
+          }
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] && data['score'] > 0.5) {
+        print("CAPTCHA Verified Successfully");
+      } else {
+        print("CAPTCHA Verification Failed: ${data['error-codes']}");
+      }
+      if (data['success']) {
+        print("CAPTCHA Verified Successfully");
+      } else {
+        print("CAPTCHA Verification Failed: ${data['error-codes']}");
+      }
+    } else {
+      print("Error verifying CAPTCHA: ${response.statusCode}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -455,10 +477,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     SizedBox(
                       height: height * 0.02,
                     ),
-                    // SizedBox(
-                    //   height: width * 0.2,
-                    //   child: WebViewWidget(controller: _controller),
-                    // ),
+                    SizedBox(
+                      height: width * 0.2,
+                      child: WebViewWidget(controller: _controller),
+                    ),
                     SizedBox(
                       height: height * 0.02,
                     ),

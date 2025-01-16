@@ -3,8 +3,10 @@ import 'dart:developer';
 
 import 'package:demomydayplanner/config/config.dart';
 import 'package:demomydayplanner/models/request/createBoardListsPostRequest.dart';
+import 'package:demomydayplanner/models/request/getBoardByIdUserPostRequest.dart';
 import 'package:demomydayplanner/models/request/getUserByEmailPostRequest.dart';
-import 'package:demomydayplanner/models/response/boardCreateByIdUserGetResponse.dart';
+import 'package:demomydayplanner/models/response/getBoardByIdUserGroupsPostResponse.dart';
+import 'package:demomydayplanner/models/response/getBoardByIdUserListsPostResponse.dart';
 import 'package:demomydayplanner/models/response/getUserByEmailPostResponst.dart';
 import 'package:demomydayplanner/pages/pageMember/myTasksLists/boradLists.dart';
 import 'package:demomydayplanner/pages/settings.dart';
@@ -30,8 +32,9 @@ class _HomePageState extends State<HomePage> {
   String name = '';
   int userId = 0;
   TextEditingController boardCtl = TextEditingController();
-  List<BoardCreateByIdUserGetResponse> boards = [];
-  List<BoardCreateByIdUserGetResponse> boardsWorkSpaces = [];
+  List<GetBoardByIdUserListsPostResponse> boardsLists = [];
+  List<GetBoardByIdUserGroupsPostResponse> boardsGroup = [];
+  late List boards = [];
   bool displayFormat = false;
   GlobalKey listKey = GlobalKey();
   GlobalKey groupKey = GlobalKey();
@@ -73,9 +76,43 @@ class _HomePageState extends State<HomePage> {
       name = responst.name;
       userId = responst.userId;
 
-      var board = await http
-          .get(Uri.parse("$url/board/boardCreateby/${responst.userId}"));
-      boards = boardCreateByIdUserGetResponseFromJson(board.body);
+      var responseGetBoardGroup0 = await http.post(
+        Uri.parse("$url/board/boardbyID"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: getBoardByIdUserPostRequestToJson(
+          GetBoardByIdUserPostRequest(
+            userId: userId,
+            group: 0,
+          ),
+        ),
+      );
+      var responseGetBoardGroup1 = await http.post(
+        Uri.parse("$url/board/boardbyID"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: getBoardByIdUserPostRequestToJson(
+          GetBoardByIdUserPostRequest(
+            userId: userId,
+            group: 1,
+          ),
+        ),
+      );
+
+      boardsLists = getBoardByIdUserListsPostResponseFromJson(
+          responseGetBoardGroup0.body);
+      boardsGroup = getBoardByIdUserGroupsPostResponseFromJson(
+          responseGetBoardGroup1.body);
+
+      if (listsFontWeight == FontWeight.w600) {
+        boards = boardsLists;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          moveSliderToKey(listKey);
+        });
+      } else if (groupFontWeight == FontWeight.w600) {
+        boards = boardsGroup;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          moveSliderToKey(groupKey);
+        });
+      }
 
       isLoadings = false;
       setState(() {});
@@ -100,9 +137,8 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.connectionState == ConnectionState.done) {
           Future.delayed(Duration(seconds: 1), () {
             if (mounted) {
-              setState(() {
-                itemCount = boards.isEmpty ? 1 : boards.length;
-              });
+              itemCount = boards.isEmpty ? 1 : boards.length;
+              setState(() {});
             }
           });
         }
@@ -395,6 +431,7 @@ class _HomePageState extends State<HomePage> {
                               InkWell(
                                 key: listKey,
                                 onTap: () {
+                                  boards = boardsLists;
                                   moveSliderToKey(listKey);
                                   listsFontWeight = FontWeight.w600;
                                   groupFontWeight = FontWeight.w500;
@@ -413,6 +450,7 @@ class _HomePageState extends State<HomePage> {
                               InkWell(
                                 key: groupKey,
                                 onTap: () {
+                                  boards = boardsGroup;
                                   moveSliderToKey(groupKey);
                                   listsFontWeight = FontWeight.w500;
                                   groupFontWeight = FontWeight.w600;
@@ -543,13 +581,21 @@ class _HomePageState extends State<HomePage> {
                                                           InkWell(
                                                             onTap: () =>
                                                                 goToMyList(board
-                                                                    .boardName
-                                                                    .toString()),
+                                                                    .boardName),
                                                             child: Container(
                                                               width:
                                                                   width * 0.4,
                                                               height:
                                                                   height * 0.15,
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    width *
+                                                                        0.01,
+                                                                vertical:
+                                                                    height *
+                                                                        0.01,
+                                                              ),
                                                               decoration:
                                                                   const BoxDecoration(
                                                                 color: Color(
@@ -582,7 +628,7 @@ class _HomePageState extends State<HomePage> {
                                                                       TextStyle(
                                                                     fontSize: Get
                                                                         .textTheme
-                                                                        .titleLarge!
+                                                                        .titleMedium!
                                                                         .fontSize,
                                                                     fontWeight:
                                                                         FontWeight
@@ -742,7 +788,7 @@ class _HomePageState extends State<HomePage> {
                                                   board.boardName,
                                                   style: TextStyle(
                                                     fontSize: Get.textTheme
-                                                        .titleLarge!.fontSize,
+                                                        .titleMedium!.fontSize,
                                                     fontWeight: FontWeight.w500,
                                                     color: Colors.black,
                                                   ),
@@ -986,30 +1032,58 @@ class _HomePageState extends State<HomePage> {
                               return;
                             }
                             loadingDialog();
-                            var responseCreateBorad = await http.post(
-                                Uri.parse("$url/board/createBoard"),
-                                headers: {
-                                  "Content-Type":
-                                      "application/json; charset=utf-8"
-                                },
-                                body: createBoardListsPostRequestToJson(
-                                  CreateBoardListsPostRequest(
-                                    boardName: boardCtl.text,
-                                    createBy: userId,
-                                    isGroup: 0,
-                                  ),
-                                ));
-                            if (responseCreateBorad.statusCode == 201) {
-                              Get.back();
-                              Get.back();
-                              loadDataAsync();
-                              boardCtl.clear();
-                              textError = '';
-                              setState(() {});
-                            } else {
-                              Get.back();
-                              textError = 'Error!';
-                              setState(() {});
+                            if (listsFontWeight == FontWeight.w600) {
+                              var responseCreateBoradList = await http.post(
+                                  Uri.parse("$url/board/createBoard"),
+                                  headers: {
+                                    "Content-Type":
+                                        "application/json; charset=utf-8"
+                                  },
+                                  body: createBoardListsPostRequestToJson(
+                                    CreateBoardListsPostRequest(
+                                      boardName: boardCtl.text,
+                                      createBy: userId,
+                                      isGroup: 0,
+                                    ),
+                                  ));
+                              if (responseCreateBoradList.statusCode == 201) {
+                                Get.back();
+                                Get.back();
+                                loadDataAsync();
+                                boardCtl.clear();
+                                textError = '';
+                                setState(() {});
+                              } else {
+                                Get.back();
+                                textError = 'Error!';
+                                setState(() {});
+                              }
+                            } else if (groupFontWeight == FontWeight.w600) {
+                              var responseCreateBoradGroup = await http.post(
+                                  Uri.parse("$url/board/createBoard"),
+                                  headers: {
+                                    "Content-Type":
+                                        "application/json; charset=utf-8"
+                                  },
+                                  body: createBoardListsPostRequestToJson(
+                                    CreateBoardListsPostRequest(
+                                      boardName: boardCtl.text,
+                                      createBy: userId,
+                                      isGroup: 1,
+                                    ),
+                                  ));
+                              if (responseCreateBoradGroup.statusCode == 201) {
+                                Get.back();
+                                Get.back();
+                                loadDataAsync();
+                                boardCtl.clear();
+                                textError = '';
+                                setState(() {});
+                              } else {
+                                Get.back();
+                                textError = 'Error!';
+                                setState(() {});
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(

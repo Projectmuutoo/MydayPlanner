@@ -29,6 +29,7 @@ dependencies:
   flutter_rounded_date_picker: ^3.0.4
   intl: ^0.19.0
   shimmer: ^3.0.0
+  recaptcha_enterprise_flutter: ^18.6.1
 
 dev_dependencies:
   flutter_test:

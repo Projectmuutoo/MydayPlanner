@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:demomydayplanner/pages/login.dart';
-import 'package:demomydayplanner/pages/pageAdmin/navBarAdmin.dart';
-import 'package:demomydayplanner/pages/pageMember/navBar.dart';
+import 'package:demomydayplanner/pages/delayChange.dart';
+import 'package:demomydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -22,34 +21,50 @@ class _SplashPageState extends State<SplashPage>
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
-    Future.delayed(const Duration(seconds: 2), () {
-      final box = GetStorage();
-      final email = box.read('email');
-      if (email != null && email.isNotEmpty) {
-        var results = FirebaseFirestore.instance
-            .collection('usersLogin')
-            .doc(email)
-            .snapshots();
-        results.listen((snapshot) {
+    KeepRoleUser keep = KeepRoleUser();
+    keep.keepRoleUser = '';
+    keep.keepActiveUser = '';
+    context.read<Appdata>().keepUser = keep;
+
+    final box = GetStorage();
+    final email = box.read('email');
+    if (email != null && email.isNotEmpty) {
+      var results = FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(email)
+          .snapshots();
+      results.listen((snapshot) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!snapshot.exists) {
+            KeepRoleUser keep = KeepRoleUser();
+            keep.keepActiveUser = '';
+            keep.keepRoleUser = '';
+            context.read<Appdata>().keepUser = keep;
+            Get.to(() => DelaychangePage());
+            return;
+          }
           if (snapshot['active'] == '0') {
-            Get.to(() => LoginPage());
+            KeepRoleUser keep = KeepRoleUser();
+            keep.keepActiveUser = snapshot['active'];
+            context.read<Appdata>().keepUser = keep;
+            Get.to(() => DelaychangePage());
             return;
           }
           if (snapshot['login'] == 1) {
-            snapshot['role'] == "admin"
-                ? Get.to(() => NavbaradminPage())
-                : Get.to(() => NavbarPage());
-            return;
-          } else {
-            Get.to(() => LoginPage());
+            KeepRoleUser keep = KeepRoleUser();
+            keep.keepRoleUser = snapshot['role'];
+            context.read<Appdata>().keepUser = keep;
+            Get.to(() => DelaychangePage());
             return;
           }
         });
-      } else {
-        Get.to(() => LoginPage());
-        return;
-      }
-    });
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.to(() => DelaychangePage());
+      });
+      return;
+    }
   }
 
   @override

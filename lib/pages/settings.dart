@@ -6,6 +6,7 @@ import 'package:demomydayplanner/models/response/logoutUserPostResponse.dart';
 import 'package:demomydayplanner/pages/login.dart';
 import 'package:demomydayplanner/pages/pageMember/home.dart';
 import 'package:demomydayplanner/pages/pageMember/navBar.dart';
+import 'package:demomydayplanner/pages/splash.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -439,7 +440,7 @@ class _SettingsPageState extends State<SettingsPage> {
               // Sign out from Firebase if needed
               await FirebaseAuth.instance.signOut();
               if (response.success) {
-                Get.to(() => LoginPage());
+                Get.to(() => SplashPage());
               }
             }
           },

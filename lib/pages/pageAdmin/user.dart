@@ -85,9 +85,8 @@ class _UserPageState extends State<UserPage> {
         if (snapshot.connectionState == ConnectionState.done) {
           Future.delayed(Duration(seconds: 1), () {
             if (mounted) {
-              setState(() {
-                itemCount = filteredUsers.isEmpty ? 1 : filteredUsers.length;
-              });
+              itemCount = filteredUsers.isEmpty ? 1 : filteredUsers.length;
+              setState(() {});
             }
           });
         }

@@ -2,6 +2,7 @@ import 'package:demomydayplanner/config/config.dart';
 import 'package:demomydayplanner/models/request/logoutUserPostRequest.dart';
 import 'package:demomydayplanner/models/response/logoutUserPostResponse.dart';
 import 'package:demomydayplanner/pages/login.dart';
+import 'package:demomydayplanner/pages/splash.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -149,7 +150,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
               // Sign out from Firebase if needed
               await FirebaseAuth.instance.signOut();
               if (response.success) {
-                Get.to(() => LoginPage());
+                Get.to(() => SplashPage());
               }
             }
           },
