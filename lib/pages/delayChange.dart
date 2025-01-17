@@ -23,7 +23,7 @@ class _DelaychangePageState extends State<DelaychangePage>
 
     var active = context.read<Appdata>().keepUser.keepActiveUser;
     var role = context.read<Appdata>().keepUser.keepRoleUser;
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (active == '' && role == '') {
         Get.to(() => LoginPage());
       }

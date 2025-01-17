@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ui' as ui;
 
 import 'package:demomydayplanner/config/config.dart';
 import 'package:demomydayplanner/models/request/adminVerifyPutRequest.dart';
 import 'package:demomydayplanner/models/request/createAdminPostRequest.dart';
+import 'package:demomydayplanner/models/request/deleteUserDeleteRequest.dart';
 import 'package:demomydayplanner/models/request/editActiveUserPutRequest.dart';
 import 'package:demomydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:demomydayplanner/models/response/allUserGetResponse.dart';
@@ -12,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
@@ -41,6 +44,8 @@ class _UserPageState extends State<UserPage> {
   int itemCount = 1;
   bool isLoadings = true;
   bool showShimmer = true;
+  bool displayEditAdmin = false;
+  var box = GetStorage();
 
   @override
   void initState() {
@@ -58,7 +63,15 @@ class _UserPageState extends State<UserPage> {
       AllUserGetResponse response =
           allUserGetResponseFromJson(responseAllUser.body);
       allUsers = response.users;
-      filteredUsers = allUsers;
+      filteredUsers = allUsers
+          .where((user) => user.userId != 1)
+          .toList()
+          .where((user) => user.isActive != '2')
+          .toList();
+
+      if (box.read('email') == 'mydayplanner.noreply@gmail.com') {
+        displayEditAdmin = true;
+      }
 
       isLoadings = false;
       setState(() {});
@@ -111,7 +124,7 @@ class _UserPageState extends State<UserPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'User',
+                            'Users',
                             style: TextStyle(
                               fontSize: Get.textTheme.displaySmall!.fontSize,
                               fontWeight: FontWeight.w500,
@@ -235,14 +248,18 @@ class _UserPageState extends State<UserPage> {
                                                                   children: [
                                                                     Row(
                                                                       children: [
-                                                                        SvgPicture
-                                                                            .string(
-                                                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
-                                                                          height:
-                                                                              height * 0.05,
-                                                                          fit: BoxFit
-                                                                              .contain,
-                                                                        ),
+                                                                        user.profile ==
+                                                                                'none-url'
+                                                                            ? SvgPicture.string(
+                                                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
+                                                                                height: height * 0.05,
+                                                                                fit: BoxFit.contain,
+                                                                              )
+                                                                            : Image.network(
+                                                                                user.profile,
+                                                                                height: height * 0.05,
+                                                                                fit: BoxFit.contain,
+                                                                              ),
                                                                         Column(
                                                                           crossAxisAlignment:
                                                                               CrossAxisAlignment.start,
@@ -250,10 +267,11 @@ class _UserPageState extends State<UserPage> {
                                                                             Row(
                                                                               children: [
                                                                                 Text(
-                                                                                  '${user.email} ',
+                                                                                  '${user.email} ${box.read('email') == user.email ? '(You)' : ''}',
                                                                                   style: TextStyle(
                                                                                     fontSize: Get.textTheme.titleMedium!.fontSize,
                                                                                     fontWeight: FontWeight.w500,
+                                                                                    color: box.read('email') == user.email ? Colors.blue : null,
                                                                                   ),
                                                                                 ),
                                                                                 user.isActive == '1'
@@ -309,180 +327,321 @@ class _UserPageState extends State<UserPage> {
                                                           ],
                                                         ),
                                                       ),
-                                                      if (isDropdownOpenUserMap[
-                                                              user.email] =
-                                                          isDropdownOpenUserMap[
-                                                              user.email]!)
-                                                        Container(
-                                                          width: width,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: const Color
-                                                                .fromARGB(255,
-                                                                213, 213, 213),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .only(
-                                                              bottomLeft: Radius
-                                                                  .circular(8),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          8),
-                                                            ),
-                                                          ),
-                                                          child: Padding(
-                                                            padding: EdgeInsets
-                                                                .symmetric(
-                                                              horizontal:
-                                                                  width * 0.03,
-                                                              vertical:
-                                                                  height * 0.01,
-                                                            ),
-                                                            child: Column(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                InkWell(
-                                                                  onTap: () =>
-                                                                      disableUser(
-                                                                          user.email,
-                                                                          user.isActive),
-                                                                  child:
-                                                                      Container(
-                                                                    width:
-                                                                        width,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .all(
-                                                                        Radius.circular(
+                                                      if (displayEditAdmin)
+                                                        if (isDropdownOpenUserMap[
+                                                                user.email] =
+                                                            isDropdownOpenUserMap[
+                                                                user.email]!)
+                                                          Container(
+                                                            width: width,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: const Color
+                                                                  .fromARGB(
+                                                                  255,
+                                                                  213,
+                                                                  213,
+                                                                  213),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .only(
+                                                                bottomLeft: Radius
+                                                                    .circular(
+                                                                        8),
+                                                                bottomRight:
+                                                                    Radius
+                                                                        .circular(
                                                                             8),
-                                                                      ),
-                                                                    ),
+                                                              ),
+                                                            ),
+                                                            child: Padding(
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    width *
+                                                                        0.03,
+                                                                vertical:
+                                                                    height *
+                                                                        0.01,
+                                                              ),
+                                                              child: Column(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  InkWell(
+                                                                    onTap: () =>
+                                                                        disableUser(
+                                                                            user.email,
+                                                                            user.isActive),
                                                                     child:
-                                                                        Padding(
-                                                                      padding:
-                                                                          EdgeInsets
-                                                                              .symmetric(
-                                                                        horizontal:
-                                                                            width *
-                                                                                0.02,
-                                                                        vertical:
-                                                                            height *
-                                                                                0.005,
+                                                                        Container(
+                                                                      width:
+                                                                          width,
+                                                                      decoration:
+                                                                          BoxDecoration(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        borderRadius:
+                                                                            BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              8),
+                                                                        ),
                                                                       ),
                                                                       child:
-                                                                          Row(
-                                                                        mainAxisAlignment:
-                                                                            MainAxisAlignment.center,
-                                                                        children: [
-                                                                          SvgPicture
-                                                                              .string(
-                                                                            user.isActive == '1'
-                                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>'
-                                                                                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c1.654 0 3 1.346 3 3h2c0-2.757-2.243-5-5-5S7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2H9V7c0-1.654 1.346-3 3-3zm6.002 16H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                                                            height:
-                                                                                height * 0.03,
-                                                                            fit:
-                                                                                BoxFit.contain,
-                                                                            color: user.isActive == '1'
-                                                                                ? Color(0xffFF8400)
-                                                                                : Colors.green,
-                                                                          ),
-                                                                          SizedBox(
-                                                                              width: width * 0.02),
-                                                                          Text(
-                                                                            user.isActive == '1'
-                                                                                ? 'Disable user'
-                                                                                : 'Undisable user',
-                                                                            style:
-                                                                                TextStyle(
-                                                                              fontSize: Get.textTheme.titleLarge!.fontSize,
-                                                                              fontWeight: FontWeight.normal,
+                                                                          Padding(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              width * 0.02,
+                                                                          vertical:
+                                                                              height * 0.005,
+                                                                        ),
+                                                                        child:
+                                                                            Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.center,
+                                                                          children: [
+                                                                            SvgPicture.string(
+                                                                              user.isActive == '1' ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c1.654 0 3 1.346 3 3h2c0-2.757-2.243-5-5-5S7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2H9V7c0-1.654 1.346-3 3-3zm6.002 16H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                                                              height: height * 0.03,
+                                                                              fit: BoxFit.contain,
                                                                               color: user.isActive == '1' ? Color(0xffFF8400) : Colors.green,
                                                                             ),
-                                                                          ),
-                                                                        ],
+                                                                            SizedBox(width: width * 0.02),
+                                                                            Text(
+                                                                              user.isActive == '1' ? 'Disable user' : 'Undisable user',
+                                                                              style: TextStyle(
+                                                                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                                                                fontWeight: FontWeight.normal,
+                                                                                color: user.isActive == '1' ? Color(0xffFF8400) : Colors.green,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
                                                                       ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                                SizedBox(
-                                                                  height:
-                                                                      height *
-                                                                          0.005,
-                                                                ),
-                                                                InkWell(
-                                                                  onTap: () {
-                                                                    log('message');
-                                                                  },
-                                                                  child:
-                                                                      Container(
-                                                                    width:
-                                                                        width,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .all(
-                                                                        Radius.circular(
-                                                                            8),
-                                                                      ),
-                                                                    ),
+                                                                  SizedBox(
+                                                                    height:
+                                                                        height *
+                                                                            0.005,
+                                                                  ),
+                                                                  InkWell(
+                                                                    onTap: () =>
+                                                                        deleteUser(
+                                                                            user.email),
                                                                     child:
-                                                                        Padding(
-                                                                      padding:
-                                                                          EdgeInsets
-                                                                              .symmetric(
-                                                                        horizontal:
-                                                                            width *
-                                                                                0.02,
-                                                                        vertical:
-                                                                            height *
-                                                                                0.005,
+                                                                        Container(
+                                                                      width:
+                                                                          width,
+                                                                      decoration:
+                                                                          BoxDecoration(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        borderRadius:
+                                                                            BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              8),
+                                                                        ),
                                                                       ),
                                                                       child:
-                                                                          Row(
-                                                                        mainAxisAlignment:
-                                                                            MainAxisAlignment.center,
-                                                                        children: [
-                                                                          SvgPicture
-                                                                              .string(
-                                                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
-                                                                            height:
-                                                                                height * 0.03,
-                                                                            fit:
-                                                                                BoxFit.contain,
-                                                                            color:
-                                                                                Colors.red,
-                                                                          ),
-                                                                          SizedBox(
-                                                                              width: width * 0.02),
-                                                                          Text(
-                                                                            'Delete user',
-                                                                            style:
-                                                                                TextStyle(
-                                                                              fontSize: Get.textTheme.titleLarge!.fontSize,
-                                                                              fontWeight: FontWeight.normal,
+                                                                          Padding(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              width * 0.02,
+                                                                          vertical:
+                                                                              height * 0.005,
+                                                                        ),
+                                                                        child:
+                                                                            Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.center,
+                                                                          children: [
+                                                                            SvgPicture.string(
+                                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                                                                              height: height * 0.03,
+                                                                              fit: BoxFit.contain,
                                                                               color: Colors.red,
                                                                             ),
-                                                                          ),
-                                                                        ],
+                                                                            SizedBox(width: width * 0.02),
+                                                                            Text(
+                                                                              'Delete user',
+                                                                              style: TextStyle(
+                                                                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                                                                fontWeight: FontWeight.normal,
+                                                                                color: Colors.red,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
                                                                       ),
                                                                     ),
                                                                   ),
-                                                                ),
-                                                              ],
+                                                                ],
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
+                                                      if (!displayEditAdmin)
+                                                        if (isDropdownOpenUserMap[
+                                                                user.email] =
+                                                            isDropdownOpenUserMap[
+                                                                    user
+                                                                        .email]! &&
+                                                                user.role ==
+                                                                    'user')
+                                                          Container(
+                                                            width: width,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: const Color
+                                                                  .fromARGB(
+                                                                  255,
+                                                                  213,
+                                                                  213,
+                                                                  213),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .only(
+                                                                bottomLeft: Radius
+                                                                    .circular(
+                                                                        8),
+                                                                bottomRight:
+                                                                    Radius
+                                                                        .circular(
+                                                                            8),
+                                                              ),
+                                                            ),
+                                                            child: Padding(
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    width *
+                                                                        0.03,
+                                                                vertical:
+                                                                    height *
+                                                                        0.01,
+                                                              ),
+                                                              child: Column(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  InkWell(
+                                                                    onTap: () =>
+                                                                        disableUser(
+                                                                            user.email,
+                                                                            user.isActive),
+                                                                    child:
+                                                                        Container(
+                                                                      width:
+                                                                          width,
+                                                                      decoration:
+                                                                          BoxDecoration(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        borderRadius:
+                                                                            BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              8),
+                                                                        ),
+                                                                      ),
+                                                                      child:
+                                                                          Padding(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              width * 0.02,
+                                                                          vertical:
+                                                                              height * 0.005,
+                                                                        ),
+                                                                        child:
+                                                                            Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.center,
+                                                                          children: [
+                                                                            SvgPicture.string(
+                                                                              user.isActive == '1' ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c1.654 0 3 1.346 3 3h2c0-2.757-2.243-5-5-5S7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2H9V7c0-1.654 1.346-3 3-3zm6.002 16H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                                                              height: height * 0.03,
+                                                                              fit: BoxFit.contain,
+                                                                              color: user.isActive == '1' ? Color(0xffFF8400) : Colors.green,
+                                                                            ),
+                                                                            SizedBox(width: width * 0.02),
+                                                                            Text(
+                                                                              user.isActive == '1' ? 'Disable user' : 'Undisable user',
+                                                                              style: TextStyle(
+                                                                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                                                                fontWeight: FontWeight.normal,
+                                                                                color: user.isActive == '1' ? Color(0xffFF8400) : Colors.green,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                    height:
+                                                                        height *
+                                                                            0.005,
+                                                                  ),
+                                                                  InkWell(
+                                                                    onTap: () =>
+                                                                        deleteUser(
+                                                                            user.email),
+                                                                    child:
+                                                                        Container(
+                                                                      width:
+                                                                          width,
+                                                                      decoration:
+                                                                          BoxDecoration(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        borderRadius:
+                                                                            BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              8),
+                                                                        ),
+                                                                      ),
+                                                                      child:
+                                                                          Padding(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              width * 0.02,
+                                                                          vertical:
+                                                                              height * 0.005,
+                                                                        ),
+                                                                        child:
+                                                                            Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.center,
+                                                                          children: [
+                                                                            SvgPicture.string(
+                                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                                                                              height: height * 0.03,
+                                                                              fit: BoxFit.contain,
+                                                                              color: Colors.red,
+                                                                            ),
+                                                                            SizedBox(width: width * 0.02),
+                                                                            Text(
+                                                                              'Delete user',
+                                                                              style: TextStyle(
+                                                                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                                                                fontWeight: FontWeight.normal,
+                                                                                color: Colors.red,
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
                                                     ],
                                                   ),
                                                 );
@@ -551,14 +710,30 @@ class _UserPageState extends State<UserPage> {
                                             fit: BoxFit.contain,
                                           ),
                                           SizedBox(width: width * 0.02),
-                                          Text(
-                                            selectedRole,
-                                            style: TextStyle(
-                                              fontSize: Get.textTheme
-                                                  .titleLarge!.fontSize,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
+                                          isLoadings || showShimmer
+                                              ? Shimmer.fromColors(
+                                                  baseColor: Colors.grey[300]!,
+                                                  highlightColor:
+                                                      Colors.grey[100]!,
+                                                  child: Container(
+                                                    width: calculateTextWidth(
+                                                      '$selectedRole  (${filteredUsers.length})',
+                                                      Get.textTheme.titleLarge!
+                                                          .fontSize!,
+                                                    ),
+                                                    height: Get.textTheme
+                                                        .titleLarge!.fontSize,
+                                                    color: Colors.white,
+                                                  ),
+                                                )
+                                              : Text(
+                                                  '$selectedRole  (${filteredUsers.length})',
+                                                  style: TextStyle(
+                                                    fontSize: Get.textTheme
+                                                        .titleLarge!.fontSize,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                )
                                         ],
                                       ),
                                       !isDropdownOpen
@@ -609,8 +784,11 @@ class _UserPageState extends State<UserPage> {
                                           padding: EdgeInsets.only(
                                             top: height * 0.01,
                                             left: width * 0.02,
+                                            right: width * 0.02,
                                           ),
                                           child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
                                                 'All',
@@ -620,6 +798,39 @@ class _UserPageState extends State<UserPage> {
                                                   fontWeight: FontWeight.normal,
                                                 ),
                                               ),
+                                              isLoadings || showShimmer
+                                                  ? Shimmer.fromColors(
+                                                      baseColor:
+                                                          Colors.grey[300]!,
+                                                      highlightColor:
+                                                          Colors.grey[100]!,
+                                                      child: Container(
+                                                        width:
+                                                            calculateTextWidth(
+                                                          '${allUsers.where((user) => user.isActive != '2').toList().length - 1}',
+                                                          Get
+                                                              .textTheme
+                                                              .titleLarge!
+                                                              .fontSize!,
+                                                        ),
+                                                        height: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '${allUsers.where((user) => user.isActive != '2').toList().length - 1}',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                      ),
+                                                    ),
                                             ],
                                           ),
                                         ),
@@ -639,8 +850,11 @@ class _UserPageState extends State<UserPage> {
                                         child: Padding(
                                           padding: EdgeInsets.only(
                                             left: width * 0.02,
+                                            right: width * 0.02,
                                           ),
                                           child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
                                                 'Admin',
@@ -650,6 +864,39 @@ class _UserPageState extends State<UserPage> {
                                                   fontWeight: FontWeight.normal,
                                                 ),
                                               ),
+                                              isLoadings || showShimmer
+                                                  ? Shimmer.fromColors(
+                                                      baseColor:
+                                                          Colors.grey[300]!,
+                                                      highlightColor:
+                                                          Colors.grey[100]!,
+                                                      child: Container(
+                                                        width:
+                                                            calculateTextWidth(
+                                                          '${allUsers.where((user) => user.role == 'admin').toList().where((user) => user.isActive != '2').toList().length - 1}',
+                                                          Get
+                                                              .textTheme
+                                                              .titleLarge!
+                                                              .fontSize!,
+                                                        ),
+                                                        height: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '${allUsers.where((user) => user.role == 'admin').toList().where((user) => user.isActive != '2').toList().length - 1}',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                      ),
+                                                    ),
                                             ],
                                           ),
                                         ),
@@ -670,8 +917,11 @@ class _UserPageState extends State<UserPage> {
                                           padding: EdgeInsets.only(
                                             bottom: height * 0.01,
                                             left: width * 0.02,
+                                            right: width * 0.02,
                                           ),
                                           child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
                                                 'User',
@@ -681,6 +931,39 @@ class _UserPageState extends State<UserPage> {
                                                   fontWeight: FontWeight.normal,
                                                 ),
                                               ),
+                                              isLoadings || showShimmer
+                                                  ? Shimmer.fromColors(
+                                                      baseColor:
+                                                          Colors.grey[300]!,
+                                                      highlightColor:
+                                                          Colors.grey[100]!,
+                                                      child: Container(
+                                                        width:
+                                                            calculateTextWidth(
+                                                          '${allUsers.where((user) => user.role == 'user').toList().where((user) => user.isActive != '2').toList().length}',
+                                                          Get
+                                                              .textTheme
+                                                              .titleLarge!
+                                                              .fontSize!,
+                                                        ),
+                                                        height: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : Text(
+                                                      '${allUsers.where((user) => user.role == 'user').toList().where((user) => user.isActive != '2').toList().length}',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                      ),
+                                                    ),
                                             ],
                                           ),
                                         ),
@@ -701,6 +984,185 @@ class _UserPageState extends State<UserPage> {
         );
       },
     );
+  }
+
+  void deleteUser(String email) async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+
+    //horizontal left right
+    double width = MediaQuery.of(context).size.width;
+    //vertical tob bottom
+    double height = MediaQuery.of(context).size.height;
+
+    Get.defaultDialog(
+      title: "",
+      barrierDismissible: true,
+      titlePadding: EdgeInsets.zero,
+      backgroundColor: Color(0xff494949),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: width * 0.02,
+        vertical: height * 0.02,
+      ),
+      content: Column(
+        children: [
+          Text(
+            'You confirm to delete this user email\n$email.',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleMedium!.fontSize,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(
+            height: height * 0.02,
+          )
+        ],
+      ),
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                // แสดง Loading Dialog
+                loadingDialog();
+                var responseLogot = await http.delete(
+                  Uri.parse("$url/user/account"),
+                  headers: {"Content-Type": "application/json; charset=utf-8"},
+                  body: deleteUserDeleteRequestToJson(
+                    DeleteUserDeleteRequest(
+                      email: email,
+                    ),
+                  ),
+                );
+                if (responseLogot.statusCode == 200) {
+                  Get.back();
+                  Get.back();
+                  loadDataAsync();
+                  selectedRole = 'All';
+                  setState(() {});
+
+                  Get.defaultDialog(
+                    title: "",
+                    barrierDismissible: true,
+                    titlePadding: EdgeInsets.zero,
+                    backgroundColor: Color(0xff494949),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: width * 0.02,
+                      vertical: height * 0.02,
+                    ),
+                    content: Column(
+                      children: [
+                        Text(
+                          'You delete email $email successfully.',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(
+                          height: height * 0.02,
+                        )
+                      ],
+                    ),
+                    actions: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              Get.back();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(
+                                MediaQuery.of(context).size.width * 0.3,
+                                MediaQuery.of(context).size.height * 0.05,
+                              ),
+                              backgroundColor: const Color(0xffD5843D),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Ok',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                } else {
+                  Get.back();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width * 0.3,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xffD5843D),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width * 0.3,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: const Color.fromARGB(255, 212, 68, 68),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  double calculateTextWidth(String text, double fontSize) {
+    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textDirection: ui.TextDirection.ltr, // ใช้จาก dart:ui
+      ),
+    )
+      ..pushStyle(ui.TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+      ))
+      ..addText(text);
+
+    final ui.Paragraph paragraph = paragraphBuilder.build()
+      ..layout(ui.ParagraphConstraints(width: double.infinity));
+
+    return paragraph.longestLine;
   }
 
   void createAdmin() async {
@@ -1171,10 +1633,18 @@ class _UserPageState extends State<UserPage> {
 
   void filterUsersByRole(String role) {
     if (role == 'All') {
-      filteredUsers = allUsers;
+      filteredUsers = allUsers
+          .where((user) => user.userId != 1)
+          .toList()
+          .where((user) => user.isActive != '2')
+          .toList();
     } else {
       filteredUsers = allUsers
           .where((user) => user.role.toLowerCase() == role.toLowerCase())
+          .toList()
+          .where((user) => user.userId != 1)
+          .toList()
+          .where((user) => user.isActive != '2')
           .toList();
     }
     setState(() {});

@@ -45,6 +45,15 @@ class _LoginPageState extends State<LoginPage> {
   var box = GetStorage();
 
   @override
+  void initState() {
+    super.initState();
+    var re = box.getKeys();
+    for (var i in re) {
+      log(i);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     //horizontal left right
     double width = MediaQuery.of(context).size.width;
@@ -783,6 +792,7 @@ class _LoginPageState extends State<LoginPage> {
             if (getUserByEmailResponse.success) {
               //เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
               box.write('email', emailCtl.text);
+              box.write('password', passwordCtl.text);
               //แยกทางใครทางมัน
               if (getUserByEmailResponse.role == "admin") {
                 Get.to(() => const NavbaradminPage());
