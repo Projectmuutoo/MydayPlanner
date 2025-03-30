@@ -3,7 +3,6 @@ import 'package:demomydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:demomydayplanner/pages/pageMember/navBar.dart';
 import 'package:demomydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -14,12 +13,10 @@ class DelaychangePage extends StatefulWidget {
   State<DelaychangePage> createState() => _DelaychangePageState();
 }
 
-class _DelaychangePageState extends State<DelaychangePage>
-    with SingleTickerProviderStateMixin {
+class _DelaychangePageState extends State<DelaychangePage> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
     var active = context.read<Appdata>().keepUser.keepActiveUser;
     var role = context.read<Appdata>().keepUser.keepRoleUser;
@@ -41,19 +38,12 @@ class _DelaychangePageState extends State<DelaychangePage>
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.grey,
+          color: Color.fromRGBO(242, 242, 246, 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

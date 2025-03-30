@@ -39,7 +39,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: width * 0.05,
-              vertical: height * 0.05,
+              vertical: height * 0.03,
             ),
             child: Column(
               children: [
@@ -51,6 +51,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                       style: TextStyle(
                         fontSize: Get.textTheme.displaySmall!.fontSize,
                         fontWeight: FontWeight.w500,
+                        color: Color.fromRGBO(0, 122, 255, 1),
                       ),
                     ),
                     InkWell(

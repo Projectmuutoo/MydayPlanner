@@ -47,10 +47,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    var re = box.getKeys();
-    for (var i in re) {
-      log(i);
-    }
+    // var re = box.getKeys();
+    // for (var i in re) {
+    //   log(i);
+    // }
   }
 
   @override
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: width * 0.05,
-                vertical: height * 0.05,
+                vertical: height * 0.03,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.max,
@@ -143,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text(
                               'Email',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
@@ -155,20 +155,20 @@ class _LoginPageState extends State<LoginPage> {
                         keyboardType: TextInputType.emailAddress,
                         cursorColor: Colors.black,
                         style: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
                         ),
                         decoration: InputDecoration(
                           hintText: isTyping ? '' : 'Enter your email address…',
                           hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            color: Colors.grey,
                           ),
                           prefixIcon: IconButton(
                             onPressed: null,
                             icon: SvgPicture.string(
                               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           constraints: BoxConstraints(
@@ -201,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'Password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -215,20 +215,20 @@ class _LoginPageState extends State<LoginPage> {
                           obscureText: !isCheckedPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
                               fontWeight: FontWeight.normal,
-                              color: const Color.fromRGBO(0, 0, 0, 0.3),
+                              color: Colors.grey,
                             ),
                             prefixIcon: IconButton(
                               onPressed: null,
                               icon: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                color: const Color(0xff7B7B7B),
+                                color: Colors.grey,
                               ),
                             ),
                             suffixIcon: IconButton(
@@ -240,7 +240,7 @@ class _LoginPageState extends State<LoginPage> {
                                 isCheckedPassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: const Color(0xff7B7B7B),
+                                color: Colors.grey,
                               ),
                             ),
                             constraints: BoxConstraints(
@@ -274,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
-                                  color: const Color(0xffAF4C31),
+                                  color: Colors.black,
                                 ),
                               ),
                             ),
@@ -290,7 +290,7 @@ class _LoginPageState extends State<LoginPage> {
                             width,
                             height * 0.04,
                           ),
-                          backgroundColor: const Color(0xffD5843D),
+                          backgroundColor: Color.fromRGBO(0, 122, 255, 1),
                           elevation: 1,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -314,7 +314,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(
                             fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: Colors.red, // สีสำหรับแจ้งเตือน
+                            color: Colors.red,
                           ),
                         ),
                       SizedBox(
@@ -337,13 +337,10 @@ class _LoginPageState extends State<LoginPage> {
                             width,
                             height * 0.05,
                           ),
-                          backgroundColor: const Color(0xffEFEEEC),
+                          backgroundColor: Colors.white,
                           elevation: 1,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: const BorderSide(
-                              width: 0.1,
-                            ),
                           ),
                         ),
                         child: Row(
@@ -373,7 +370,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           fontSize: Get.textTheme.titleMedium!.fontSize,
                           fontWeight: FontWeight.normal,
-                          color: const Color.fromRGBO(0, 0, 0, 0.6),
+                          color: Colors.grey,
                         ),
                       ),
                       InkWell(
@@ -383,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(
                             fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color(0xffAF4C31),
+                            color: Colors.black,
                           ),
                         ),
                       ),
@@ -532,7 +529,7 @@ class _LoginPageState extends State<LoginPage> {
                     MediaQuery.of(context).size.width * 0.3,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: const Color(0xffD5843D),
+                  backgroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -541,7 +538,7 @@ class _LoginPageState extends State<LoginPage> {
                   'Confirm',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -555,7 +552,7 @@ class _LoginPageState extends State<LoginPage> {
                     MediaQuery.of(context).size.width * 0.3,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: const Color(0xffFEF7E7),
+                  backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -575,7 +572,7 @@ class _LoginPageState extends State<LoginPage> {
       }
       var result = await FirebaseFirestore.instance
           .collection('usersLogin')
-          .doc(box.read('email'))
+          .doc(googleUser.email)
           .get();
       var data = result.data();
       if (data != null) {
@@ -684,7 +681,7 @@ class _LoginPageState extends State<LoginPage> {
         shadowColor: Colors.transparent,
         content: Center(
           child: CircularProgressIndicator(
-            color: Color(0xffCDBEAE),
+            color: Colors.white,
           ),
         ),
       ),
@@ -709,7 +706,6 @@ class _LoginPageState extends State<LoginPage> {
 
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
-
     // แสดง Loading Dialog
     loadingDialog();
     var responseGetuser = await http.post(
@@ -745,7 +741,7 @@ class _LoginPageState extends State<LoginPage> {
       }
       var result = await FirebaseFirestore.instance
           .collection('usersLogin')
-          .doc(box.read('email'))
+          .doc(emailCtl.text)
           .get();
       var data = result.data();
       if (data != null) {
@@ -756,7 +752,6 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
       }
-
       //เปิดให้ใส่รหัสผ่าน
       isCheckedEmail = true;
       showNotification('');
@@ -893,7 +888,7 @@ class _LoginPageState extends State<LoginPage> {
                                   child: TextFormField(
                                     focusNode: focusNodes[index],
                                     controller: otpControllers[index],
-                                    cursorColor: Color(0xffB0A4A4),
+                                    cursorColor: Colors.grey,
                                     onChanged: (value) {
                                       if (value.length == 1) {
                                         if (index < 5) {
@@ -949,7 +944,7 @@ class _LoginPageState extends State<LoginPage> {
                                         borderSide: BorderSide(
                                           color: warning.isNotEmpty
                                               ? Color(int.parse('0xff$warning'))
-                                              : Color(0xffB0A4A4),
+                                              : Colors.grey,
                                           width: 2,
                                         ),
                                       ),

@@ -47,7 +47,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: width * 0.05,
-              vertical: height * 0.05,
+              vertical: height * 0.03,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.max,
@@ -63,14 +63,14 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             children: [
                               SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                color: const Color.fromRGBO(0, 0, 0, 0.6),
+                                color: Colors.grey,
                               ),
                               Text(
                                 'back',
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleLarge!.fontSize,
                                   fontWeight: FontWeight.normal,
-                                  color: const Color.fromRGBO(0, 0, 0, 0.6),
+                                  color: Colors.grey,
                                 ),
                               ),
                             ],
@@ -137,7 +137,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             child: Text(
                               'Email',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
@@ -150,20 +150,20 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         keyboardType: TextInputType.emailAddress,
                         cursorColor: Colors.black,
                         style: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
                         ),
                         decoration: InputDecoration(
                           hintText: isTyping ? '' : 'Enter your email address…',
                           hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            color: Colors.grey,
                           ),
                           prefixIcon: IconButton(
                             onPressed: null,
                             icon: SvgPicture.string(
                               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           constraints: BoxConstraints(
@@ -200,7 +200,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             child: Text(
                               'OTP Code',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
@@ -217,20 +217,20 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         style: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
                         ),
                         decoration: InputDecoration(
                           hintText: isTyping ? '' : 'Enter your code',
                           hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            color: Colors.grey,
                           ),
                           prefixIcon: IconButton(
                             onPressed: null,
                             icon: SvgPicture.string(
                               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M7 17a5.007 5.007 0 0 0 4.898-4H14v2h2v-2h2v3h2v-3h1v-2h-9.102A5.007 5.007 0 0 0 7 7c-2.757 0-5 2.243-5 5s2.243 5 5 5zm0-8c1.654 0 3 1.346 3 3s-1.346 3-3 3-3-1.346-3-3 1.346-3 3-3z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           constraints: BoxConstraints(
@@ -267,7 +267,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             child: Text(
                               'Password',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
@@ -281,20 +281,20 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         obscureText: !isCheckedPassword,
                         cursorColor: Colors.black,
                         style: TextStyle(
-                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
                         ),
                         decoration: InputDecoration(
                           hintText: isTyping ? '' : 'Enter your password',
                           hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            color: Colors.grey,
                           ),
                           prefixIcon: IconButton(
                             onPressed: null,
                             icon: SvgPicture.string(
                               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           suffixIcon: IconButton(
@@ -306,7 +306,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               isCheckedPassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           constraints: BoxConstraints(
@@ -341,7 +341,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
-                                color: const Color.fromRGBO(0, 0, 0, 0.6),
+                                color: Colors.grey,
                               ),
                             ),
                           ),
@@ -382,13 +382,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           hintStyle: TextStyle(
                             fontSize: Get.textTheme.titleLarge!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.3),
+                            color: Colors.grey,
                           ),
                           prefixIcon: IconButton(
                             onPressed: null,
                             icon: SvgPicture.string(
                               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           suffixIcon: IconButton(
@@ -401,7 +401,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               isCheckedConfirmPassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
-                              color: const Color(0xff7B7B7B),
+                              color: Colors.grey,
                             ),
                           ),
                           constraints: BoxConstraints(
@@ -436,7 +436,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
-                                color: const Color.fromRGBO(0, 0, 0, 0.6),
+                                color: Colors.grey,
                               ),
                             ),
                           ),
@@ -448,7 +448,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         style: TextStyle(
                           fontSize: Get.textTheme.titleMedium!.fontSize,
                           fontWeight: FontWeight.normal,
-                          color: Colors.red, // สีสำหรับแจ้งเตือน
+                          color: Colors.red,
                         ),
                       ),
                   ],
@@ -463,6 +463,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           style: TextStyle(
                             fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
+                            color: Colors.grey,
                           ),
                         ),
                         SizedBox(
@@ -477,7 +478,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             style: TextStyle(
                               fontSize: Get.textTheme.titleMedium!.fontSize,
                               fontWeight: FontWeight.normal,
-                              color: Color(0xffAF4C31),
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -490,7 +491,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           width,
                           height * 0.04,
                         ),
-                        backgroundColor: const Color(0xffD5843D),
+                        backgroundColor: Colors.black,
                         elevation: 1,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -643,7 +644,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
             title: "",
             barrierDismissible: false,
             titlePadding: EdgeInsets.zero,
-            backgroundColor: Color(0xff494949),
+            backgroundColor: Colors.grey,
             contentPadding: EdgeInsets.symmetric(
               horizontal: MediaQuery.of(context).size.width * 0.02,
               vertical: MediaQuery.of(context).size.height * 0.02,
@@ -681,7 +682,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                     MediaQuery.of(context).size.width,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: const Color(0xffD5843D),
+                  backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -690,7 +691,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                   'OK!',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -710,7 +711,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         shadowColor: Colors.transparent,
         content: Center(
           child: CircularProgressIndicator(
-            color: Color(0xffCDBEAE),
+            color: Colors.white,
           ),
         ),
       ),

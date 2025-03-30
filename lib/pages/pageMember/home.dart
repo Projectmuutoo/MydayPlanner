@@ -150,13 +150,13 @@ class _HomePageState extends State<HomePage> {
             appBar: null,
             body: Center(
               child: RefreshIndicator(
-                color: Color(0xffCDBEAE),
+                color: Colors.grey,
                 onRefresh: loadDataAsync,
                 child: Padding(
                   padding: EdgeInsets.only(
                     right: width * 0.05,
                     left: width * 0.05,
-                    top: height * 0.05,
+                    top: height * 0.03,
                   ),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -170,8 +170,8 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 isLoadings || showShimmer
                                     ? Shimmer.fromColors(
-                                        baseColor: Colors.grey[300]!,
-                                        highlightColor: Colors.grey[100]!,
+                                        baseColor: Color(0xFFF7F7F7),
+                                        highlightColor: Colors.grey[300]!,
                                         child: Container(
                                           decoration: BoxDecoration(
                                             color: Colors.white,
@@ -195,8 +195,8 @@ class _HomePageState extends State<HomePage> {
                                                       height: height * 0.1,
                                                       decoration:
                                                           const BoxDecoration(
-                                                        color:
-                                                            Color(0xffd9d9d9),
+                                                        color: Color.fromRGBO(
+                                                            242, 242, 246, 1),
                                                         shape: BoxShape.circle,
                                                       ),
                                                     ),
@@ -208,7 +208,8 @@ class _HomePageState extends State<HomePage> {
                                                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
                                                         height: height * 0.05,
                                                         fit: BoxFit.contain,
-                                                        color: Colors.grey,
+                                                        color: Color.fromRGBO(
+                                                            151, 149, 149, 1),
                                                       ),
                                                     )
                                                   ],
@@ -227,8 +228,8 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     isLoadings || showShimmer
                                         ? Shimmer.fromColors(
-                                            baseColor: Colors.grey[300]!,
-                                            highlightColor: Colors.grey[100]!,
+                                            baseColor: Color(0xFFF7F7F7),
+                                            highlightColor: Colors.grey[300]!,
                                             child: Container(
                                               width: _calculateTextWidth(
                                                   'Hello, $name',
@@ -294,15 +295,16 @@ class _HomePageState extends State<HomePage> {
                             width: width,
                             height: height * 0.12,
                             decoration: const BoxDecoration(
-                              color: Color(0xffF5EBE0),
+                              color: Color.fromRGBO(242, 242, 246, 1),
                               borderRadius: BorderRadius.all(
                                 Radius.circular(40),
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   offset: Offset(0, 1),
-                                  blurRadius: 1,
-                                  spreadRadius: 0,
+                                  blurRadius: 3,
+                                  color: Color.fromRGBO(151, 149, 149, 1),
+                                  spreadRadius: 0.1,
                                 ),
                               ],
                             ),
@@ -331,6 +333,7 @@ class _HomePageState extends State<HomePage> {
                                           fontSize: Get
                                               .textTheme.titleLarge!.fontSize,
                                           fontWeight: FontWeight.w500,
+                                          color: Color.fromRGBO(0, 122, 255, 1),
                                         ),
                                       ),
                                     ],
@@ -345,7 +348,8 @@ class _HomePageState extends State<HomePage> {
                                             '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
                                             height: height * 0.01,
                                             fit: BoxFit.contain,
-                                            color: Colors.white,
+                                            color: Color.fromRGBO(
+                                                151, 149, 149, 1),
                                           ),
                                           SizedBox(
                                             width: width * 0.01,
@@ -406,6 +410,7 @@ class _HomePageState extends State<HomePage> {
                                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm16-8V6H8.023v2H18.8zM8 11h12v2H8zm0 5h12v2H8z"></path></svg>',
                                         height: height * 0.034,
                                         fit: BoxFit.contain,
+                                        color: Color.fromRGBO(151, 149, 149, 1),
                                       ),
                                     ),
                                   if (displayFormat)
@@ -442,6 +447,7 @@ class _HomePageState extends State<HomePage> {
                                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zm5 2h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm1-6h4v4h-4V5zM3 20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6zm2-5h4v4H5v-4zm8 5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6zm2-5h4v4h-4v-4z"></path></svg>',
                                         height: height * 0.03,
                                         fit: BoxFit.contain,
+                                        color: Color.fromRGBO(151, 149, 149, 1),
                                       ),
                                     ),
                                   if (!displayFormat)
@@ -466,9 +472,10 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
-                        const Divider(
-                          thickness: 1,
+                        Divider(
+                          thickness: 0,
                           height: 0,
+                          color: Color.fromRGBO(151, 149, 149, 1),
                         ),
                         Padding(
                           padding: EdgeInsets.only(
@@ -495,6 +502,9 @@ class _HomePageState extends State<HomePage> {
                                     fontSize:
                                         Get.textTheme.titleLarge!.fontSize,
                                     fontWeight: listsFontWeight,
+                                    color: listsFontWeight == FontWeight.w600
+                                        ? Color.fromRGBO(0, 122, 255, 1)
+                                        : null,
                                   ),
                                 ),
                               ),
@@ -514,6 +524,9 @@ class _HomePageState extends State<HomePage> {
                                     fontSize:
                                         Get.textTheme.titleLarge!.fontSize,
                                     fontWeight: groupFontWeight,
+                                    color: groupFontWeight == FontWeight.w600
+                                        ? Color.fromRGBO(0, 122, 255, 1)
+                                        : null,
                                   ),
                                 ),
                               ),
@@ -548,7 +561,7 @@ class _HomePageState extends State<HomePage> {
                               width: width,
                               height: height * 0.54,
                               decoration: const BoxDecoration(
-                                color: Color.fromARGB(0, 0, 0, 0),
+                                color: Colors.white,
                               ),
                             ),
                             AnimatedPositioned(
@@ -560,7 +573,7 @@ class _HomePageState extends State<HomePage> {
                                 width: width * 0.1,
                                 height: height * 0.06,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xffCDBEAE),
+                                  color: Color.fromRGBO(0, 122, 255, 1),
                                   shape: BoxShape.rectangle,
                                   borderRadius: BorderRadius.all(
                                     Radius.circular(22),
@@ -581,7 +594,7 @@ class _HomePageState extends State<HomePage> {
                                     vertical: height * 0.01,
                                   ),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xffCDBEAE),
+                                    color: Color.fromRGBO(242, 242, 246, 1),
                                     borderRadius: BorderRadius.all(
                                       Radius.circular(18),
                                     ),
@@ -599,26 +612,19 @@ class _HomePageState extends State<HomePage> {
                                             ? List.generate(
                                                 itemCount,
                                                 (index) => Shimmer.fromColors(
-                                                  baseColor: Colors.grey[300]!,
+                                                  baseColor: Color(0xFFF7F7F7),
                                                   highlightColor:
-                                                      Colors.grey[100]!,
+                                                      Colors.grey[300]!,
                                                   child: Container(
                                                     width: width * 0.4,
                                                     height: height * 0.15,
                                                     decoration:
                                                         const BoxDecoration(
-                                                      color: Color(0xffEFEEEC),
+                                                      color: Colors.white,
                                                       borderRadius:
                                                           BorderRadius.all(
                                                         Radius.circular(12),
                                                       ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          offset: Offset(0, 1),
-                                                          blurRadius: 1,
-                                                          spreadRadius: 0,
-                                                        ),
-                                                      ],
                                                     ),
                                                   ),
                                                 ),
@@ -629,67 +635,66 @@ class _HomePageState extends State<HomePage> {
                                                     return SizedBox(
                                                       child: Column(
                                                         children: [
-                                                          InkWell(
-                                                            onTap: () =>
-                                                                goToMyList(board
-                                                                    .boardName),
-                                                            child: Container(
-                                                              width:
-                                                                  width * 0.4,
-                                                              height:
-                                                                  height * 0.15,
-                                                              padding: EdgeInsets
-                                                                  .symmetric(
-                                                                horizontal:
-                                                                    width *
-                                                                        0.01,
-                                                                vertical:
-                                                                    height *
-                                                                        0.01,
-                                                              ),
-                                                              decoration:
-                                                                  const BoxDecoration(
-                                                                color: Color(
-                                                                    0xffEFEEEC),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .all(
-                                                                  Radius
+                                                          Container(
+                                                            width: width * 0.4,
+                                                            height:
+                                                                height * 0.15,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color:
+                                                                  Colors.white,
+                                                              borderRadius:
+                                                                  BorderRadius
                                                                       .circular(
                                                                           12),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  offset:
+                                                                      Offset(
+                                                                          0, 1),
+                                                                  blurRadius: 3,
+                                                                  color: Color
+                                                                      .fromRGBO(
+                                                                          151,
+                                                                          149,
+                                                                          149,
+                                                                          1),
+                                                                  spreadRadius:
+                                                                      0.1,
                                                                 ),
-                                                                boxShadow: [
-                                                                  BoxShadow(
-                                                                    offset:
-                                                                        Offset(
-                                                                            0,
-                                                                            1),
-                                                                    blurRadius:
-                                                                        1,
-                                                                    spreadRadius:
-                                                                        0,
+                                                              ],
+                                                            ),
+                                                            child: Material(
+                                                              color: Colors
+                                                                  .transparent,
+                                                              child: InkWell(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            12),
+                                                                onTap: () =>
+                                                                    goToMyList(board
+                                                                        .boardName),
+                                                                child: Center(
+                                                                  child: Text(
+                                                                    board
+                                                                        .boardName,
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize: Get
+                                                                          .textTheme
+                                                                          .titleMedium!
+                                                                          .fontSize,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
                                                                   ),
-                                                                ],
-                                                              ),
-                                                              child: Center(
-                                                                child: Text(
-                                                                  board
-                                                                      .boardName,
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize: Get
-                                                                        .textTheme
-                                                                        .titleMedium!
-                                                                        .fontSize,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w500,
-                                                                    color: Colors
-                                                                        .black,
-                                                                  ),
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .center,
                                                                 ),
                                                               ),
                                                             ),
@@ -703,48 +708,50 @@ class _HomePageState extends State<HomePage> {
                                                 SizedBox(
                                                   child: Column(
                                                     children: [
-                                                      InkWell(
-                                                        onTap: createNewBoard,
-                                                        child: Container(
-                                                          width: width * 0.4,
-                                                          height: height * 0.15,
-                                                          decoration:
-                                                              const BoxDecoration(
-                                                            color: Color(
-                                                                0xffCFCFCF),
+                                                      Container(
+                                                        width: width * 0.4,
+                                                        height: height * 0.15,
+                                                        decoration: BoxDecoration(
                                                             borderRadius:
                                                                 BorderRadius
-                                                                    .all(
-                                                              Radius.circular(
-                                                                  12),
-                                                            ),
-                                                            boxShadow: [
-                                                              BoxShadow(
-                                                                offset: Offset(
-                                                                    0, 1),
-                                                                blurRadius: 1,
-                                                                spreadRadius: 0,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          child: Center(
-                                                            child: Text(
-                                                              '+',
-                                                              style: TextStyle(
-                                                                fontSize: Get
-                                                                    .textTheme
-                                                                    .headlineSmall!
-                                                                    .fontSize,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color: Colors
-                                                                    .white,
+                                                                    .circular(
+                                                                        12),
+                                                            color:
+                                                                Colors.white),
+                                                        child: Material(
+                                                          color: Colors
+                                                              .transparent,
+                                                          child: InkWell(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                            onTap:
+                                                                createNewBoard,
+                                                            child: Center(
+                                                              child: Text(
+                                                                '+',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .headlineSmall!
+                                                                      .fontSize,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                  color: Color
+                                                                      .fromRGBO(
+                                                                          0,
+                                                                          122,
+                                                                          255,
+                                                                          1),
+                                                                ),
                                                               ),
                                                             ),
                                                           ),
                                                         ),
-                                                      ),
+                                                      )
                                                     ],
                                                   ),
                                                 ),
@@ -767,7 +774,7 @@ class _HomePageState extends State<HomePage> {
                                     vertical: height * 0.01,
                                   ),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xffCDBEAE),
+                                    color: Color.fromRGBO(242, 242, 246, 1),
                                     borderRadius: BorderRadius.all(
                                       Radius.circular(18),
                                     ),
@@ -782,9 +789,8 @@ class _HomePageState extends State<HomePage> {
                                     itemBuilder: (context, index) {
                                       if (isLoadings || showShimmer) {
                                         return Shimmer.fromColors(
-                                          baseColor: const Color.fromRGBO(
-                                              224, 224, 224, 1),
-                                          highlightColor: Colors.grey[100]!,
+                                          baseColor: Color(0xFFF7F7F7),
+                                          highlightColor: Colors.grey[300]!,
                                           child: Padding(
                                             padding: EdgeInsets.only(
                                               bottom: height * 0.01,
@@ -793,95 +799,101 @@ class _HomePageState extends State<HomePage> {
                                               width: width,
                                               height: height * 0.06,
                                               decoration: const BoxDecoration(
-                                                color: Color(0xffEFEEEC),
+                                                color: Colors.white,
                                                 borderRadius: BorderRadius.all(
                                                   Radius.circular(12),
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    offset: Offset(0, 1),
-                                                    blurRadius: 1,
-                                                    spreadRadius: 0,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      if (index < boards.length) {
-                                        final board = boards[index];
-                                        return Padding(
-                                          padding: EdgeInsets.only(
-                                            bottom: height * 0.01,
-                                          ),
-                                          child: InkWell(
-                                            onTap: () => goToMyList(
-                                                board.boardName.toString()),
-                                            child: Container(
-                                              width: width,
-                                              height: height * 0.06,
-                                              decoration: const BoxDecoration(
-                                                color: Color(0xffEFEEEC),
-                                                borderRadius: BorderRadius.all(
-                                                  Radius.circular(12),
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    offset: Offset(0, 1),
-                                                    blurRadius: 1,
-                                                    spreadRadius: 0,
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  board.boardName,
-                                                  style: TextStyle(
-                                                    fontSize: Get.textTheme
-                                                        .titleMedium!.fontSize,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.black,
-                                                  ),
-                                                  textAlign: TextAlign.center,
                                                 ),
                                               ),
                                             ),
                                           ),
                                         );
                                       } else {
-                                        // ปุ่มสร้างบอร์ดใหม่
-                                        return InkWell(
-                                          onTap: createNewBoard,
-                                          child: Container(
+                                        if (index < boards.length) {
+                                          final board = boards[index];
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: height * 0.01,
+                                            ),
+                                            child: Container(
+                                              width: width,
+                                              height: height * 0.06,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: const [
+                                                  BoxShadow(
+                                                    offset: Offset(0, 1),
+                                                    blurRadius: 3,
+                                                    color: Color.fromRGBO(
+                                                        151, 149, 149, 1),
+                                                    spreadRadius: 0.1,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  onTap: () => goToMyList(board
+                                                      .boardName
+                                                      .toString()),
+                                                  child: Center(
+                                                    child: Text(
+                                                      board.boardName,
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleMedium!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.black,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          // ปุ่มสร้างบอร์ดใหม่
+                                          return Container(
                                             width: width,
                                             height: height * 0.06,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xffCFCFCF),
-                                              borderRadius: BorderRadius.all(
-                                                Radius.circular(12),
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  offset: Offset(0, 1),
-                                                  blurRadius: 1,
-                                                  spreadRadius: 0,
-                                                ),
-                                              ],
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              color: Colors.white,
                                             ),
-                                            child: Center(
-                                              child: Text(
-                                                '+',
-                                                style: TextStyle(
-                                                  fontSize: Get.textTheme
-                                                      .headlineSmall!.fontSize,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.white,
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              child: InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                onTap: createNewBoard,
+                                                child: Center(
+                                                  child: Text(
+                                                    '+',
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .headlineSmall!
+                                                          .fontSize,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color.fromRGBO(
+                                                          0, 122, 255, 1),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        );
+                                          );
+                                        }
                                       }
                                     },
                                   ),
@@ -982,7 +994,6 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.only(
                 left: width * 0.05,
                 right: width * 0.05,
-                top: height * 0.02,
                 bottom:
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
@@ -1014,7 +1025,7 @@ class _HomePageState extends State<HomePage> {
                               child: Text(
                                 'Name board',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -1026,12 +1037,12 @@ class _HomePageState extends State<HomePage> {
                           keyboardType: TextInputType.text,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your board name',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: const Color.fromRGBO(0, 0, 0, 0.3),
                             ),
@@ -1142,14 +1153,14 @@ class _HomePageState extends State<HomePage> {
                               width,
                               height * 0.06,
                             ),
-                            backgroundColor: const Color(0xff0D0C0C),
+                            backgroundColor: Color.fromRGBO(0, 122, 255, 1),
                             elevation: 1,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: Text(
-                            'Create New Board',
+                            'Create new board',
                             style: TextStyle(
                               fontSize: Get.textTheme.titleLarge!.fontSize,
                               fontWeight: FontWeight.normal,
@@ -1195,7 +1206,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       position: RelativeRect.fromLTRB(
         width,
-        height * 0.1,
+        height * 0.12,
         width * 0.1,
         0,
       ),
@@ -1209,7 +1220,7 @@ class _HomePageState extends State<HomePage> {
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 16c2.206 0 4-1.794 4-4s-1.794-4-4-4-4 1.794-4 4 1.794 4 4 4zm0-6c1.084 0 2 .916 2 2s-.916 2-2 2-2-.916-2-2 .916-2 2-2z"></path><path d="m2.845 16.136 1 1.73c.531.917 1.809 1.261 2.73.73l.529-.306A8.1 8.1 0 0 0 9 19.402V20c0 1.103.897 2 2 2h2c1.103 0 2-.897 2-2v-.598a8.132 8.132 0 0 0 1.896-1.111l.529.306c.923.53 2.198.188 2.731-.731l.999-1.729a2.001 2.001 0 0 0-.731-2.732l-.505-.292a7.718 7.718 0 0 0 0-2.224l.505-.292a2.002 2.002 0 0 0 .731-2.732l-.999-1.729c-.531-.92-1.808-1.265-2.731-.732l-.529.306A8.1 8.1 0 0 0 15 4.598V4c0-1.103-.897-2-2-2h-2c-1.103 0-2 .897-2 2v.598a8.132 8.132 0 0 0-1.896 1.111l-.529-.306c-.924-.531-2.2-.187-2.731.732l-.999 1.729a2.001 2.001 0 0 0 .731 2.732l.505.292a7.683 7.683 0 0 0 0 2.223l-.505.292a2.003 2.003 0 0 0-.731 2.733zm3.326-2.758A5.703 5.703 0 0 1 6 12c0-.462.058-.926.17-1.378a.999.999 0 0 0-.47-1.108l-1.123-.65.998-1.729 1.145.662a.997.997 0 0 0 1.188-.142 6.071 6.071 0 0 1 2.384-1.399A1 1 0 0 0 11 5.3V4h2v1.3a1 1 0 0 0 .708.956 6.083 6.083 0 0 1 2.384 1.399.999.999 0 0 0 1.188.142l1.144-.661 1 1.729-1.124.649a1 1 0 0 0-.47 1.108c.112.452.17.916.17 1.378 0 .461-.058.925-.171 1.378a1 1 0 0 0 .471 1.108l1.123.649-.998 1.729-1.145-.661a.996.996 0 0 0-1.188.142 6.071 6.071 0 0 1-2.384 1.399A1 1 0 0 0 13 18.7l.002 1.3H11v-1.3a1 1 0 0 0-.708-.956 6.083 6.083 0 0 1-2.384-1.399.992.992 0 0 0-1.188-.141l-1.144.662-1-1.729 1.124-.651a1 1 0 0 0 .471-1.108z"></path></svg>',
                 height: height * 0.035,
                 fit: BoxFit.contain,
-                color: const Color(0xff787878),
+                color: Color.fromRGBO(151, 149, 149, 1),
               ),
               SizedBox(width: width * 0.08),
               Text(
@@ -1231,7 +1242,7 @@ class _HomePageState extends State<HomePage> {
                 '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240ZM330-120 120-330v-300l210-210h300l210 210v300L630-120H330Zm34-80h232l164-164v-232L596-760H364L200-596v232l164 164Zm116-280Z"/></svg>',
                 height: height * 0.035,
                 fit: BoxFit.contain,
-                color: const Color(0xff787878),
+                color: Color.fromRGBO(255, 58, 49, 1),
               ),
               SizedBox(width: width * 0.08),
               Text(
