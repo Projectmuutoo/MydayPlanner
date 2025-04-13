@@ -1,7 +1,9 @@
-import 'package:demomydayplanner/pages/login.dart';
-import 'package:demomydayplanner/pages/pageAdmin/navBarAdmin.dart';
-import 'package:demomydayplanner/pages/pageMember/navBar.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'dart:developer';
+
+import 'package:mydayplanner/pages/login.dart';
+import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
+import 'package:mydayplanner/pages/pageMember/navBar.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +19,6 @@ class _DelaychangePageState extends State<DelaychangePage> {
   @override
   void initState() {
     super.initState();
-
     var active = context.read<Appdata>().keepUser.keepActiveUser;
     var role = context.read<Appdata>().keepUser.keepRoleUser;
     Future.delayed(const Duration(seconds: 1), () {

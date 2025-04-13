@@ -7,18 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:773568755866:android:2d9a6c41d0ad844a828723",
+        "mobilesdk_app_id": "1:773568755866:android:00397cf859e18d6c828723",
         "android_client_info": {
-          "package_name": "com.example.demomydayplanner"
+          "package_name": "com.example.mydayplanner"
         }
       },
       "oauth_client": [
         {
-          "client_id": "773568755866-e4t9lp0g4blt2qplifr8bnlftti19rnb.apps.googleusercontent.com",
+          "client_id": "773568755866-fd2ga98ed3u4d1aqof7uvuf0kt6kl0cg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.demomydayplanner",
-            "certificate_hash": "a5d383c208b4707e566bf35adb974c05a43bb934"
+            "package_name": "com.example.mydayplanner",
+            "certificate_hash": "907213a77c5f281d2cf9a7ad67928d23a779dc18"
           }
         },
         {
@@ -35,8 +35,15 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "773568755866-9idgfuo0urn10frmsth4acjols7p291h.apps.googleusercontent.com",
+              "client_id": "113319437075224379612",
               "client_type": 3
+            },
+            {
+              "client_id": "773568755866-kb3m2p7skb2k9ecj6475egrrp628bn0u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.demomydayplanner"
+              }
             }
           ]
         }

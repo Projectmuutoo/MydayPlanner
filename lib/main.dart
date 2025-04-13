@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:demomydayplanner/pages/splash.dart';
-import 'package:demomydayplanner/shared/firebase_options.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/pages/splash.dart';
+import 'package:mydayplanner/shared/firebase_options.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';

@@ -3,16 +3,16 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:bcrypt/bcrypt.dart';
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/models/request/deleteUserDeleteRequest.dart';
-import 'package:demomydayplanner/models/request/editProfileUserPutRequest.dart';
-import 'package:demomydayplanner/models/request/getUserByEmailPostRequest.dart';
-import 'package:demomydayplanner/models/request/logoutUserPostRequest.dart';
-import 'package:demomydayplanner/models/response/getUserByEmailPostResponst.dart';
-import 'package:demomydayplanner/models/response/logoutUserPostResponse.dart';
-import 'package:demomydayplanner/pages/pageMember/navBar.dart';
-import 'package:demomydayplanner/pages/splash.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/deleteUserDeleteRequest.dart';
+import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
+import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
+import 'package:mydayplanner/models/request/logoutUserPostRequest.dart';
+import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
+import 'package:mydayplanner/models/response/logoutUserPostResponse.dart';
+import 'package:mydayplanner/pages/pageMember/navBar.dart';
+import 'package:mydayplanner/pages/splash.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -64,11 +64,12 @@ class _SettingsPageState extends State<SettingsPage> {
   bool isCheckedPasswordVerify = false;
   bool isTogglePushNotification = false;
   bool isToggleEmailNotification = false;
+  FocusNode editNameFocusNode = FocusNode();
+  FocusNode editPasswordFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-
     // var re = box.getKeys();
     // for (var i in re) {
     //   log(i);
@@ -140,7 +141,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: width * 0.05,
-                vertical: height * 0.03,
+                vertical: height * 0.05,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -752,791 +753,903 @@ class _SettingsPageState extends State<SettingsPage> {
 
             return PopScope(
               canPop: false,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: width * 0.05,
-                  right: width * 0.05,
-                  top: height * 0.05,
-                  bottom: height * 0.05,
-                ),
-                child: SizedBox(
-                  height: height,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  Get.back();
-                                  editNameCtl.removeListener(() {});
-                                  editPasswordCtl.removeListener(() {});
-                                  savedFile = null;
-                                  isTyping = false;
-                                  isTypingPassword = false;
-                                  editNameCtl.clear();
-                                  editPasswordCtl.clear();
-                                  passwordVerifyCtl.clear();
-                                  isCheckedPassword = false;
-                                  isCheckedPasswordConfirmDelete = false;
-                                  passwordConfirmDeleteCtl.clear();
-                                  notitext = false;
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.02,
-                                    vertical: height * 0.01,
-                                  ),
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
-                                    height: height * 0.03,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'My profile',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(
-                                width: width * 0.05,
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              showMenu(
-                                context: context,
-                                position: RelativeRect.fromLTRB(
-                                  1,
-                                  height * 0.22,
-                                  0,
-                                  0,
-                                ),
-                                color: Colors.white,
-                                items: [
-                                  PopupMenuItem(
-                                    value: 'แกลลอรี่',
-                                    child: Text(
-                                      'Choose Photo',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+              child: GestureDetector(
+                onTap: () {
+                  if (editNameFocusNode.hasFocus) {
+                    editNameFocusNode.unfocus();
+                    setState(() {});
+                  }
+                  if (editPasswordFocusNode.hasFocus) {
+                    editPasswordFocusNode.unfocus();
+                    setState(() {});
+                  }
+                },
+                child: Scaffold(
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      left: width * 0.05,
+                      right: width * 0.05,
+                      top: height * 0.05,
+                      bottom: height * 0.05,
+                    ),
+                    child: SingleChildScrollView(
+                      child: SizedBox(
+                        height: height * 0.9,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        Get.back();
+                                        editNameCtl.removeListener(() {});
+                                        editPasswordCtl.removeListener(() {});
+                                        savedFile = null;
+                                        isTyping = false;
+                                        isTypingPassword = false;
+                                        editNameCtl.clear();
+                                        editPasswordCtl.clear();
+                                        passwordVerifyCtl.clear();
+                                        isCheckedPassword = false;
+                                        isCheckedPasswordConfirmDelete = false;
+                                        passwordConfirmDeleteCtl.clear();
+                                        notitext = false;
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                          vertical: height * 0.01,
+                                        ),
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
+                                          height: height * 0.03,
+                                          fit: BoxFit.contain,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'เลือกไฟล์',
-                                    child: Text(
-                                      'Choose file',
+                                    Text(
+                                      'My profile',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get.textTheme.titleLarge!.fontSize,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'ถ่ายรูป',
-                                    child: Text(
-                                      'Take Photo',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                      ),
+                                    SizedBox(
+                                      width: width * 0.05,
                                     ),
-                                  ),
-                                ],
-                              ).then((value) async {
-                                if (value != null) {
-                                  if (value == 'แกลลอรี่') {
-                                    image = await picker.pickImage(
-                                        source: ImageSource.gallery);
-                                    if (image != null) {
-                                      savedFile = File(image!.path);
-                                      setState(() {});
-                                    }
-                                  } else if (value == 'เลือกไฟล์') {
-                                    FilePickerResult? result =
-                                        await FilePicker.platform.pickFiles();
-                                    if (result != null) {
-                                      savedFile =
-                                          File(result.files.first.path!);
-                                      setState(() {});
-                                    }
-                                  } else if (value == 'ถ่ายรูป') {
-                                    image = await picker.pickImage(
-                                        source: ImageSource.camera);
-                                    if (image != null) {
-                                      savedFile = File(image!.path);
-                                      setState(() {});
-                                    }
-                                  }
-                                }
-                              });
-                            },
-                            child: Container(
-                              height: height * 0.1,
-                              width: width * 0.22,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                              ),
-                              child: Stack(
-                                children: [
-                                  savedFile != null
-                                      ? Positioned(
-                                          right: -width * 0.005,
-                                          top: -height * 0.005,
-                                          child: InkWell(
-                                            onTap: () {
-                                              savedFile = null;
-                                              setState(() {});
-                                            },
-                                            child: SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
-                                              width: width * 0.06,
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: height * 0.02,
+                                ),
+                                InkWell(
+                                  onTap: () {
+                                    showMenu(
+                                      context: context,
+                                      position: RelativeRect.fromLTRB(
+                                        1,
+                                        height * 0.22,
+                                        0,
+                                        0,
+                                      ),
+                                      color: Colors.white,
+                                      items: [
+                                        PopupMenuItem(
+                                          value: 'แกลลอรี่',
+                                          child: Text(
+                                            'Choose Photo',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleMedium!.fontSize,
                                             ),
                                           ),
-                                        )
-                                      : const SizedBox.shrink(),
-                                  Container(
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'เลือกไฟล์',
+                                          child: Text(
+                                            'Choose file',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleMedium!.fontSize,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'ถ่ายรูป',
+                                          child: Text(
+                                            'Take Photo',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleMedium!.fontSize,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ).then((value) async {
+                                      if (value != null) {
+                                        if (value == 'แกลลอรี่') {
+                                          image = await picker.pickImage(
+                                              source: ImageSource.gallery);
+                                          if (image != null) {
+                                            savedFile = File(image!.path);
+                                            setState(() {});
+                                          }
+                                        } else if (value == 'เลือกไฟล์') {
+                                          FilePickerResult? result =
+                                              await FilePicker.platform
+                                                  .pickFiles();
+                                          if (result != null) {
+                                            savedFile =
+                                                File(result.files.first.path!);
+                                            setState(() {});
+                                          }
+                                        } else if (value == 'ถ่ายรูป') {
+                                          image = await picker.pickImage(
+                                              source: ImageSource.camera);
+                                          if (image != null) {
+                                            savedFile = File(image!.path);
+                                            setState(() {});
+                                          }
+                                        }
+                                      }
+                                    });
+                                  },
+                                  child: Container(
                                     height: height * 0.1,
+                                    width: width * 0.22,
                                     decoration: const BoxDecoration(
-                                      color: Colors.white,
                                       shape: BoxShape.circle,
                                     ),
-                                  ),
-                                  savedFile == null
-                                      ? Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom: 0,
-                                          child: ClipOval(
-                                            child: userProfile == 'none-url'
-                                                ? Container(
-                                                    height: height * 0.1,
-                                                    width: width * 0.22,
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Stack(
-                                                      children: [
-                                                        Container(
+                                    child: Stack(
+                                      children: [
+                                        savedFile != null
+                                            ? Positioned(
+                                                right: -width * 0.005,
+                                                top: -height * 0.005,
+                                                child: InkWell(
+                                                  onTap: () {
+                                                    savedFile = null;
+                                                    setState(() {});
+                                                  },
+                                                  child: SvgPicture.string(
+                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
+                                                    width: width * 0.06,
+                                                  ),
+                                                ),
+                                              )
+                                            : const SizedBox.shrink(),
+                                        Container(
+                                          height: height * 0.1,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        savedFile == null
+                                            ? Positioned(
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                child: ClipOval(
+                                                  child: userProfile ==
+                                                          'none-url'
+                                                      ? Container(
                                                           height: height * 0.1,
+                                                          width: width * 0.22,
                                                           decoration:
                                                               const BoxDecoration(
-                                                            color:
-                                                                Color.fromRGBO(
-                                                                    242,
-                                                                    242,
-                                                                    246,
-                                                                    1),
                                                             shape:
                                                                 BoxShape.circle,
                                                           ),
-                                                        ),
-                                                        Positioned(
-                                                          left: 0,
-                                                          right: 0,
-                                                          bottom: 0,
-                                                          child:
-                                                              SvgPicture.string(
-                                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                            height:
-                                                                height * 0.07,
-                                                            fit: BoxFit.contain,
-                                                            color: Colors.grey,
+                                                          child: Stack(
+                                                            children: [
+                                                              Container(
+                                                                height: height *
+                                                                    0.1,
+                                                                decoration:
+                                                                    const BoxDecoration(
+                                                                  color: Color
+                                                                      .fromRGBO(
+                                                                          242,
+                                                                          242,
+                                                                          246,
+                                                                          1),
+                                                                  shape: BoxShape
+                                                                      .circle,
+                                                                ),
+                                                              ),
+                                                              Positioned(
+                                                                left: 0,
+                                                                right: 0,
+                                                                bottom: 0,
+                                                                child:
+                                                                    SvgPicture
+                                                                        .string(
+                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                  height:
+                                                                      height *
+                                                                          0.07,
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
+                                                              )
+                                                            ],
                                                           ),
                                                         )
-                                                      ],
-                                                    ),
-                                                  )
-                                                : Image.network(
-                                                    userProfile,
+                                                      : Image.network(
+                                                          userProfile,
+                                                          height: height * 0.1,
+                                                          width: width * 0.22,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                ),
+                                              )
+                                            : Positioned(
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                child: ClipOval(
+                                                  child: Image.file(
+                                                    savedFile!,
                                                     height: height * 0.1,
                                                     width: width * 0.22,
                                                     fit: BoxFit.cover,
                                                   ),
-                                          ),
-                                        )
-                                      : Positioned(
-                                          left: 0,
-                                          right: 0,
+                                                ),
+                                              ),
+                                        Positioned(
                                           bottom: 0,
-                                          child: ClipOval(
-                                            child: Image.file(
-                                              savedFile!,
-                                              height: height * 0.1,
-                                              width: width * 0.22,
-                                              fit: BoxFit.cover,
+                                          right: 0,
+                                          width: width * 0.1,
+                                          child: Center(
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Container(
+                                                  height: height * 0.03,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  height: height * 0.025,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 8c-2.168 0-4 1.832-4 4s1.832 4 4 4 4-1.832 4-4-1.832-4-4-4zm0 6c-1.065 0-2-.935-2-2s.935-2 2-2 2 .935 2 2-.935 2-2 2z"></path><path d="M20 5h-2.586l-2.707-2.707A.996.996 0 0 0 14 2h-4a.996.996 0 0 0-.707.293L6.586 5H4c-1.103 0-2 .897-2 2v11c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2zM4 18V7h3c.266 0 .52-.105.707-.293L10.414 4h3.172l2.707 2.707A.996.996 0 0 0 17 7h3l.002 11H4z"></path></svg>',
+                                                  height: height * 0.02,
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    width: width * 0.1,
-                                    child: Center(
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          Container(
-                                            height: height * 0.03,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          Container(
-                                            height: height * 0.025,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 8c-2.168 0-4 1.832-4 4s1.832 4 4 4 4-1.832 4-4-1.832-4-4-4zm0 6c-1.065 0-2-.935-2-2s.935-2 2-2 2 .935 2 2-.935 2-2 2z"></path><path d="M20 5h-2.586l-2.707-2.707A.996.996 0 0 0 14 2h-4a.996.996 0 0 0-.707.293L6.586 5H4c-1.103 0-2 .897-2 2v11c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2zM4 18V7h3c.266 0 .52-.105.707-.293L10.414 4h3.172l2.707 2.707A.996.996 0 0 0 17 7h3l.002 11H4z"></path></svg>',
-                                            height: height * 0.02,
-                                          ),
-                                        ],
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: height * 0.01),
-                          savedFile != null
-                              ? InkWell(
-                                  onTap: () {
-                                    if (savedFile != null) {
-                                      confirmInformation();
-                                    }
-                                  },
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>',
-                                    width: width * 0.08,
-                                    color: Colors.green,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                          SizedBox(height: height * 0.03),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Name',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: width * 0.6,
-                                    child: TextField(
-                                      controller: editNameCtl,
-                                      keyboardType: TextInputType.text,
-                                      cursorColor: Colors.black,
+                                SizedBox(height: height * 0.01),
+                                savedFile != null
+                                    ? InkWell(
+                                        onTap: () {
+                                          if (savedFile != null) {
+                                            confirmInformation();
+                                          }
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>',
+                                          width: width * 0.08,
+                                          color: Colors.green,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                                SizedBox(height: height * 0.03),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Name',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
-                                      ),
-                                      textAlign: TextAlign.end,
-                                      decoration: InputDecoration(
-                                        hintText:
-                                            isTyping ? 'Enter your name' : name,
-                                        hintStyle: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleSmall!.fontSize,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
-                                        constraints: BoxConstraints(
-                                          maxHeight: height * 0.05,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
+                                            Get.textTheme.titleMedium!.fontSize,
+                                        fontWeight: FontWeight.normal,
                                       ),
                                     ),
-                                  ),
-                                  isTyping
-                                      ? InkWell(
-                                          onTap: () {
-                                            confirmInformation();
-                                          },
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: width * 0.01,
-                                              vertical: height * 0.005,
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: width * 0.6,
+                                          child: TextField(
+                                            controller: editNameCtl,
+                                            focusNode: editNameFocusNode,
+                                            keyboardType: TextInputType.text,
+                                            cursorColor: Colors.black,
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleSmall!.fontSize,
                                             ),
-                                            child: Text(
-                                              'confirm',
-                                              style: TextStyle(
+                                            textAlign: TextAlign.end,
+                                            decoration: InputDecoration(
+                                              hintText: isTyping
+                                                  ? 'Enter your name'
+                                                  : name,
+                                              hintStyle: TextStyle(
                                                 fontSize: Get.textTheme
                                                     .titleSmall!.fontSize,
                                                 fontWeight: FontWeight.normal,
-                                                color: Color.fromRGBO(
-                                                    0, 122, 255, 1),
+                                                color: Colors.black,
                                               ),
+                                              constraints: BoxConstraints(
+                                                maxHeight: height * 0.05,
+                                              ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                horizontal: width * 0.02,
+                                              ),
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
                                             ),
                                           ),
-                                        )
-                                      : InkWell(
-                                          onTap: () {
-                                            isTyping = true;
-                                            setState(() {});
-                                          },
-                                          child: SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                            height: height * 0.03,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        )
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: height * 0.01),
-                          Padding(
-                            padding: EdgeInsets.only(right: width * 0.02),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Email address',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                  ),
+                                        ),
+                                        isTyping
+                                            ? InkWell(
+                                                onTap: () {
+                                                  confirmInformation();
+                                                },
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.01,
+                                                    vertical: height * 0.005,
+                                                  ),
+                                                  child: Text(
+                                                    'confirm',
+                                                    style: TextStyle(
+                                                      fontSize: Get.textTheme
+                                                          .titleSmall!.fontSize,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      color: Color.fromRGBO(
+                                                          0, 122, 255, 1),
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : InkWell(
+                                                onTap: () {
+                                                  isTyping = true;
+                                                  setState(() {});
+                                                },
+                                                child: SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                  height: height * 0.03,
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              )
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  userEmail,
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleSmall!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: height * 0.01),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Password',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: width * 0.6,
-                                    child: TextField(
-                                      controller: editPasswordCtl,
-                                      keyboardType:
-                                          TextInputType.visiblePassword,
-                                      obscureText: !isCheckedPassword,
-                                      cursorColor: Colors.black,
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                SizedBox(height: height * 0.01),
+                                Padding(
+                                  padding: EdgeInsets.only(right: width * 0.02),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Email address',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleMedium!.fontSize,
+                                          fontWeight: FontWeight.normal,
+                                        ),
                                       ),
-                                      textAlign: TextAlign.end,
-                                      decoration: InputDecoration(
-                                        hintText: isCheckedPassword
-                                            ? userPassword == '-'
-                                                ? 'set your new password'
-                                                : box.read('password')
-                                            : userPassword == '-'
-                                                ? 'set your new password'
-                                                : obfuscatePasswordFully(
-                                                    box.read('password')),
-                                        hintStyle: TextStyle(
+                                      Text(
+                                        userEmail,
+                                        style: TextStyle(
                                           fontSize: Get
                                               .textTheme.titleSmall!.fontSize,
                                           fontWeight: FontWeight.normal,
-                                          color: Colors.black,
                                         ),
-                                        suffixIcon: IconButton(
-                                          onPressed: () {
-                                            if (userPassword == '-') {
-                                              isCheckedPassword =
-                                                  !isCheckedPassword;
-                                              setState(() {});
-                                            } else {
-                                              if (isCheckedPassword) {
-                                                isCheckedPassword = false;
-                                                passwordVerifyCtl.clear();
-                                                setState(() {});
-                                                return;
-                                              }
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: height * 0.01),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Password',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleMedium!.fontSize,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: width * 0.6,
+                                          child: TextField(
+                                            controller: editPasswordCtl,
+                                            focusNode: editPasswordFocusNode,
+                                            keyboardType:
+                                                TextInputType.visiblePassword,
+                                            obscureText: !isCheckedPassword,
+                                            cursorColor: Colors.black,
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleSmall!.fontSize,
+                                            ),
+                                            textAlign: TextAlign.end,
+                                            decoration: InputDecoration(
+                                              hintText: isCheckedPassword
+                                                  ? userPassword == '-'
+                                                      ? 'set your new password'
+                                                      : box.read('password')
+                                                  : userPassword == '-'
+                                                      ? 'set your new password'
+                                                      : obfuscatePasswordFully(
+                                                          box.read('password')),
+                                              hintStyle: TextStyle(
+                                                fontSize: Get.textTheme
+                                                    .titleSmall!.fontSize,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.black,
+                                              ),
+                                              suffixIcon: IconButton(
+                                                onPressed: () {
+                                                  if (userPassword == '-') {
+                                                    isCheckedPassword =
+                                                        !isCheckedPassword;
+                                                    setState(() {});
+                                                  } else {
+                                                    if (isCheckedPassword) {
+                                                      isCheckedPassword = false;
+                                                      passwordVerifyCtl.clear();
+                                                      setState(() {});
+                                                      return;
+                                                    }
 
-                                              Get.defaultDialog(
-                                                title: "",
-                                                barrierDismissible: true,
-                                                titlePadding: EdgeInsets.zero,
-                                                backgroundColor: Colors.white,
-                                                contentPadding: EdgeInsets.only(
-                                                  left: width * 0.02,
-                                                  right: width * 0.02,
-                                                ),
-                                                content: StatefulBuilder(
-                                                    builder: (BuildContext
-                                                            context,
-                                                        StateSetter setState) {
-                                                  return Column(
-                                                    children: [
-                                                      Text(
-                                                        'Enter your password to verify your identity',
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
-                                                          color: Colors.black,
-                                                        ),
-                                                        textAlign:
-                                                            TextAlign.center,
+                                                    Get.defaultDialog(
+                                                      title: "",
+                                                      titlePadding:
+                                                          EdgeInsets.zero,
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                        horizontal:
+                                                            MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                0.04,
+                                                        vertical: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height *
+                                                            0.02,
                                                       ),
-                                                      SizedBox(
-                                                        height: height * 0.03,
-                                                      ),
-                                                      TextField(
-                                                        controller:
-                                                            passwordVerifyCtl,
-                                                        keyboardType:
-                                                            TextInputType
-                                                                .visiblePassword,
-                                                        obscureText:
-                                                            !isCheckedPasswordVerify,
-                                                        cursorColor:
-                                                            Colors.black,
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
-                                                        ),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        decoration:
-                                                            InputDecoration(
-                                                          hintText:
-                                                              isTypingPasswordVerify
-                                                                  ? ''
-                                                                  : 'Enter your password',
-                                                          hintStyle: TextStyle(
-                                                            fontSize: Get
-                                                                .textTheme
-                                                                .titleMedium!
-                                                                .fontSize,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .normal,
-                                                            color: Colors.black,
-                                                          ),
-                                                          prefixIcon:
-                                                              SizedBox(),
-                                                          suffixIcon:
-                                                              IconButton(
-                                                            onPressed: () {
-                                                              isCheckedPasswordVerify =
-                                                                  !isCheckedPasswordVerify;
-                                                              setState(() {});
-                                                            },
-                                                            icon: Icon(
-                                                              isCheckedPasswordVerify
-                                                                  ? Icons
-                                                                      .visibility
-                                                                  : Icons
-                                                                      .visibility_off,
-                                                              color:
-                                                                  Colors.grey,
+                                                      content: StatefulBuilder(
+                                                          builder: (BuildContext
+                                                                  context,
+                                                              StateSetter
+                                                                  setState) {
+                                                        return Column(
+                                                          children: [
+                                                            Image.asset(
+                                                              "assets/images/aleart/info.png",
+                                                              height: MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .height *
+                                                                  0.1,
+                                                              fit: BoxFit
+                                                                  .contain,
                                                             ),
-                                                          ),
-                                                          contentPadding:
-                                                              EdgeInsets
-                                                                  .symmetric(
-                                                            horizontal:
-                                                                width * 0.02,
-                                                          ),
-                                                          enabledBorder:
-                                                              OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                            borderSide:
-                                                                const BorderSide(
-                                                              width: 0.5,
-                                                            ),
-                                                          ),
-                                                          focusedBorder:
-                                                              OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                            borderSide:
-                                                                const BorderSide(
-                                                              width: 0.5,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      if (notitext || !notitext)
-                                                        SizedBox(
-                                                          height: height * 0.02,
-                                                        ),
-                                                      if (notitext)
-                                                        Text(
-                                                          'Invalid password',
-                                                          style: TextStyle(
-                                                            fontSize: Get
-                                                                .textTheme
-                                                                .titleMedium!
-                                                                .fontSize,
-                                                            color: Colors.red,
-                                                          ),
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                        ),
-                                                      if (notitext)
-                                                        SizedBox(
-                                                          height: height * 0.02,
-                                                        ),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceAround,
-                                                        children: [
-                                                          ElevatedButton(
-                                                            onPressed: () {
-                                                              if (BCrypt.checkpw(
-                                                                  passwordVerifyCtl
-                                                                      .text,
-                                                                  userPassword)) {
-                                                                Get.back();
-                                                                isCheckedPassword =
-                                                                    !isCheckedPassword;
-                                                                editPasswordCtl
-                                                                    .clear();
-                                                                notitext =
-                                                                    false;
-                                                                setState(() {});
-                                                              } else {
-                                                                notitext = true;
-                                                                setState(() {});
-                                                              }
-                                                            },
-                                                            style:
-                                                                ElevatedButton
-                                                                    .styleFrom(
-                                                              fixedSize: Size(
-                                                                MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width *
-                                                                    0.3,
-                                                                MediaQuery.of(
+                                                            SizedBox(
+                                                                height: MediaQuery.of(
                                                                             context)
                                                                         .size
                                                                         .height *
-                                                                    0.05,
+                                                                    0.01),
+                                                            Text(
+                                                              'Verify!',
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .headlineSmall!
+                                                                    .fontSize,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        0,
+                                                                        122,
+                                                                        255,
+                                                                        1),
                                                               ),
-                                                              backgroundColor:
-                                                                  Color
+                                                            ),
+                                                            Text(
+                                                              'Enter your password to verify your identity',
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .titleMedium!
+                                                                    .fontSize,
+                                                                color: Colors
+                                                                    .black,
+                                                              ),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                            ),
+                                                            SizedBox(
+                                                                height: MediaQuery.of(
+                                                                            context)
+                                                                        .size
+                                                                        .height *
+                                                                    0.01),
+                                                            TextField(
+                                                              controller:
+                                                                  passwordVerifyCtl,
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .visiblePassword,
+                                                              obscureText:
+                                                                  !isCheckedPasswordVerify,
+                                                              cursorColor:
+                                                                  Colors.black,
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .titleMedium!
+                                                                    .fontSize,
+                                                              ),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              decoration:
+                                                                  InputDecoration(
+                                                                hintText:
+                                                                    isTypingPasswordVerify
+                                                                        ? ''
+                                                                        : 'Enter your password',
+                                                                hintStyle:
+                                                                    TextStyle(
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .titleMedium!
+                                                                      .fontSize,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .normal,
+                                                                  color: Colors
+                                                                      .black,
+                                                                ),
+                                                                prefixIcon:
+                                                                    SizedBox(),
+                                                                suffixIcon:
+                                                                    IconButton(
+                                                                  onPressed:
+                                                                      () {
+                                                                    isCheckedPasswordVerify =
+                                                                        !isCheckedPasswordVerify;
+                                                                    setState(
+                                                                        () {});
+                                                                  },
+                                                                  icon: Icon(
+                                                                    isCheckedPasswordVerify
+                                                                        ? Icons
+                                                                            .visibility
+                                                                        : Icons
+                                                                            .visibility_off,
+                                                                    color: Colors
+                                                                        .grey,
+                                                                  ),
+                                                                ),
+                                                                contentPadding:
+                                                                    EdgeInsets
+                                                                        .symmetric(
+                                                                  horizontal:
+                                                                      width *
+                                                                          0.02,
+                                                                ),
+                                                                enabledBorder:
+                                                                    OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                  borderSide:
+                                                                      const BorderSide(
+                                                                    width: 0.5,
+                                                                  ),
+                                                                ),
+                                                                focusedBorder:
+                                                                    OutlineInputBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              8),
+                                                                  borderSide:
+                                                                      const BorderSide(
+                                                                    width: 0.5,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            if (notitext ||
+                                                                !notitext)
+                                                              SizedBox(
+                                                                height: height *
+                                                                    0.02,
+                                                              ),
+                                                            if (notitext)
+                                                              Text(
+                                                                'Invalid password',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .titleMedium!
+                                                                      .fontSize,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                              ),
+                                                            if (notitext)
+                                                              SizedBox(
+                                                                height: height *
+                                                                    0.02,
+                                                              ),
+                                                            ElevatedButton(
+                                                              onPressed: () {
+                                                                if (BCrypt.checkpw(
+                                                                    passwordVerifyCtl
+                                                                        .text,
+                                                                    userPassword)) {
+                                                                  Get.back();
+                                                                  isCheckedPassword =
+                                                                      !isCheckedPassword;
+                                                                  editPasswordCtl
+                                                                      .clear();
+                                                                  notitext =
+                                                                      false;
+                                                                  setState(
+                                                                      () {});
+                                                                } else {
+                                                                  notitext =
+                                                                      true;
+                                                                  setState(
+                                                                      () {});
+                                                                }
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                fixedSize: Size(
+                                                                  MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width,
+                                                                  MediaQuery.of(
+                                                                              context)
+                                                                          .size
+                                                                          .height *
+                                                                      0.05,
+                                                                ),
+                                                                backgroundColor:
+                                                                    Color
+                                                                        .fromRGBO(
+                                                                            0,
+                                                                            122,
+                                                                            255,
+                                                                            1),
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                ),
+                                                                elevation: 1,
+                                                              ),
+                                                              child: Text(
+                                                                'Confirm',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .titleLarge!
+                                                                      .fontSize,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              onPressed: () {
+                                                                Get.back();
+                                                                isCheckedPassword =
+                                                                    false;
+                                                                notitext =
+                                                                    false;
+                                                                passwordVerifyCtl
+                                                                    .clear();
+                                                                setState(() {});
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                fixedSize: Size(
+                                                                  MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .width,
+                                                                  MediaQuery.of(
+                                                                              context)
+                                                                          .size
+                                                                          .height *
+                                                                      0.05,
+                                                                ),
+                                                                backgroundColor:
+                                                                    Color
+                                                                        .fromRGBO(
+                                                                            231,
+                                                                            243,
+                                                                            255,
+                                                                            1),
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                ),
+                                                                elevation: 1,
+                                                              ),
+                                                              child: Text(
+                                                                'Back',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .titleLarge!
+                                                                      .fontSize,
+                                                                  color: Color
                                                                       .fromRGBO(
                                                                           0,
                                                                           122,
                                                                           255,
                                                                           1),
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            8),
+                                                                ),
                                                               ),
                                                             ),
-                                                            child: Text(
-                                                              'Confirm',
-                                                              style: TextStyle(
-                                                                fontSize: Get
-                                                                    .textTheme
-                                                                    .titleMedium!
-                                                                    .fontSize,
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed: () {
-                                                              Get.back();
-                                                              isCheckedPassword =
-                                                                  false;
-                                                              notitext = false;
-                                                              passwordVerifyCtl
-                                                                  .clear();
-                                                              setState(() {});
-                                                            },
-                                                            style:
-                                                                ElevatedButton
-                                                                    .styleFrom(
-                                                              fixedSize: Size(
-                                                                MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width *
-                                                                    0.3,
-                                                                MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .height *
-                                                                    0.05,
-                                                              ),
-                                                              backgroundColor:
-                                                                  Colors.grey,
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            8),
-                                                              ),
-                                                            ),
-                                                            child: Text(
-                                                              'Cancel',
-                                                              style: TextStyle(
-                                                                fontSize: Get
-                                                                    .textTheme
-                                                                    .titleMedium!
-                                                                    .fontSize,
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  );
-                                                }),
-                                              );
-                                            }
-                                          },
-                                          icon: Icon(
-                                            isCheckedPassword
-                                                ? Icons.visibility
-                                                : Icons.visibility_off,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        constraints: BoxConstraints(
-                                          maxHeight: height * 0.05,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                          vertical: height * 0.01,
-                                        ),
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
-                                  isTypingPassword
-                                      ? InkWell(
-                                          onTap: () {
-                                            confirmInformation();
-                                          },
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: width * 0.01,
-                                              vertical: height * 0.005,
-                                            ),
-                                            child: Text(
-                                              'confirm',
-                                              style: TextStyle(
-                                                fontSize: Get.textTheme
-                                                    .titleSmall!.fontSize,
-                                                fontWeight: FontWeight.normal,
-                                                color: Color.fromRGBO(
-                                                    0, 122, 255, 1),
+                                                          ],
+                                                        );
+                                                      }),
+                                                    );
+                                                  }
+                                                },
+                                                icon: Icon(
+                                                  isCheckedPassword
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: Colors.grey,
+                                                ),
                                               ),
+                                              constraints: BoxConstraints(
+                                                maxHeight: height * 0.05,
+                                              ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                horizontal: width * 0.02,
+                                                vertical: height * 0.01,
+                                              ),
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
                                             ),
                                           ),
-                                        )
-                                      : InkWell(
-                                          onTap: () {
-                                            isTypingPassword = true;
-                                            setState(() {});
-                                          },
-                                          child: SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                            height: height * 0.03,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        )
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Material(
-                            color: Color.fromRGBO(242, 242, 246, 1),
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: deleteUser,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.01),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Delete account',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                        fontWeight: FontWeight.normal,
-                                        color: Colors.red,
-                                      ),
+                                        ),
+                                        isTypingPassword
+                                            ? InkWell(
+                                                onTap: () {
+                                                  confirmInformation();
+                                                },
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.01,
+                                                    vertical: height * 0.005,
+                                                  ),
+                                                  child: Text(
+                                                    'confirm',
+                                                    style: TextStyle(
+                                                      fontSize: Get.textTheme
+                                                          .titleSmall!.fontSize,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      color: Color.fromRGBO(
+                                                          0, 122, 255, 1),
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : InkWell(
+                                                onTap: () {
+                                                  isTypingPassword = true;
+                                                  setState(() {});
+                                                },
+                                                child: SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                  height: height * 0.03,
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              )
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
+                              ],
                             ),
-                          )
-                        ],
-                      )
-                    ],
+                            Column(
+                              children: [
+                                Material(
+                                  color: Color.fromRGBO(242, 242, 246, 1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: InkWell(
+                                    onTap: deleteUser,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: height * 0.01),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Delete account',
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .titleMedium!.fontSize,
+                                              fontWeight: FontWeight.normal,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1547,12 +1660,14 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+//รอปรับปรุง method นี้!!!!!!!!!!!!!!
   void confirmInformation() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
     String downloadUrl = "";
     loadingDialog();
+
     if (savedFile != null) {
       // สร้างอ้างอิงไปยัง Firebase Storage
       Reference storageReference = FirebaseStorage.instance.ref().child(
@@ -1564,12 +1679,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
       // รับ URL ของรูปที่อัพโหลดสำเร็จ
       downloadUrl = await taskSnapshot.ref.getDownloadURL();
-      // ลบรูปเดิมหากมี
+
+      // ลบรูปเดิมถ้า URL เดิมใน SQL (userProfile) ตรงกับ URL ใน Firebase
       if (userProfile.isNotEmpty && userProfile != 'none-url') {
         Reference oldImageRef =
             FirebaseStorage.instance.refFromURL(userProfile);
-        await oldImageRef.delete();
+        String oldDownloadUrl = await oldImageRef.getDownloadURL();
+
+        if (userProfile == oldDownloadUrl) {
+          await oldImageRef.delete();
+        }
       }
+    }
+
+    //ถ้าหากว่า user ไม่ได้เปลี่ยนรหัสผ่านก็ยังคงเป็นรหัสเดิม
+    if (editPasswordCtl.text.isEmpty) {
+      box.write('password', box.read('password'));
     }
 
     var responseEditProfile = await http.put(
@@ -1582,15 +1707,27 @@ class _SettingsPageState extends State<SettingsPage> {
             name: editNameCtl.text.isNotEmpty ? editNameCtl.text : name,
             hashedPassword: editPasswordCtl.text.isNotEmpty
                 ? editPasswordCtl.text
-                : box.read('password'),
+                : box.read('password'), //ตรงนี้มีปัญหา
+            //
+//--------------------------------------------------------------------------
+
+//ตรงนี้มีปัญหาถ้า user ไม่ได้เปลี่ยนรหัส แล้วรหัสยังเป็น '-' อยู่แล้วใน sql ไม่ต้องเปลี่ยนแปลงอะไร
+//ที่มีปัญหาคือส่ง password ส่งค่าว่างไปอัพเดทใน sql แทน
+//สรุปคือถ้า user ไม่ได้อัพเดท password ให้ backend กำหนด feild password เป็น '-' เหมือนเดิม
+
+//--------------------------------------------------------------------------
+            //
             profile: savedFile != null ? downloadUrl : userProfile,
           ),
         ),
       ),
     );
+
     if (responseEditProfile.statusCode == 200) {
       Get.back();
-      box.write('password', editPasswordCtl.text);
+      if (editPasswordCtl.text.isNotEmpty) {
+        box.write('password', editPasswordCtl.text);
+      }
       savedFile = null;
       isTyping = false;
       isTypingPassword = false;
@@ -1598,69 +1735,75 @@ class _SettingsPageState extends State<SettingsPage> {
       editPasswordCtl.clear();
       isCheckedPassword = false;
       loadDataAsync();
-      setState(() {});
 
       BackPageSettingToHome keep = BackPageSettingToHome();
       keep.keepPage = true;
       context.read<Appdata>().keepPage = keep;
 
-      double width = MediaQuery.of(context).size.width;
-      double height = MediaQuery.of(context).size.height;
-
-      Get.defaultDialog(
-        title: "",
-        barrierDismissible: true,
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: width * 0.02,
-          vertical: height * 0.02,
-        ),
-        content: Column(
-          children: [
-            Text(
-              'Update your profile successfully.',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(
-              height: height * 0.02,
-            )
-          ],
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+      Future.delayed(const Duration(milliseconds: 500), () {
+        editNameFocusNode.unfocus();
+        editPasswordFocusNode.unfocus();
+        Get.defaultDialog(
+          title: "",
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: Column(
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  Get.back();
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width * 0.3,
-                    MediaQuery.of(context).size.height * 0.05,
-                  ),
-                  backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              Image.asset(
+                "assets/images/aleart/success.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Successfully!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color.fromRGBO(0, 122, 255, 1),
                 ),
-                child: Text(
-                  'Ok',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.black,
-                  ),
+              ),
+              Text(
+                'Update your profile successfully',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-        ],
-      );
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Ok',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      });
     } else {
       Get.back();
     }
@@ -1709,85 +1852,32 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void logout(BuildContext context) async {
-    //horizontal left right
-    double width = MediaQuery.of(context).size.width;
-    //vertical tob bottom
-    double height = MediaQuery.of(context).size.height;
-
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    Get.defaultDialog(
-      title: "",
-      barrierDismissible: true,
-      titlePadding: EdgeInsets.zero,
-      backgroundColor: Colors.white,
-      contentPadding: EdgeInsets.only(
-        right: width * 0.02,
-        left: width * 0.02,
-        bottom: height * 0.02,
-      ),
-      content: Column(
-        children: [
-          Text(
-            'Log out account',
-            style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(
-            height: height * 0.02,
-          )
-        ],
-      ),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            // แสดง Loading Dialog
-            loadingDialog();
-            var responseLogot = await http.post(
-              Uri.parse("$url/signin_up/api/logout"),
-              headers: {"Content-Type": "application/json; charset=utf-8"},
-              body: logoutUserPostRequestToJson(
-                LogoutUserPostRequest(
-                  email: box.read('email'),
-                ),
-              ),
-            );
-            if (responseLogot.statusCode == 200) {
-              Get.back();
-
-              LogoutUserPostResponse response =
-                  logoutUserPostResponseFromJson(responseLogot.body);
-              await googleSignIn.signOut();
-              // Sign out from Firebase if needed
-              await FirebaseAuth.instance.signOut();
-              if (response.success) {
-                Get.to(() => SplashPage());
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            'Log out',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
-              color: Colors.white,
-            ),
-          ),
+    // แสดง Loading Dialog
+    loadingDialog();
+    var responseLogot = await http.post(
+      Uri.parse("$url/signin_up/api/logout"),
+      headers: {"Content-Type": "application/json; charset=utf-8"},
+      body: logoutUserPostRequestToJson(
+        LogoutUserPostRequest(
+          email: box.read('email'),
         ),
-      ],
+      ),
     );
+    if (responseLogot.statusCode == 200) {
+      Get.back();
+
+      LogoutUserPostResponse response =
+          logoutUserPostResponseFromJson(responseLogot.body);
+      await googleSignIn.signOut();
+      // Sign out from Firebase if needed
+      await FirebaseAuth.instance.signOut();
+      if (response.success) {
+        Get.to(() => SplashPage());
+      }
+    }
   }
 
   String obfuscatePasswordFully(String password) {
@@ -1803,325 +1893,405 @@ class _SettingsPageState extends State<SettingsPage> {
     //vertical tob bottom
     double height = MediaQuery.of(context).size.height;
 
-    //confirm password
-
-    Get.defaultDialog(
-      title: "",
-      barrierDismissible: true,
-      titlePadding: EdgeInsets.zero,
-      backgroundColor: Colors.white,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: width * 0.02,
-      ),
-      content: Builder(
-        builder: (context) {
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                children: [
-                  Text(
-                    'Enter your password to delete your account',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.black,
+    if (box.read('password') == '-') {
+      Get.defaultDialog(
+        title: "",
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: Builder(
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/question.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(
-                    height: height * 0.03,
-                  ),
-                  TextField(
-                    controller: passwordConfirmDeleteCtl,
-                    keyboardType: TextInputType.visiblePassword,
-                    obscureText: !isCheckedPasswordConfirmDelete,
-                    cursorColor: Colors.black,
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                    ),
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: isCheckedPasswordConfirmDelete
-                          ? ''
-                          : 'Enter your password',
-                      hintStyle: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.grey,
-                      ),
-                      prefixIcon: SizedBox(),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          isCheckedPasswordConfirmDelete =
-                              !isCheckedPasswordConfirmDelete;
-                          setState(() {});
-                        },
-                        icon: Icon(
-                          isCheckedPasswordConfirmDelete
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: width * 0.02,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          width: 0.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          width: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (notitext || !notitext)
-                    SizedBox(
-                      height: height * 0.02,
-                    ),
-                  if (notitext)
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
                     Text(
-                      'Invalid password',
+                      'Verify!!',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromRGBO(0, 122, 255, 1),
+                      ),
+                    ),
+                    Text(
+                      'You must verify your otp email to delete this account',
                       style: TextStyle(
                         fontSize: Get.textTheme.titleMedium!.fontSize,
-                        color: Colors.red,
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  if (notitext)
                     SizedBox(
-                      height: height * 0.02,
+                      height: height * 0.01,
                     ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          if (BCrypt.checkpw(
-                              passwordConfirmDeleteCtl.text, userPassword)) {
-                            Get.back();
-                            Get.defaultDialog(
-                              title: "",
-                              barrierDismissible: true,
-                              titlePadding: EdgeInsets.zero,
-                              backgroundColor: Colors.white,
-                              contentPadding: EdgeInsets.only(
-                                right: width * 0.02,
-                                left: width * 0.02,
-                                bottom: height * 0.02,
-                              ),
-                              content: Column(
-                                children: [
-                                  Text(
-                                    'You confirm to delete this account',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      color: Colors.black,
-                                    ),
-                                    textAlign: TextAlign.center,
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width,
+                          MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: Text(
+                        'OK',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width,
+                          MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: Text(
+                        'Back',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          color: Color.fromRGBO(0, 122, 255, 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      );
+    } else {
+      //confirm password
+      Get.defaultDialog(
+        title: "",
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: Builder(
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/question.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                    Text(
+                      'Verify!!',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromRGBO(0, 122, 255, 1),
+                      ),
+                    ),
+                    Text(
+                      'Enter your password to delete your account',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(
+                      height: height * 0.01,
+                    ),
+                    TextField(
+                      controller: passwordConfirmDeleteCtl,
+                      keyboardType: TextInputType.visiblePassword,
+                      obscureText: !isCheckedPasswordConfirmDelete,
+                      cursorColor: Colors.black,
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                      ),
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: isCheckedPasswordConfirmDelete
+                            ? ''
+                            : 'Enter your password',
+                        hintStyle: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey,
+                        ),
+                        prefixIcon: SizedBox(),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            isCheckedPasswordConfirmDelete =
+                                !isCheckedPasswordConfirmDelete;
+                            setState(() {});
+                          },
+                          icon: Icon(
+                            isCheckedPasswordConfirmDelete
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: width * 0.02,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            width: 0.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (notitext || !notitext)
+                      SizedBox(
+                        height: height * 0.02,
+                      ),
+                    if (notitext)
+                      Text(
+                        'Invalid password',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
+                          color: Colors.red,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    if (notitext)
+                      SizedBox(
+                        height: height * 0.02,
+                      ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (BCrypt.checkpw(
+                            passwordConfirmDeleteCtl.text, userPassword)) {
+                          Get.back();
+                          Get.defaultDialog(
+                            title: "",
+                            titlePadding: EdgeInsets.zero,
+                            backgroundColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal:
+                                  MediaQuery.of(context).size.width * 0.04,
+                              vertical:
+                                  MediaQuery.of(context).size.height * 0.02,
+                            ),
+                            content: Column(
+                              children: [
+                                Image.asset(
+                                  "assets/images/aleart/warning.png",
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.1,
+                                  fit: BoxFit.contain,
+                                ),
+                                SizedBox(
+                                    height: MediaQuery.of(context).size.height *
+                                        0.01),
+                                Text(
+                                  'Confirm!!',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.headlineSmall!.fontSize,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color.fromRGBO(0, 122, 255, 1),
                                   ),
-                                  SizedBox(
-                                    height: height * 0.02,
-                                  )
-                                ],
-                              ),
-                              actions: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        // แสดง Loading Dialog
-                                        loadingDialog();
-                                        var responseDelete = await http.delete(
-                                          Uri.parse("$url/user/account"),
-                                          headers: {
-                                            "Content-Type":
-                                                "application/json; charset=utf-8"
-                                          },
-                                          body: deleteUserDeleteRequestToJson(
-                                            DeleteUserDeleteRequest(
-                                              email: userEmail,
-                                            ),
-                                          ),
-                                        );
-
-                                        if (responseDelete.statusCode == 200) {
-                                          Get.back();
-                                          Get.back();
-
-                                          Future.delayed(
-                                              const Duration(seconds: 4),
-                                              () async {
-                                            var responseLogot = await http.post(
-                                              Uri.parse(
-                                                  "$url/signin_up/api/logout"),
-                                              headers: {
-                                                "Content-Type":
-                                                    "application/json; charset=utf-8"
-                                              },
-                                              body: logoutUserPostRequestToJson(
-                                                LogoutUserPostRequest(
-                                                  email: box.read('email'),
-                                                ),
-                                              ),
-                                            );
-                                            if (responseLogot.statusCode ==
-                                                200) {
-                                              await googleSignIn.signOut();
-                                              // Sign out from Firebase if needed
-                                              await FirebaseAuth.instance
-                                                  .signOut();
-                                            }
-
-                                            Get.to(() => SplashPage());
-                                            box.remove('email');
-                                            box.remove('password');
-                                          });
-
-                                          Get.defaultDialog(
-                                            title: "",
-                                            barrierDismissible: true,
-                                            titlePadding: EdgeInsets.zero,
-                                            backgroundColor: Colors.black,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: width * 0.02,
-                                              vertical: height * 0.02,
-                                            ),
-                                            content: Column(
-                                              children: [
-                                                Text(
-                                                  'You delete this account successfully.',
-                                                  style: TextStyle(
-                                                    fontSize: Get.textTheme
-                                                        .titleMedium!.fontSize,
-                                                    color: Colors.white,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        } else {
-                                          Get.back();
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        fixedSize: Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.3,
-                                          MediaQuery.of(context).size.height *
-                                              0.05,
-                                        ),
-                                        backgroundColor:
-                                            Color.fromRGBO(0, 122, 255, 1),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Confirm',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleMedium!.fontSize,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        passwordConfirmDeleteCtl.clear();
-                                        Get.back();
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        fixedSize: Size(
-                                          MediaQuery.of(context).size.width *
-                                              0.3,
-                                          MediaQuery.of(context).size.height *
-                                              0.05,
-                                        ),
-                                        backgroundColor: Colors.grey,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Cancel',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleMedium!.fontSize,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                ),
+                                Text(
+                                  'You confirm to delete this account',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    color: Colors.black,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
-                            );
-                          } else {
-                            notitext = true;
-                            setState(() {});
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width * 0.3,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'OK',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          notitext = false;
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                onPressed: () async {
+                                  // แสดง Loading Dialog
+                                  loadingDialog();
+                                  var responseDelete = await http.delete(
+                                    Uri.parse("$url/user/account"),
+                                    headers: {
+                                      "Content-Type":
+                                          "application/json; charset=utf-8"
+                                    },
+                                    body: deleteUserDeleteRequestToJson(
+                                      DeleteUserDeleteRequest(
+                                        email: userEmail,
+                                      ),
+                                    ),
+                                  );
+                                  if (responseDelete.statusCode == 200) {
+                                    Get.back();
+                                    Get.back();
+
+                                    Future.delayed(const Duration(seconds: 1),
+                                        () async {
+                                      loadingDialog();
+                                      var responseLogot = await http.post(
+                                        Uri.parse("$url/signin_up/api/logout"),
+                                        headers: {
+                                          "Content-Type":
+                                              "application/json; charset=utf-8"
+                                        },
+                                        body: logoutUserPostRequestToJson(
+                                          LogoutUserPostRequest(
+                                            email: box.read('email'),
+                                          ),
+                                        ),
+                                      );
+                                      if (responseLogot.statusCode == 200) {
+                                        await googleSignIn.signOut();
+                                        // Sign out from Firebase if needed
+                                        await FirebaseAuth.instance.signOut();
+                                      }
+
+                                      Get.to(() => SplashPage());
+                                      box.remove('email');
+                                      box.remove('password');
+                                    });
+                                  } else {
+                                    Get.back();
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width,
+                                    MediaQuery.of(context).size.height * 0.05,
+                                  ),
+                                  backgroundColor:
+                                      Color.fromRGBO(0, 122, 255, 1),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 1,
+                                ),
+                                child: Text(
+                                  'Confirm',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleLarge!.fontSize,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  passwordConfirmDeleteCtl.clear();
+                                  Get.back();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  fixedSize: Size(
+                                    MediaQuery.of(context).size.width,
+                                    MediaQuery.of(context).size.height * 0.05,
+                                  ),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 239, 96, 86),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 1,
+                                ),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleLarge!.fontSize,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        } else {
+                          notitext = true;
                           setState(() {});
-                          Get.back();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width * 0.3,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          backgroundColor: Colors.grey,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width,
+                          MediaQuery.of(context).size.height * 0.05,
                         ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            color: Colors.white,
-                          ),
+                        backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: Text(
+                        'OK',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          color: Colors.white,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      ),
-    );
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        notitext = false;
+                        setState(() {});
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(
+                          MediaQuery.of(context).size.width,
+                          MediaQuery.of(context).size.height * 0.05,
+                        ),
+                        backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: Text(
+                        'Back',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          color: Color.fromRGBO(0, 122, 255, 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      );
+    }
   }
 }

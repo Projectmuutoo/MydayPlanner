@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>773568755866-kb3m2p7skb2k9ecj6475egrrp628bn0u.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.773568755866-kb3m2p7skb2k9ecj6475egrrp628bn0u</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>773568755866-e4t9lp0g4blt2qplifr8bnlftti19rnb.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAE3glIo46ku_YXzH75LyhqpN1yNHF2bO4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>773568755866</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.demomydayplanner</string>
+	<key>PROJECT_ID</key>
+	<string>mydayplanner-a6270</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mydayplanner-a6270.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:773568755866:ios:81d27d8a65d76026828723</string>
+</dict>
+</plist>

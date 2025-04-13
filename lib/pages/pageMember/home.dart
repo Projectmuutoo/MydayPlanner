@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/models/request/createBoardListsPostRequest.dart';
-import 'package:demomydayplanner/models/request/getBoardByIdUserPostRequest.dart';
-import 'package:demomydayplanner/models/request/getUserByEmailPostRequest.dart';
-import 'package:demomydayplanner/models/response/getBoardByIdUserGroupsPostResponse.dart';
-import 'package:demomydayplanner/models/response/getBoardByIdUserListsPostResponse.dart';
-import 'package:demomydayplanner/models/response/getUserByEmailPostResponst.dart';
-import 'package:demomydayplanner/pages/pageMember/myTasksLists/boradLists.dart';
-import 'package:demomydayplanner/pages/settings.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/createBoardListsPostRequest.dart';
+import 'package:mydayplanner/models/request/getBoardByIdUserPostRequest.dart';
+import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
+import 'package:mydayplanner/models/response/getBoardByIdUserGroupsPostResponse.dart';
+import 'package:mydayplanner/models/response/getBoardByIdUserListsPostResponse.dart';
+import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
+import 'package:mydayplanner/pages/pageMember/myTasksLists/boradLists.dart';
+import 'package:mydayplanner/pages/settings.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   int userId = 0;
   String userProfile = '';
   TextEditingController boardCtl = TextEditingController();
+  TextEditingController searchCtl = TextEditingController();
   List<GetBoardByIdUserListsPostResponse> boardsLists = [];
   List<GetBoardByIdUserGroupsPostResponse> boardsGroup = [];
   late List boards = [];
@@ -48,6 +49,9 @@ class _HomePageState extends State<HomePage> {
   int itemCount = 1;
   bool isLoadings = true;
   bool showShimmer = true;
+  bool hideSearchMyBoards = false;
+  FocusNode searchFocusNode = FocusNode();
+  FocusNode boardFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -146,762 +150,877 @@ class _HomePageState extends State<HomePage> {
         }
         return PopScope(
           canPop: false,
-          child: Scaffold(
-            appBar: null,
-            body: Center(
-              child: RefreshIndicator(
-                color: Colors.grey,
-                onRefresh: loadDataAsync,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: width * 0.05,
-                    left: width * 0.05,
-                    top: height * 0.03,
-                  ),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                isLoadings || showShimmer
-                                    ? Shimmer.fromColors(
-                                        baseColor: Color(0xFFF7F7F7),
-                                        highlightColor: Colors.grey[300]!,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          width: height * 0.07,
-                                          height: height * 0.07,
-                                        ),
-                                      )
-                                    : ClipOval(
-                                        child: userProfile == 'none-url'
-                                            ? Container(
-                                                width: height * 0.07,
-                                                height: height * 0.07,
-                                                decoration: const BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: Stack(
-                                                  children: [
-                                                    Container(
-                                                      height: height * 0.1,
-                                                      decoration:
-                                                          const BoxDecoration(
-                                                        color: Color.fromRGBO(
-                                                            242, 242, 246, 1),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                    ),
-                                                    Positioned(
-                                                      left: 0,
-                                                      right: 0,
-                                                      bottom: 0,
-                                                      child: SvgPicture.string(
-                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                        height: height * 0.05,
-                                                        fit: BoxFit.contain,
-                                                        color: Color.fromRGBO(
-                                                            151, 149, 149, 1),
-                                                      ),
-                                                    )
-                                                  ],
+          child: GestureDetector(
+            onTap: () {
+              if (searchFocusNode.hasFocus) {
+                setState(() {
+                  hideSearchMyBoards = false;
+                });
+                searchFocusNode.unfocus();
+                searchCtl.clear();
+              }
+              if (boardCtl.text.isNotEmpty) {
+                boardCtl.clear();
+              }
+            },
+            child: Scaffold(
+              appBar: null,
+              body: Center(
+                child: RefreshIndicator(
+                  color: Colors.grey,
+                  onRefresh: loadDataAsync,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: width * 0.05,
+                      left: width * 0.05,
+                      top: height * 0.05,
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              !hideSearchMyBoards
+                                  ? Row(
+                                      children: [
+                                        isLoadings || showShimmer
+                                            ? Shimmer.fromColors(
+                                                baseColor: Color(0xFFF7F7F7),
+                                                highlightColor:
+                                                    Colors.grey[300]!,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  width: height * 0.07,
+                                                  height: height * 0.07,
                                                 ),
                                               )
-                                            : Image.network(
-                                                userProfile,
-                                                width: height * 0.07,
-                                                height: height * 0.07,
-                                                fit: BoxFit.cover,
+                                            : ClipOval(
+                                                child: userProfile == 'none-url'
+                                                    ? Container(
+                                                        width: height * 0.07,
+                                                        height: height * 0.07,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                        child: Stack(
+                                                          children: [
+                                                            Container(
+                                                              height:
+                                                                  height * 0.1,
+                                                              decoration:
+                                                                  const BoxDecoration(
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        242,
+                                                                        242,
+                                                                        246,
+                                                                        1),
+                                                                shape: BoxShape
+                                                                    .circle,
+                                                              ),
+                                                            ),
+                                                            Positioned(
+                                                              left: 0,
+                                                              right: 0,
+                                                              bottom: 0,
+                                                              child: SvgPicture
+                                                                  .string(
+                                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                height: height *
+                                                                    0.05,
+                                                                fit: BoxFit
+                                                                    .contain,
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        151,
+                                                                        149,
+                                                                        149,
+                                                                        1),
+                                                              ),
+                                                            )
+                                                          ],
+                                                        ),
+                                                      )
+                                                    : Image.network(
+                                                        userProfile,
+                                                        width: height * 0.07,
+                                                        height: height * 0.07,
+                                                        fit: BoxFit.cover,
+                                                      ),
                                               ),
-                                      ),
-                                SizedBox(width: width * 0.01),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    isLoadings || showShimmer
-                                        ? Shimmer.fromColors(
-                                            baseColor: Color(0xFFF7F7F7),
-                                            highlightColor: Colors.grey[300]!,
-                                            child: Container(
-                                              width: _calculateTextWidth(
-                                                  'Hello, $name',
-                                                  Get.textTheme.titleSmall!
-                                                      .fontSize!),
-                                              height: Get.textTheme.titleSmall!
-                                                  .fontSize,
-                                              color: Colors.white,
+                                        SizedBox(width: width * 0.01),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            isLoadings || showShimmer
+                                                ? Shimmer.fromColors(
+                                                    baseColor:
+                                                        Color(0xFFF7F7F7),
+                                                    highlightColor:
+                                                        Colors.grey[300]!,
+                                                    child: Container(
+                                                      width:
+                                                          _calculateTextWidth(
+                                                              'Hello, $name',
+                                                              Get
+                                                                  .textTheme
+                                                                  .titleSmall!
+                                                                  .fontSize!),
+                                                      height: Get.textTheme
+                                                          .titleSmall!.fontSize,
+                                                      color: Colors.white,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    'Hello, $name',
+                                                    style: TextStyle(
+                                                      fontSize: Get.textTheme
+                                                          .titleSmall!.fontSize,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                            Text(
+                                              'you can do it!',
+                                              style: TextStyle(
+                                                fontSize: Get.textTheme
+                                                    .titleSmall!.fontSize,
+                                                fontWeight: FontWeight.normal,
+                                              ),
                                             ),
-                                          )
-                                        : Text(
-                                            'Hello, $name',
-                                            style: TextStyle(
-                                              fontSize: Get.textTheme
-                                                  .titleSmall!.fontSize,
-                                              fontWeight: FontWeight.w500,
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                                  : SizedBox(
+                                      width: width * 0.8,
+                                      child: TextField(
+                                        controller: searchCtl,
+                                        focusNode: searchFocusNode,
+                                        keyboardType: TextInputType.text,
+                                        cursorColor: Colors.black,
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleMedium!.fontSize,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: isTyping ? '' : 'Search',
+                                          hintStyle: TextStyle(
+                                            fontSize: Get.textTheme.titleMedium!
+                                                .fontSize,
+                                            fontWeight: FontWeight.normal,
+                                            color: Colors.grey,
+                                          ),
+                                          prefixIcon: IconButton(
+                                            onPressed: null,
+                                            icon: SvgPicture.string(
+                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"></path></svg>',
+                                              color: Colors.grey,
                                             ),
                                           ),
-                                    Text(
-                                      'you can do it!',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
-                                        fontWeight: FontWeight.normal,
+                                          suffixIcon: IconButton(
+                                            onPressed: () {
+                                              searchCtl.clear();
+                                            },
+                                            icon: SvgPicture.string(
+                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M9.172 16.242 12 13.414l2.828 2.828 1.414-1.414L13.414 12l2.828-2.828-1.414-1.414L12 10.586 9.172 7.758 7.758 9.172 10.586 12l-2.828 2.828z"></path><path d="M12 22c5.514 0 10-4.486 10-10S17.514 2 12 2 2 6.486 2 12s4.486 10 10 10zm0-18c4.411 0 8 3.589 8 8s-3.589 8-8 8-8-3.589-8-8 3.589-8 8-8z"></path></svg>',
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          constraints: BoxConstraints(
+                                            maxHeight: height * 0.05,
+                                          ),
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
+                              Row(
+                                children: [
+                                  !hideSearchMyBoards
+                                      ? InkWell(
+                                          onTap: searchMyBoards,
+                                          child: SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"></path></svg>',
+                                            height: height * 0.035,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        )
+                                      : Container(),
+                                  InkWell(
+                                    onTap: () {
+                                      !hideSearchMyBoards
+                                          ? showPopupMenu(context)
+                                          : hideSearchMyBoards = false;
+                                      if (searchCtl.text.isNotEmpty) {
+                                        searchCtl.clear();
+                                      }
+                                    },
+                                    child: SvgPicture.string(
+                                      !hideSearchMyBoards
+                                          ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>'
+                                          : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
+                                      height: !hideSearchMyBoards
+                                          ? height * 0.035
+                                          : height * 0.04,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: height * 0.01,
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: width * 0.01,
+                            ),
+                            child: Container(
+                              width: width,
+                              height: height * 0.12,
+                              decoration: const BoxDecoration(
+                                color: Color.fromRGBO(242, 242, 246, 1),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(40),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    offset: Offset(0, 1),
+                                    blurRadius: 3,
+                                    color: Color.fromRGBO(151, 149, 149, 1),
+                                    spreadRadius: 0.1,
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.08,
+                                  vertical: height * 0.005,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'is comming!!',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme.titleLarge!.fontSize,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          'To day',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme.titleLarge!.fontSize,
+                                            fontWeight: FontWeight.w500,
+                                            color:
+                                                Color.fromRGBO(0, 122, 255, 1),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            SvgPicture.string(
+                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
+                                              height: height * 0.01,
+                                              fit: BoxFit.contain,
+                                              color: Color.fromRGBO(
+                                                  151, 149, 149, 1),
+                                            ),
+                                            SizedBox(
+                                              width: width * 0.01,
+                                            ),
+                                            Text(
+                                              'ไปกินข้าว',
+                                              style: TextStyle(
+                                                fontSize: Get.textTheme
+                                                    .labelMedium!.fontSize,
+                                                fontWeight: FontWeight.normal,
+                                                fontFamily: 'mali',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '10m',
+                                          style: TextStyle(
+                                            fontSize: Get.textTheme.labelMedium!
+                                                .fontSize,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: height * 0.01,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'My Boards',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.headlineSmall!.fontSize,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    if (!displayFormat)
+                                      InkWell(
+                                        onTap: () {
+                                          // log('list ยังไม่กด');
+                                          box.write('list', true);
+                                          box.write('grid', false);
+                                          displayFormat = true;
+                                          setState(() {});
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm16-8V6H8.023v2H18.8zM8 11h12v2H8zm0 5h12v2H8z"></path></svg>',
+                                          height: height * 0.034,
+                                          fit: BoxFit.contain,
+                                          color:
+                                              Color.fromRGBO(151, 149, 149, 1),
+                                        ),
+                                      ),
+                                    if (displayFormat)
+                                      InkWell(
+                                        onTap: () {
+                                          // log('list กด');
+                                          box.write('list', true);
+                                          box.write('grid', false);
+                                          if (!displayFormat) {
+                                            displayFormat = false;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M80-160v-160h160v160H80Zm240 0v-160h560v160H320ZM80-400v-160h160v160H80Zm240 0v-160h560v160H320ZM80-640v-160h160v160H80Zm240 0v-160h560v160H320Z"/></svg>',
+                                          height: height * 0.03,
+                                          fit: BoxFit.contain,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    SizedBox(
+                                      width: width * 0.01,
+                                    ),
+                                    if (displayFormat)
+                                      InkWell(
+                                        onTap: () {
+                                          // log('grid ไม่กด');
+                                          box.write('grid', true);
+                                          box.write('list', false);
+                                          displayFormat = false;
+                                          setState(() {});
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zm5 2h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm1-6h4v4h-4V5zM3 20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6zm2-5h4v4H5v-4zm8 5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6zm2-5h4v4h-4v-4z"></path></svg>',
+                                          height: height * 0.03,
+                                          fit: BoxFit.contain,
+                                          color:
+                                              Color.fromRGBO(151, 149, 149, 1),
+                                        ),
+                                      ),
+                                    if (!displayFormat)
+                                      InkWell(
+                                        onTap: () {
+                                          // log('grid กด');
+                                          box.write('grid', true);
+                                          box.write('list', false);
+                                          if (!displayFormat) {
+                                            displayFormat = false;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 11h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zM4 21h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1z"></path></svg>',
+                                          height: height * 0.03,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ],
                             ),
-                            Row(
+                          ),
+                          Divider(
+                            thickness: 0,
+                            height: 0,
+                            color: Color.fromRGBO(151, 149, 149, 1),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                              right: width * 0.03,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 InkWell(
-                                  onTap: () {},
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"></path></svg>',
-                                    height: height * 0.035,
-                                    fit: BoxFit.contain,
+                                  key: listKey,
+                                  onTap: () {
+                                    boards = boardsLists;
+                                    moveSliderToKey(listKey);
+                                    listsFontWeight = FontWeight.w600;
+                                    groupFontWeight = FontWeight.w500;
+                                    priorityFontWeight = FontWeight.w500;
+                                    setState(() {});
+                                  },
+                                  child: Text(
+                                    'Lists',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleLarge!.fontSize,
+                                      fontWeight: listsFontWeight,
+                                      color: listsFontWeight == FontWeight.w600
+                                          ? Color.fromRGBO(0, 122, 255, 1)
+                                          : null,
+                                    ),
                                   ),
                                 ),
                                 InkWell(
+                                  key: groupKey,
                                   onTap: () {
-                                    showPopupMenu(context);
+                                    boards = boardsGroup;
+                                    moveSliderToKey(groupKey);
+                                    listsFontWeight = FontWeight.w500;
+                                    groupFontWeight = FontWeight.w600;
+                                    priorityFontWeight = FontWeight.w500;
+                                    setState(() {});
                                   },
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
-                                    height: height * 0.035,
-                                    fit: BoxFit.contain,
+                                  child: Text(
+                                    'Groups',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleLarge!.fontSize,
+                                      fontWeight: groupFontWeight,
+                                      color: groupFontWeight == FontWeight.w600
+                                          ? Color.fromRGBO(0, 122, 255, 1)
+                                          : null,
+                                    ),
                                   ),
                                 ),
+                                // InkWell(
+                                //   key: priorityKey,
+                                //   onTap: () {
+                                //     if (mounted) {
+                                //       setState(() {
+                                //         moveSliderToKey(priorityKey);
+                                //         listsFontWeight = FontWeight.w500;
+                                //         groupFontWeight = FontWeight.w500;
+                                //         priorityFontWeight = FontWeight.w600;
+                                //       });
+                                //     }
+                                //   },
+                                //   child: Text(
+                                //     'Priority',
+                                //     style: TextStyle(
+                                //       fontSize:
+                                //           Get.textTheme.titleLarge!.fontSize,
+                                //       fontWeight: priorityFontWeight,
+                                //     ),
+                                //   ),
+                                // ),
                               ],
-                            )
-                          ],
-                        ),
-                        SizedBox(
-                          height: height * 0.01,
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
-                          ),
-                          child: Container(
-                            width: width,
-                            height: height * 0.12,
-                            decoration: const BoxDecoration(
-                              color: Color.fromRGBO(242, 242, 246, 1),
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(40),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 3,
-                                  color: Color.fromRGBO(151, 149, 149, 1),
-                                  spreadRadius: 0.1,
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.08,
-                                vertical: height * 0.005,
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'is comming!!',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleLarge!.fontSize,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      Text(
-                                        'To day',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleLarge!.fontSize,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color.fromRGBO(0, 122, 255, 1),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
-                                            height: height * 0.01,
-                                            fit: BoxFit.contain,
-                                            color: Color.fromRGBO(
-                                                151, 149, 149, 1),
-                                          ),
-                                          SizedBox(
-                                            width: width * 0.01,
-                                          ),
-                                          Text(
-                                            'ไปกินข้าว',
-                                            style: TextStyle(
-                                              fontSize: Get.textTheme
-                                                  .labelMedium!.fontSize,
-                                              fontWeight: FontWeight.normal,
-                                              fontFamily: 'mali',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Text(
-                                        '10m',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.labelMedium!.fontSize,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: height * 0.01,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Stack(
+                            alignment: Alignment.topCenter,
                             children: [
-                              Text(
-                                'My Boards',
-                                style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.headlineSmall!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  if (!displayFormat)
-                                    InkWell(
-                                      onTap: () {
-                                        // log('list ยังไม่กด');
-                                        box.write('list', true);
-                                        box.write('grid', false);
-                                        displayFormat = true;
-                                        setState(() {});
-                                      },
-                                      child: SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm16-8V6H8.023v2H18.8zM8 11h12v2H8zm0 5h12v2H8z"></path></svg>',
-                                        height: height * 0.034,
-                                        fit: BoxFit.contain,
-                                        color: Color.fromRGBO(151, 149, 149, 1),
-                                      ),
-                                    ),
-                                  if (displayFormat)
-                                    InkWell(
-                                      onTap: () {
-                                        // log('list กด');
-                                        box.write('list', true);
-                                        box.write('grid', false);
-                                        if (!displayFormat) {
-                                          displayFormat = false;
-                                          setState(() {});
-                                        }
-                                      },
-                                      child: SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M80-160v-160h160v160H80Zm240 0v-160h560v160H320ZM80-400v-160h160v160H80Zm240 0v-160h560v160H320ZM80-640v-160h160v160H80Zm240 0v-160h560v160H320Z"/></svg>',
-                                        height: height * 0.03,
-                                        fit: BoxFit.contain,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  SizedBox(
-                                    width: width * 0.01,
-                                  ),
-                                  if (displayFormat)
-                                    InkWell(
-                                      onTap: () {
-                                        // log('grid ไม่กด');
-                                        box.write('grid', true);
-                                        box.write('list', false);
-                                        displayFormat = false;
-                                        setState(() {});
-                                      },
-                                      child: SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zm5 2h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm1-6h4v4h-4V5zM3 20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6zm2-5h4v4H5v-4zm8 5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6zm2-5h4v4h-4v-4z"></path></svg>',
-                                        height: height * 0.03,
-                                        fit: BoxFit.contain,
-                                        color: Color.fromRGBO(151, 149, 149, 1),
-                                      ),
-                                    ),
-                                  if (!displayFormat)
-                                    InkWell(
-                                      onTap: () {
-                                        // log('grid กด');
-                                        box.write('grid', true);
-                                        box.write('list', false);
-                                        if (!displayFormat) {
-                                          displayFormat = false;
-                                          setState(() {});
-                                        }
-                                      },
-                                      child: SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 11h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zM4 21h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1z"></path></svg>',
-                                        height: height * 0.03,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Divider(
-                          thickness: 0,
-                          height: 0,
-                          color: Color.fromRGBO(151, 149, 149, 1),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                            right: width * 0.03,
-                            top: height * 0.01,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              InkWell(
-                                key: listKey,
-                                onTap: () {
-                                  boards = boardsLists;
-                                  moveSliderToKey(listKey);
-                                  listsFontWeight = FontWeight.w600;
-                                  groupFontWeight = FontWeight.w500;
-                                  priorityFontWeight = FontWeight.w500;
-                                  setState(() {});
-                                },
-                                child: Text(
-                                  'Lists',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: listsFontWeight,
-                                    color: listsFontWeight == FontWeight.w600
-                                        ? Color.fromRGBO(0, 122, 255, 1)
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                              InkWell(
-                                key: groupKey,
-                                onTap: () {
-                                  boards = boardsGroup;
-                                  moveSliderToKey(groupKey);
-                                  listsFontWeight = FontWeight.w500;
-                                  groupFontWeight = FontWeight.w600;
-                                  priorityFontWeight = FontWeight.w500;
-                                  setState(() {});
-                                },
-                                child: Text(
-                                  'Groups',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: groupFontWeight,
-                                    color: groupFontWeight == FontWeight.w600
-                                        ? Color.fromRGBO(0, 122, 255, 1)
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                              // InkWell(
-                              //   key: priorityKey,
-                              //   onTap: () {
-                              //     if (mounted) {
-                              //       setState(() {
-                              //         moveSliderToKey(priorityKey);
-                              //         listsFontWeight = FontWeight.w500;
-                              //         groupFontWeight = FontWeight.w500;
-                              //         priorityFontWeight = FontWeight.w600;
-                              //       });
-                              //     }
-                              //   },
-                              //   child: Text(
-                              //     'Priority',
-                              //     style: TextStyle(
-                              //       fontSize:
-                              //           Get.textTheme.titleLarge!.fontSize,
-                              //       fontWeight: priorityFontWeight,
-                              //     ),
-                              //   ),
-                              // ),
-                            ],
-                          ),
-                        ),
-                        Stack(
-                          alignment: Alignment.topCenter,
-                          children: [
-                            Container(
-                              width: width,
-                              height: height * 0.54,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                              ),
-                            ),
-                            AnimatedPositioned(
-                              left: slider,
-                              top: 0,
-                              duration: Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                              child: Container(
-                                width: width * 0.1,
-                                height: height * 0.06,
+                              Container(
+                                width: width,
+                                height: height * 0.54,
                                 decoration: const BoxDecoration(
-                                  color: Color.fromRGBO(0, 122, 255, 1),
-                                  shape: BoxShape.rectangle,
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(22),
+                                  color: Colors.white,
+                                ),
+                              ),
+                              AnimatedPositioned(
+                                left: slider,
+                                top: 0,
+                                duration: Duration(milliseconds: 500),
+                                curve: Curves.easeInOut,
+                                child: Container(
+                                  width: width * 0.1,
+                                  height: height * 0.06,
+                                  decoration: const BoxDecoration(
+                                    color: Color.fromRGBO(0, 122, 255, 1),
+                                    shape: BoxShape.rectangle,
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(22),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            if (!displayFormat)
-                              Positioned(
-                                top: 10,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  width: width,
-                                  height: height * 0.52,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01,
-                                    vertical: height * 0.01,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromRGBO(242, 242, 246, 1),
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(18),
+                              if (!displayFormat)
+                                Positioned(
+                                  top: 10,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: width,
+                                    height: height * 0.52,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.01,
+                                      vertical: height * 0.01,
                                     ),
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.01,
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromRGBO(242, 242, 246, 1),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(18),
                                       ),
-                                      child: Wrap(
-                                        spacing: width * 0.02,
-                                        runSpacing: width * 0.03,
-                                        children: isLoadings || showShimmer
-                                            ? List.generate(
-                                                itemCount,
-                                                (index) => Shimmer.fromColors(
-                                                  baseColor: Color(0xFFF7F7F7),
-                                                  highlightColor:
-                                                      Colors.grey[300]!,
-                                                  child: Container(
-                                                    width: width * 0.4,
-                                                    height: height * 0.15,
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.all(
-                                                        Radius.circular(12),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.01,
+                                        ),
+                                        child: Wrap(
+                                          spacing: width * 0.02,
+                                          runSpacing: width * 0.03,
+                                          children: isLoadings || showShimmer
+                                              ? List.generate(
+                                                  itemCount,
+                                                  (index) => Shimmer.fromColors(
+                                                    baseColor:
+                                                        Color(0xFFF7F7F7),
+                                                    highlightColor:
+                                                        Colors.grey[300]!,
+                                                    child: Container(
+                                                      width: width * 0.4,
+                                                      height: height * 0.15,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        color: Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                          Radius.circular(12),
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
-                                                ),
-                                              )
-                                            : [
-                                                ...boards.map(
-                                                  (board) {
-                                                    return SizedBox(
-                                                      child: Column(
-                                                        children: [
-                                                          Container(
-                                                            width: width * 0.4,
-                                                            height:
-                                                                height * 0.15,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color:
-                                                                  Colors.white,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12),
-                                                              boxShadow: [
-                                                                BoxShadow(
-                                                                  offset:
-                                                                      Offset(
-                                                                          0, 1),
-                                                                  blurRadius: 3,
-                                                                  color: Color
-                                                                      .fromRGBO(
-                                                                          151,
-                                                                          149,
-                                                                          149,
-                                                                          1),
-                                                                  spreadRadius:
-                                                                      0.1,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            child: Material(
-                                                              color: Colors
-                                                                  .transparent,
-                                                              child: InkWell(
+                                                )
+                                              : [
+                                                  ...boards.map(
+                                                    (board) {
+                                                      return SizedBox(
+                                                        child: Column(
+                                                          children: [
+                                                            Container(
+                                                              width:
+                                                                  width * 0.4,
+                                                              height:
+                                                                  height * 0.15,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Colors
+                                                                    .white,
                                                                 borderRadius:
                                                                     BorderRadius
                                                                         .circular(
                                                                             12),
-                                                                onTap: () =>
-                                                                    goToMyList(board
-                                                                        .boardName),
-                                                                child: Center(
-                                                                  child: Text(
-                                                                    board
-                                                                        .boardName,
-                                                                    style:
-                                                                        TextStyle(
-                                                                      fontSize: Get
-                                                                          .textTheme
-                                                                          .titleMedium!
-                                                                          .fontSize,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w500,
-                                                                      color: Colors
-                                                                          .black,
+                                                                boxShadow: [
+                                                                  BoxShadow(
+                                                                    offset:
+                                                                        Offset(
+                                                                            0,
+                                                                            1),
+                                                                    blurRadius:
+                                                                        3,
+                                                                    color: Color
+                                                                        .fromRGBO(
+                                                                            151,
+                                                                            149,
+                                                                            149,
+                                                                            1),
+                                                                    spreadRadius:
+                                                                        0.1,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              child: Material(
+                                                                color: Colors
+                                                                    .transparent,
+                                                                child: InkWell(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                  onTap: () =>
+                                                                      goToMyList(
+                                                                          board
+                                                                              .boardName),
+                                                                  child: Center(
+                                                                    child: Text(
+                                                                      board
+                                                                          .boardName,
+                                                                      style:
+                                                                          TextStyle(
+                                                                        fontSize: Get
+                                                                            .textTheme
+                                                                            .titleMedium!
+                                                                            .fontSize,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                        color: Colors
+                                                                            .black,
+                                                                      ),
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .center,
                                                                     ),
-                                                                    textAlign:
-                                                                        TextAlign
-                                                                            .center,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  // ปุ่มสร้างบอร์ดใหม่
+                                                  SizedBox(
+                                                    child: Column(
+                                                      children: [
+                                                        Container(
+                                                          width: width * 0.4,
+                                                          height: height * 0.15,
+                                                          decoration: BoxDecoration(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                              color:
+                                                                  Colors.white),
+                                                          child: Material(
+                                                            color: Colors
+                                                                .transparent,
+                                                            child: InkWell(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                              onTap:
+                                                                  createNewBoard,
+                                                              child: Center(
+                                                                child: Text(
+                                                                  '+',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize: Get
+                                                                        .textTheme
+                                                                        .headlineSmall!
+                                                                        .fontSize,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                    color: Color
+                                                                        .fromRGBO(
+                                                                            0,
+                                                                            122,
+                                                                            255,
+                                                                            1),
                                                                   ),
                                                                 ),
                                                               ),
                                                             ),
                                                           ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                                // ปุ่มสร้างบอร์ดใหม่
-                                                SizedBox(
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        width: width * 0.4,
-                                                        height: height * 0.15,
-                                                        decoration: BoxDecoration(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12),
-                                                            color:
-                                                                Colors.white),
-                                                        child: Material(
-                                                          color: Colors
-                                                              .transparent,
-                                                          child: InkWell(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12),
-                                                            onTap:
-                                                                createNewBoard,
-                                                            child: Center(
-                                                              child: Text(
-                                                                '+',
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontSize: Get
-                                                                      .textTheme
-                                                                      .headlineSmall!
-                                                                      .fontSize,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  color: Color
-                                                                      .fromRGBO(
-                                                                          0,
-                                                                          122,
-                                                                          255,
-                                                                          1),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      )
-                                                    ],
+                                                        )
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            if (displayFormat)
-                              Positioned(
-                                top: 10,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  width: width,
-                                  height: height * 0.52,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01,
-                                    vertical: height * 0.01,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    color: Color.fromRGBO(242, 242, 246, 1),
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(18),
-                                    ),
-                                  ),
-                                  child: ListView.builder(
+                              if (displayFormat)
+                                Positioned(
+                                  top: 10,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: width,
+                                    height: height * 0.52,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: width * 0.03,
+                                      horizontal: width * 0.01,
                                       vertical: height * 0.01,
                                     ),
-                                    itemCount: boards.length +
-                                        1, // +1 สำหรับปุ่มสร้างบอร์ดใหม่
-                                    itemBuilder: (context, index) {
-                                      if (isLoadings || showShimmer) {
-                                        return Shimmer.fromColors(
-                                          baseColor: Color(0xFFF7F7F7),
-                                          highlightColor: Colors.grey[300]!,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                              bottom: height * 0.01,
-                                            ),
-                                            child: Container(
-                                              width: width,
-                                              height: height * 0.06,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.all(
-                                                  Radius.circular(12),
-                                                ),
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromRGBO(242, 242, 246, 1),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(18),
+                                      ),
+                                    ),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: width * 0.03,
+                                        vertical: height * 0.01,
+                                      ),
+                                      itemCount: boards.length +
+                                          1, // +1 สำหรับปุ่มสร้างบอร์ดใหม่
+                                      itemBuilder: (context, index) {
+                                        if (isLoadings || showShimmer) {
+                                          return Shimmer.fromColors(
+                                            baseColor: Color(0xFFF7F7F7),
+                                            highlightColor: Colors.grey[300]!,
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: height * 0.01,
                                               ),
-                                            ),
-                                          ),
-                                        );
-                                      } else {
-                                        if (index < boards.length) {
-                                          final board = boards[index];
-                                          return Padding(
-                                            padding: EdgeInsets.only(
-                                              bottom: height * 0.01,
-                                            ),
-                                            child: Container(
-                                              width: width,
-                                              height: height * 0.06,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                boxShadow: const [
-                                                  BoxShadow(
-                                                    offset: Offset(0, 1),
-                                                    blurRadius: 3,
-                                                    color: Color.fromRGBO(
-                                                        151, 149, 149, 1),
-                                                    spreadRadius: 0.1,
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
+                                              child: Container(
+                                                width: width,
+                                                height: height * 0.06,
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.white,
                                                   borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  onTap: () => goToMyList(board
-                                                      .boardName
-                                                      .toString()),
-                                                  child: Center(
-                                                    child: Text(
-                                                      board.boardName,
-                                                      style: TextStyle(
-                                                        fontSize: Get
-                                                            .textTheme
-                                                            .titleMedium!
-                                                            .fontSize,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.black,
-                                                      ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
+                                                      BorderRadius.all(
+                                                    Radius.circular(12),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           );
                                         } else {
-                                          // ปุ่มสร้างบอร์ดใหม่
-                                          return Container(
-                                            width: width,
-                                            height: height * 0.06,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              color: Colors.white,
-                                            ),
-                                            child: Material(
-                                              color: Colors.transparent,
-                                              child: InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                onTap: createNewBoard,
-                                                child: Center(
-                                                  child: Text(
-                                                    '+',
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .headlineSmall!
-                                                          .fontSize,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                          if (index < boards.length) {
+                                            final board = boards[index];
+                                            return Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: height * 0.01,
+                                              ),
+                                              child: Container(
+                                                width: width,
+                                                height: height * 0.06,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  boxShadow: const [
+                                                    BoxShadow(
+                                                      offset: Offset(0, 1),
+                                                      blurRadius: 3,
                                                       color: Color.fromRGBO(
-                                                          0, 122, 255, 1),
+                                                          151, 149, 149, 1),
+                                                      spreadRadius: 0.1,
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    onTap: () => goToMyList(
+                                                        board.boardName
+                                                            .toString()),
+                                                    child: Center(
+                                                      child: Text(
+                                                        board.boardName,
+                                                        style: TextStyle(
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .titleMedium!
+                                                              .fontSize,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color: Colors.black,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          );
+                                            );
+                                          } else {
+                                            // ปุ่มสร้างบอร์ดใหม่
+                                            return Container(
+                                              width: width,
+                                              height: height * 0.06,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                color: Colors.white,
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  onTap: createNewBoard,
+                                                  child: Center(
+                                                    child: Text(
+                                                      '+',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .headlineSmall!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Color.fromRGBO(
+                                                            0, 122, 255, 1),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }
                                         }
-                                      }
-                                    },
+                                      },
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -911,6 +1030,16 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  void searchMyBoards() {
+    setState(() {
+      hideSearchMyBoards = !hideSearchMyBoards;
+    });
+    Future.delayed(Duration(milliseconds: 100), () {
+      searchFocusNode.requestFocus();
+    });
+    log("message");
   }
 
   void showDisplays() {
@@ -974,6 +1103,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void createNewBoard() async {
+    Future.delayed(Duration(milliseconds: 100), () {
+      boardFocusNode.requestFocus();
+      if (boardCtl.text.isNotEmpty) {
+        boardCtl.clear();
+      }
+    });
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
@@ -1034,6 +1169,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         TextField(
                           controller: boardCtl,
+                          focusNode: boardFocusNode,
                           keyboardType: TextInputType.text,
                           cursorColor: Colors.black,
                           style: TextStyle(

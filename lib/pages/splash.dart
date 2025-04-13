@@ -1,6 +1,8 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:demomydayplanner/pages/delayChange.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/pages/delayChange.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -22,7 +24,6 @@ class _SplashPageState extends State<SplashPage> {
     keep.keepRoleUser = '';
     keep.keepActiveUser = '';
     context.read<Appdata>().keepUser = keep;
-
     final box = GetStorage();
     final email = box.read('email');
     if (email != null && email.isNotEmpty) {
@@ -70,16 +71,14 @@ class _SplashPageState extends State<SplashPage> {
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Color.fromRGBO(242, 242, 246, 1),
+          color: Color(0xFFF2F2F6),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Image.asset(
-              'assets/images/LogoApp.png',
-              width: 100,
-              height: 100,
-            ),
+            const CircularProgressIndicator(
+              color: Colors.white,
+            )
           ],
         ),
       ),

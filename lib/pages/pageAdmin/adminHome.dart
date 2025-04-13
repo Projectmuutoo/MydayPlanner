@@ -1,9 +1,9 @@
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/models/request/logoutUserPostRequest.dart';
-import 'package:demomydayplanner/models/response/logoutUserPostResponse.dart';
-import 'package:demomydayplanner/pages/login.dart';
-import 'package:demomydayplanner/pages/splash.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/logoutUserPostRequest.dart';
+import 'package:mydayplanner/models/response/logoutUserPostResponse.dart';
+import 'package:mydayplanner/pages/login.dart';
+import 'package:mydayplanner/pages/splash.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -89,7 +89,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
         shadowColor: Colors.transparent,
         content: Center(
           child: CircularProgressIndicator(
-            color: Color(0xffCDBEAE),
+            color: Colors.white,
           ),
         ),
       ),
@@ -97,83 +97,31 @@ class _AdminhomePageState extends State<AdminhomePage> {
   }
 
   void logout(BuildContext context) async {
-    //horizontal left right
-    double width = MediaQuery.of(context).size.width;
-    //vertical tob bottom
-    double height = MediaQuery.of(context).size.height;
-
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    Get.defaultDialog(
-      title: "",
-      barrierDismissible: true,
-      titlePadding: EdgeInsets.zero,
-      backgroundColor: Color(0xff494949),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: width * 0.02,
-        vertical: height * 0.02,
-      ),
-      content: Column(
-        children: [
-          Text(
-            'Log out account',
-            style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(
-            height: height * 0.02,
-          )
-        ],
-      ),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            // แสดง Loading Dialog
-            loadingDialog();
-            var responseLogot = await http.post(
-              Uri.parse("$url/signin_up/api/logout"),
-              headers: {"Content-Type": "application/json; charset=utf-8"},
-              body: logoutUserPostRequestToJson(
-                LogoutUserPostRequest(
-                  email: box.read('email'),
-                ),
-              ),
-            );
-            if (responseLogot.statusCode == 200) {
-              Get.back();
-
-              LogoutUserPostResponse response =
-                  logoutUserPostResponseFromJson(responseLogot.body);
-              await googleSignIn.signOut();
-              // Sign out from Firebase if needed
-              await FirebaseAuth.instance.signOut();
-              if (response.success) {
-                Get.to(() => SplashPage());
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: const Color(0xffD5843D),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: Text(
-            'Log out',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
-              color: Colors.white,
-            ),
-          ),
+    // แสดง Loading Dialog
+    loadingDialog();
+    var responseLogot = await http.post(
+      Uri.parse("$url/signin_up/api/logout"),
+      headers: {"Content-Type": "application/json; charset=utf-8"},
+      body: logoutUserPostRequestToJson(
+        LogoutUserPostRequest(
+          email: box.read('email'),
         ),
-      ],
+      ),
     );
+    if (responseLogot.statusCode == 200) {
+      Get.back();
+
+      LogoutUserPostResponse response =
+          logoutUserPostResponseFromJson(responseLogot.body);
+      await googleSignIn.signOut();
+      // Sign out from Firebase if needed
+      await FirebaseAuth.instance.signOut();
+      if (response.success) {
+        Get.to(() => SplashPage());
+      }
+    }
   }
 }

@@ -1,11 +1,11 @@
 import 'dart:developer';
 
-import 'package:demomydayplanner/pages/pageMember/allTasks.dart';
-import 'package:demomydayplanner/pages/pageMember/calendar.dart';
-import 'package:demomydayplanner/pages/pageMember/home.dart';
-import 'package:demomydayplanner/pages/pageMember/notification.dart';
-import 'package:demomydayplanner/pages/pageMember/toDay.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/pages/pageMember/allTasks.dart';
+import 'package:mydayplanner/pages/pageMember/calendar.dart';
+import 'package:mydayplanner/pages/pageMember/home.dart';
+import 'package:mydayplanner/pages/pageMember/notification.dart';
+import 'package:mydayplanner/pages/pageMember/toDay.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';

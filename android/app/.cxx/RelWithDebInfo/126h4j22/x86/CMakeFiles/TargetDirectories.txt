@@ -1,0 +1,2 @@
+/Users/torikiton/Desktop/Projecthappyending/Code/CodeFrontend/android/app/.cxx/RelWithDebInfo/126h4j22/x86/CMakeFiles/edit_cache.dir
+/Users/torikiton/Desktop/Projecthappyending/Code/CodeFrontend/android/app/.cxx/RelWithDebInfo/126h4j22/x86/CMakeFiles/rebuild_cache.dir

@@ -2,14 +2,14 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:ui' as ui;
 
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/models/request/adminVerifyPutRequest.dart';
-import 'package:demomydayplanner/models/request/createAdminPostRequest.dart';
-import 'package:demomydayplanner/models/request/deleteUserDeleteRequest.dart';
-import 'package:demomydayplanner/models/request/editActiveUserPutRequest.dart';
-import 'package:demomydayplanner/models/request/sendOTPPostRequest.dart';
-import 'package:demomydayplanner/models/response/allUserGetResponse.dart';
-import 'package:demomydayplanner/models/response/sendOTPPostResponst.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/adminVerifyPutRequest.dart';
+import 'package:mydayplanner/models/request/createAdminPostRequest.dart';
+import 'package:mydayplanner/models/request/deleteUserDeleteRequest.dart';
+import 'package:mydayplanner/models/request/editActiveUserPutRequest.dart';
+import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
+import 'package:mydayplanner/models/response/allUserGetResponse.dart';
+import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -1077,158 +1077,192 @@ class _UserPageState extends State<UserPage> {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    //horizontal left right
-    double width = MediaQuery.of(context).size.width;
-    //vertical tob bottom
-    double height = MediaQuery.of(context).size.height;
-
     Get.defaultDialog(
-      title: "",
-      barrierDismissible: true,
+      title: '',
       titlePadding: EdgeInsets.zero,
       backgroundColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(
-        horizontal: width * 0.02,
-        vertical: height * 0.02,
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.02,
       ),
       content: Column(
         children: [
+          Image.asset(
+            "assets/images/aleart/question.png",
+            height: MediaQuery.of(context).size.height * 0.1,
+            fit: BoxFit.contain,
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Text(
-            'You confirm to delete this user email\n$email.',
+            'Delete?',
+            style: TextStyle(
+              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontWeight: FontWeight.w500,
+              color: Colors.red,
+            ),
+          ),
+          Text(
+            'You confirm to delete this user email',
             style: TextStyle(
               fontSize: Get.textTheme.titleMedium!.fontSize,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(
-            height: height * 0.02,
-          )
+          Text(
+            email,
+            style: TextStyle(
+              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
       actions: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                // แสดง Loading Dialog
-                loadingDialog();
-                var responseLogot = await http.delete(
-                  Uri.parse("$url/user/account"),
-                  headers: {"Content-Type": "application/json; charset=utf-8"},
-                  body: deleteUserDeleteRequestToJson(
-                    DeleteUserDeleteRequest(
-                      email: email,
+        ElevatedButton(
+          onPressed: () async {
+            // แสดง Loading Dialog
+            loadingDialog();
+            var responseLogot = await http.delete(
+              Uri.parse("$url/user/account"),
+              headers: {"Content-Type": "application/json; charset=utf-8"},
+              body: deleteUserDeleteRequestToJson(
+                DeleteUserDeleteRequest(
+                  email: email,
+                ),
+              ),
+            );
+            if (responseLogot.statusCode == 200) {
+              Get.back();
+              Get.back();
+              loadDataAsync();
+              selectedRole = 'All';
+              setState(() {});
+
+              Get.defaultDialog(
+                title: "",
+                titlePadding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
+                content: Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/success.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                    Text(
+                      'Successfully!!',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromRGBO(0, 122, 255, 1),
+                      ),
+                    ),
+                    Text(
+                      'You delete email',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      'successfully',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(
+                        MediaQuery.of(context).size.width,
+                        MediaQuery.of(context).size.height * 0.05,
+                      ),
+                      backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 1,
+                    ),
+                    child: Text(
+                      'Ok',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                );
-                if (responseLogot.statusCode == 200) {
-                  Get.back();
-                  Get.back();
-                  loadDataAsync();
-                  selectedRole = 'All';
-                  setState(() {});
-
-                  Get.defaultDialog(
-                    title: "",
-                    barrierDismissible: true,
-                    titlePadding: EdgeInsets.zero,
-                    backgroundColor: Colors.black,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: width * 0.02,
-                      vertical: height * 0.02,
-                    ),
-                    content: Column(
-                      children: [
-                        Text(
-                          'You delete email $email successfully.',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(
-                          height: height * 0.02,
-                        )
-                      ],
-                    ),
-                    actions: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Get.back();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(
-                                MediaQuery.of(context).size.width * 0.3,
-                                MediaQuery.of(context).size.height * 0.05,
-                              ),
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Ok',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                } else {
-                  Get.back();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width * 0.3,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Confirm',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
+                ],
+              );
+            } else {
+              Get.back();
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
             ),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width * 0.3,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Colors.grey,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
+            backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            elevation: 1,
+          ),
+          child: Text(
+            'Confirm',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Get.back();
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
+            ),
+            backgroundColor: const Color.fromARGB(255, 239, 96, 86),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+          ),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Colors.white,
+            ),
+          ),
         ),
       ],
     );
@@ -1555,156 +1589,191 @@ class _UserPageState extends State<UserPage> {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    //horizontal left right
-    double width = MediaQuery.of(context).size.width;
-    //vertical tob bottom
-    double height = MediaQuery.of(context).size.height;
-
     Get.defaultDialog(
       title: "",
-      barrierDismissible: true,
       titlePadding: EdgeInsets.zero,
       backgroundColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(
-        horizontal: width * 0.02,
-        vertical: height * 0.02,
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.02,
       ),
       content: Column(
         children: [
+          Image.asset(
+            "assets/images/aleart/question.png",
+            height: MediaQuery.of(context).size.height * 0.1,
+            fit: BoxFit.contain,
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
           Text(
-            'You confirm to ${isActive == '1' ? 'disable' : 'undisable'} this user email\n$email.',
+            isActive == '1' ? 'Disable?' : 'Undisable?',
+            style: TextStyle(
+              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontWeight: FontWeight.w500,
+              color: Colors.red,
+            ),
+          ),
+          Text(
+            'You confirm to ${isActive == '1' ? 'disable' : 'undisable'} this user email',
             style: TextStyle(
               fontSize: Get.textTheme.titleMedium!.fontSize,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(
-            height: height * 0.02,
-          )
+          Text(
+            email,
+            style: TextStyle(
+              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
       actions: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                // แสดง Loading Dialog
-                loadingDialog();
-                var responseLogot = await http.put(
-                  Uri.parse("$url/admin/api/edit_active"),
-                  headers: {"Content-Type": "application/json; charset=utf-8"},
-                  body: editActiveUserPutRequestToJson(
-                    EditActiveUserPutRequest(
-                      email: email,
+        ElevatedButton(
+          onPressed: () async {
+            // แสดง Loading Dialog
+            loadingDialog();
+            var responseLogot = await http.put(
+              Uri.parse("$url/admin/api/edit_active"),
+              headers: {"Content-Type": "application/json; charset=utf-8"},
+              body: editActiveUserPutRequestToJson(
+                EditActiveUserPutRequest(
+                  email: email,
+                ),
+              ),
+            );
+            if (responseLogot.statusCode == 200) {
+              Get.back();
+              Get.back();
+              loadDataAsync();
+              selectedRole = 'All';
+              setState(() {});
+
+              Get.defaultDialog(
+                title: "",
+                titlePadding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
+                content: Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/success.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                    Text(
+                      'Successfully!!',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Color.fromRGBO(0, 122, 255, 1),
+                      ),
+                    ),
+                    Text(
+                      'You ${isActive == '1' ? 'disable' : 'undisable'} email',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      'successfully',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(
+                        MediaQuery.of(context).size.width,
+                        MediaQuery.of(context).size.height * 0.05,
+                      ),
+                      backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 1,
+                    ),
+                    child: Text(
+                      'Ok',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                );
-                if (responseLogot.statusCode == 200) {
-                  Get.back();
-                  Get.back();
-                  loadDataAsync();
-                  selectedRole = 'All';
-                  setState(() {});
-
-                  Get.defaultDialog(
-                    title: "",
-                    barrierDismissible: true,
-                    titlePadding: EdgeInsets.zero,
-                    backgroundColor: Colors.black,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: width * 0.02,
-                      vertical: height * 0.02,
-                    ),
-                    content: Column(
-                      children: [
-                        Text(
-                          'You ${isActive == '1' ? 'disable' : 'undisable'} email $email successfully.',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(
-                          height: height * 0.02,
-                        )
-                      ],
-                    ),
-                    actions: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Get.back();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(
-                                MediaQuery.of(context).size.width * 0.3,
-                                MediaQuery.of(context).size.height * 0.05,
-                              ),
-                              backgroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Ok',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width * 0.3,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: isActive == '1' ? Colors.black : Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Confirm',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
+                ],
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
             ),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width * 0.3,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Colors.grey,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
+            backgroundColor:
+                isActive == '1' ? Color.fromRGBO(0, 122, 255, 1) : Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            elevation: 1,
+          ),
+          child: Text(
+            'Confirm',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Get.back();
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
+            ),
+            backgroundColor: const Color.fromARGB(255, 239, 96, 86),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+          ),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Colors.white,
+            ),
+          ),
         ),
       ],
     );
@@ -2024,59 +2093,63 @@ class _UserPageState extends State<UserPage> {
         loadDataAsync();
         setState(() {});
 
-        double width = MediaQuery.of(context).size.width;
-        double height = MediaQuery.of(context).size.height;
         Get.defaultDialog(
           title: "",
-          barrierDismissible: true,
           titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.black,
+          backgroundColor: Colors.white,
           contentPadding: EdgeInsets.symmetric(
-            horizontal: width * 0.02,
-            vertical: height * 0.02,
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
           ),
           content: Column(
             children: [
+              Image.asset(
+                "assets/images/aleart/success.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
               Text(
-                'Create account successfully.',
+                'Successfully!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color.fromRGBO(0, 122, 255, 1),
+                ),
+              ),
+              Text(
+                'Create account successfully',
                 style: TextStyle(
                   fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(
-                height: height * 0.02,
-              )
             ],
           ),
           actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(
-                      MediaQuery.of(context).size.width * 0.3,
-                      MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Ok',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.white,
-                    ),
-                  ),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
                 ),
-              ],
+                backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Ok',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         );

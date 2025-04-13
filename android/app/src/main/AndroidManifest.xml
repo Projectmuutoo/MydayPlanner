@@ -1,13 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="demomydayplanner"
+        android:label="Mydayplanner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
         >
-        <meta-data
-        android:name="com.google.android.gms.recaptcha.api_key"
-        android:value="6Lf2E7kqAAAAAJePsWz4AmOKvx4UuPHIdTmmgLwQ" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

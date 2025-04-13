@@ -1,7 +1,7 @@
-import 'package:demomydayplanner/pages/pageAdmin/adminHome.dart';
-import 'package:demomydayplanner/pages/pageAdmin/report.dart';
-import 'package:demomydayplanner/pages/pageAdmin/user.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/pages/pageAdmin/adminHome.dart';
+import 'package:mydayplanner/pages/pageAdmin/report.dart';
+import 'package:mydayplanner/pages/pageAdmin/user.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';

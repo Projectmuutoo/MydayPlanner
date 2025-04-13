@@ -1,3 +1,3 @@
-# demomydayplanner
+# mydayplanner
 
 A new Flutter project.

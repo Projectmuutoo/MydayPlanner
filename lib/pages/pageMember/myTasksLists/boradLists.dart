@@ -1,7 +1,7 @@
 import 'dart:developer';
 
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/shared/appData.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';

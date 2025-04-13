@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -54,9 +51,20 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCzyP8oUyoXWAws_xVg-NAcBRM6jySa0Nc',
-    appId: '1:773568755866:android:2d9a6c41d0ad844a828723',
+    appId: '1:773568755866:android:00397cf859e18d6c828723',
     messagingSenderId: '773568755866',
     projectId: 'mydayplanner-a6270',
     storageBucket: 'mydayplanner-a6270.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyAE3glIo46ku_YXzH75LyhqpN1yNHF2bO4',
+    appId: '1:773568755866:ios:81d27d8a65d76026828723',
+    messagingSenderId: '773568755866',
+    projectId: 'mydayplanner-a6270',
+    storageBucket: 'mydayplanner-a6270.firebasestorage.app',
+    androidClientId: '773568755866-e4t9lp0g4blt2qplifr8bnlftti19rnb.apps.googleusercontent.com',
+    iosClientId: '773568755866-kb3m2p7skb2k9ecj6475egrrp628bn0u.apps.googleusercontent.com',
+    iosBundleId: 'com.example.demomydayplanner',
   );
 }

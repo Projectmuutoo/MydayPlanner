@@ -1,12 +1,12 @@
 import 'dart:developer';
 
-import 'package:demomydayplanner/config/config.dart';
-import 'package:demomydayplanner/models/request/getUserByEmailPostRequest.dart';
-import 'package:demomydayplanner/models/request/resetPasswordPutRequest.dart';
-import 'package:demomydayplanner/models/request/sendOTPPostRequest.dart';
-import 'package:demomydayplanner/models/response/getUserByEmailPostResponst.dart';
-import 'package:demomydayplanner/models/response/sendOTPPostResponst.dart';
-import 'package:demomydayplanner/pages/login.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
+import 'package:mydayplanner/models/request/resetPasswordPutRequest.dart';
+import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
+import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
+import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
+import 'package:mydayplanner/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -47,7 +47,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: width * 0.05,
-              vertical: height * 0.03,
+              vertical: height * 0.05,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.max,

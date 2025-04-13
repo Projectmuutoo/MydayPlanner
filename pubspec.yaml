@@ -1,4 +1,4 @@
-name: demomydayplanner
+name: mydayplanner
 description: "A new Flutter project."
 publish_to: 'none'
 version: 0.1.0
@@ -19,7 +19,7 @@ dependencies:
   cloud_firestore: ^5.5.1
   firebase_storage: ^12.3.7
   image_picker: ^1.1.2
-  file_picker: ^8.1.4
+  file_picker: ^10.0.0
   webview_flutter: ^4.10.0
   firebase_auth: ^5.3.4
   google_sign_in: ^6.2.2
@@ -29,9 +29,10 @@ dependencies:
   flutter_rounded_date_picker: ^3.0.4
   intl: ^0.19.0
   shimmer: ^3.0.0
-  recaptcha_enterprise_flutter: ^18.6.1
+  recaptcha_enterprise_flutter: ^18.7.0
   firebase_app_check: ^0.3.2+4
   flutter_dotenv: ^5.0.2
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +43,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/aleart/
     - assets/config/
     - .env
   fonts:
@@ -57,3 +59,10 @@ flutter:
         - asset: assets/fonts/Mali-Bold.ttf
         - asset: assets/fonts/Mali-Medium.ttf
         - asset: assets/fonts/Mali-Regular.ttf
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/LogoApp.png"
+  adaptive_icon_background: "#ffffff" # (เฉพาะ Android) สีพื้นหลัง Adaptive Icon
+  adaptive_icon_foreground: "assets/images/LogoApp.png" # (เฉพาะ Android)
