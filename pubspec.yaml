@@ -33,6 +33,7 @@ dependencies:
   firebase_app_check: ^0.3.2+4
   flutter_dotenv: ^5.0.2
   flutter_launcher_icons: ^0.14.3
+  marquee: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +46,7 @@ flutter:
     - assets/images/
     - assets/images/aleart/
     - assets/config/
+    - assets/text/
     - .env
   fonts:
     - family: baloo

@@ -77,138 +77,78 @@ class _LoginPageState extends State<LoginPage> {
           },
           child: Scaffold(
             appBar: null,
-            body: Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: width * 0.05,
-                    vertical: height * 0.05,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              Image.asset(
-                                "assets/images/LogoApp.png",
-                                height: height * 0.07,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
-                          ),
-                          Stack(
-                            alignment: Alignment.bottomCenter,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: height * 0.02,
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width * 0.05,
+                      vertical: height * 0.05,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          children: [
+                            Row(
+                              children: [
+                                Image.asset(
+                                  "assets/images/LogoApp.png",
+                                  height: height * 0.07,
+                                  fit: BoxFit.contain,
                                 ),
-                                child: Row(
+                              ],
+                            ),
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: height * 0.02,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Welcome!',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.displaySmall!.fontSize,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
                                   children: [
                                     Text(
-                                      'Welcome!',
+                                      'Please Sign in to continue.',
                                       style: TextStyle(
-                                        fontSize: Get
-                                            .textTheme.displaySmall!.fontSize,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize:
+                                            Get.textTheme.titleLarge!.fontSize,
+                                        fontWeight: FontWeight.normal,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Please Sign in to continue.',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                          Image.asset(
-                            "assets/images/ImageShow.png",
-                            height: height * 0.2,
-                            fit: BoxFit.contain,
-                          ),
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                          Row(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
-                                child: Text(
-                                  'Email',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          TextField(
-                            controller: emailCtl,
-                            focusNode: emailFocusNode,
-                            keyboardType: TextInputType.emailAddress,
-                            cursorColor: Colors.black,
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              ],
                             ),
-                            decoration: InputDecoration(
-                              hintText:
-                                  isTyping ? '' : 'Enter your email address…',
-                              hintStyle: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.grey,
-                              ),
-                              prefixIcon: IconButton(
-                                onPressed: null,
-                                icon: SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              constraints: BoxConstraints(
-                                maxHeight: height * 0.05,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: width * 0.02,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  width: 0.5,
-                                ),
-                              ),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: height * 0.02,
                             ),
-                          ),
-                          if (isCheckedEmail)
+                            Image.asset(
+                              "assets/images/ImageShow.png",
+                              height: height * 0.2,
+                              fit: BoxFit.contain,
+                            ),
+                            SizedBox(
+                              height: height * 0.02,
+                            ),
                             Row(
                               children: [
                                 Padding(
@@ -216,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                                     left: width * 0.03,
                                   ),
                                   child: Text(
-                                    'Password',
+                                    'Email',
                                     style: TextStyle(
                                       fontSize:
                                           Get.textTheme.titleMedium!.fontSize,
@@ -226,18 +166,17 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ],
                             ),
-                          if (isCheckedEmail)
                             TextField(
-                              controller: passwordCtl,
-                              focusNode: passwordFocusNode,
-                              keyboardType: TextInputType.visiblePassword,
-                              obscureText: !isCheckedPassword,
+                              controller: emailCtl,
+                              focusNode: emailFocusNode,
+                              keyboardType: TextInputType.emailAddress,
                               cursorColor: Colors.black,
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleMedium!.fontSize,
                               ),
                               decoration: InputDecoration(
-                                hintText: isTyping ? '' : 'Enter your password',
+                                hintText:
+                                    isTyping ? '' : 'Enter your email address…',
                                 hintStyle: TextStyle(
                                   fontSize: Get.textTheme.titleMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
@@ -246,19 +185,7 @@ class _LoginPageState extends State<LoginPage> {
                                 prefixIcon: IconButton(
                                   onPressed: null,
                                   icon: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                suffixIcon: IconButton(
-                                  onPressed: () {
-                                    isCheckedPassword = !isCheckedPassword;
-                                    setState(() {});
-                                  },
-                                  icon: Icon(
-                                    isCheckedPassword
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
                                     color: Colors.grey,
                                   ),
                                 ),
@@ -282,132 +209,209 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-                          if (isCheckedEmail)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                InkWell(
-                                  onTap: forgotPassword,
-                                  child: Text(
-                                    'Forgot password?',
+                            if (isCheckedEmail)
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: width * 0.03,
+                                    ),
+                                    child: Text(
+                                      'Password',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleMedium!.fontSize,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (isCheckedEmail)
+                              TextField(
+                                controller: passwordCtl,
+                                focusNode: passwordFocusNode,
+                                keyboardType: TextInputType.visiblePassword,
+                                obscureText: !isCheckedPassword,
+                                cursorColor: Colors.black,
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText:
+                                      isTyping ? '' : 'Enter your password',
+                                  hintStyle: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.grey,
+                                  ),
+                                  prefixIcon: IconButton(
+                                    onPressed: null,
+                                    icon: SvgPicture.string(
+                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  suffixIcon: IconButton(
+                                    onPressed: () {
+                                      isCheckedPassword = !isCheckedPassword;
+                                      setState(() {});
+                                    },
+                                    icon: Icon(
+                                      isCheckedPassword
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  constraints: BoxConstraints(
+                                    maxHeight: height * 0.05,
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.02,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (isCheckedEmail)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  InkWell(
+                                    onTap: forgotPassword,
+                                    child: Text(
+                                      'Forgot password?',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleMedium!.fontSize,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            SizedBox(
+                              height: height * 0.01,
+                            ),
+                            ElevatedButton(
+                              onPressed: login,
+                              style: ElevatedButton.styleFrom(
+                                fixedSize: Size(
+                                  width,
+                                  height * 0.04,
+                                ),
+                                backgroundColor: Color(0xFF007AFF),
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                !isCheckedEmail ? 'Continue' : 'Sign in',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                            if (textNotification.isNotEmpty)
+                              SizedBox(
+                                height: height * 0.01,
+                              ),
+                            if (textNotification.isNotEmpty)
+                              Text(
+                                textNotification,
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            SizedBox(
+                              height: height * 0.02,
+                            ),
+                            Text(
+                              '- or -',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            SizedBox(
+                              height: height * 0.01,
+                            ),
+                            ElevatedButton(
+                              onPressed: signInWithGoogle,
+                              style: ElevatedButton.styleFrom(
+                                fixedSize: Size(
+                                  width,
+                                  height * 0.05,
+                                ),
+                                backgroundColor: Colors.white,
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/LogoGoogle.png',
+                                    height: height * 0.08,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  Text(
+                                    'Continue with Google',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
+                                          Get.textTheme.titleLarge!.fontSize,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          SizedBox(
-                            height: height * 0.01,
-                          ),
-                          ElevatedButton(
-                            onPressed: login,
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(
-                                width,
-                                height * 0.04,
-                              ),
-                              backgroundColor: Color(0xFF007AFF),
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                ],
                               ),
                             ),
-                            child: Text(
-                              !isCheckedEmail ? 'Continue' : 'Sign in',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                          if (textNotification.isNotEmpty)
                             SizedBox(
                               height: height * 0.01,
                             ),
-                          if (textNotification.isNotEmpty)
                             Text(
-                              textNotification,
+                              'Don’t have an account?',
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
-                                color: Colors.red,
+                                color: Colors.grey,
                               ),
                             ),
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                          Text(
-                            '- or -',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          SizedBox(
-                            height: height * 0.01,
-                          ),
-                          ElevatedButton(
-                            onPressed: signInWithGoogle,
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(
-                                width,
-                                height * 0.05,
-                              ),
-                              backgroundColor: Colors.white,
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/images/LogoGoogle.png',
-                                  height: height * 0.08,
-                                  fit: BoxFit.contain,
+                            InkWell(
+                              onTap: goToRegisterPage,
+                              child: Text(
+                                'Create yours now.',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
                                 ),
-                                Text(
-                                  'Continue with Google',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: height * 0.01,
-                          ),
-                          Text(
-                            'Don’t have an account?',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          InkWell(
-                            onTap: goToRegisterPage,
-                            child: Text(
-                              'Create yours now.',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.black,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -440,7 +444,6 @@ class _LoginPageState extends State<LoginPage> {
     loadingDialog();
 
     GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
     // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
     if (googleUser == null) {
       Get.back();

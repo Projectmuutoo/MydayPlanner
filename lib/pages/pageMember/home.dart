@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
+import 'package:flutter/services.dart';
+import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/createBoardListsPostRequest.dart';
 import 'package:mydayplanner/models/request/getBoardByIdUserPostRequest.dart';
@@ -27,38 +30,65 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<void> loadData;
-  var box = GetStorage();
+  // 🔐 User Info
   String name = '';
   int userId = 0;
   String userProfile = '';
+
+// 📦 Storage
+  var box = GetStorage();
+
+// 📥 Controller
   TextEditingController boardCtl = TextEditingController();
   TextEditingController searchCtl = TextEditingController();
-  List<GetBoardByIdUserListsPostResponse> boardsLists = [];
-  List<GetBoardByIdUserGroupsPostResponse> boardsGroup = [];
-  late List boards = [];
+
+// 🧠 Focus Nodes
+  FocusNode searchFocusNode = FocusNode();
+  FocusNode boardFocusNode = FocusNode();
+
+// 📊 UI State / Display Options
   bool displayFormat = false;
-  GlobalKey listKey = GlobalKey();
-  GlobalKey groupKey = GlobalKey();
-  GlobalKey priorityKey = GlobalKey();
-  double slider = 0;
-  FontWeight listsFontWeight = FontWeight.w600;
-  FontWeight groupFontWeight = FontWeight.w500;
-  FontWeight priorityFontWeight = FontWeight.w500;
   bool isTyping = false;
-  int itemCount = 1;
   bool isLoadings = true;
   bool showShimmer = true;
   bool hideSearchMyBoards = false;
-  FocusNode searchFocusNode = FocusNode();
-  FocusNode boardFocusNode = FocusNode();
+  double slider = 0;
+
+// 🔤 Font Weights
+  FontWeight listsFontWeight = FontWeight.w600;
+  FontWeight groupFontWeight = FontWeight.w500;
+  FontWeight priorityFontWeight = FontWeight.w500;
+
+// 📋 Global Keys
+  GlobalKey listKey = GlobalKey();
+  GlobalKey groupKey = GlobalKey();
+  GlobalKey priorityKey = GlobalKey();
+
+// 📚 Data
+  late Future<void> loadData;
+  List<GetBoardByIdUserListsPostResponse> boardsLists = [];
+  List<GetBoardByIdUserGroupsPostResponse> boardsGroup = [];
+  late List boards = [];
+
+// 🎯 Utility
+  int itemCount = 1;
+  List<String> messagesRandom = [];
+  int currentIndexMessagesRandom = 0;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
 
     showDisplays();
+    loadMessages();
     loadData = loadDataAsync();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> loadDataAsync() async {
@@ -165,7 +195,7 @@ class _HomePageState extends State<HomePage> {
             },
             child: Scaffold(
               appBar: null,
-              body: Center(
+              body: SafeArea(
                 child: RefreshIndicator(
                   color: Colors.grey,
                   onRefresh: loadDataAsync,
@@ -173,7 +203,6 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.only(
                       right: width * 0.05,
                       left: width * 0.05,
-                      top: height * 0.05,
                     ),
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -267,36 +296,105 @@ class _HomePageState extends State<HomePage> {
                                                         Color(0xFFF7F7F7),
                                                     highlightColor:
                                                         Colors.grey[300]!,
-                                                    child: Container(
-                                                      width:
-                                                          _calculateTextWidth(
-                                                              'Hello, $name',
-                                                              Get
+                                                    child: name.length >= 21
+                                                        ? SizedBox(
+                                                            width: width * 0.4,
+                                                            child: Container(
+                                                              width: _calculateTextWidth(
+                                                                  'Hello, $name',
+                                                                  Get
+                                                                      .textTheme
+                                                                      .titleSmall!
+                                                                      .fontSize!),
+                                                              height: Get
                                                                   .textTheme
                                                                   .titleSmall!
-                                                                  .fontSize!),
-                                                      height: Get.textTheme
-                                                          .titleSmall!.fontSize,
-                                                      color: Colors.white,
-                                                    ),
+                                                                  .fontSize,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          )
+                                                        : Container(
+                                                            width: _calculateTextWidth(
+                                                                'Hello, $name',
+                                                                Get
+                                                                    .textTheme
+                                                                    .titleSmall!
+                                                                    .fontSize!),
+                                                            height: Get
+                                                                .textTheme
+                                                                .titleSmall!
+                                                                .fontSize,
+                                                            color: Colors.white,
+                                                          ),
+                                                  )
+                                                : SizedBox(
+                                                    height: height * 0.02,
+                                                    width: width * 0.4,
+                                                    child: name.length >= 21
+                                                        ? Marquee(
+                                                            text:
+                                                                'Hello, $name',
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .titleSmall!
+                                                                  .fontSize,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                            scrollAxis:
+                                                                Axis.horizontal,
+                                                            blankSpace: 20.0,
+                                                            velocity: 30.0,
+                                                            pauseAfterRound:
+                                                                Duration(
+                                                                    seconds: 1),
+                                                            startPadding: 0,
+                                                            accelerationDuration:
+                                                                Duration(
+                                                                    seconds: 1),
+                                                            accelerationCurve:
+                                                                Curves.linear,
+                                                            decelerationDuration:
+                                                                Duration(
+                                                                    milliseconds:
+                                                                        500),
+                                                            decelerationCurve:
+                                                                Curves.easeOut,
+                                                          )
+                                                        : Text(
+                                                            'Hello, $name',
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .titleSmall!
+                                                                  .fontSize,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                  ),
+                                            isLoadings || showShimmer
+                                                ? Shimmer.fromColors(
+                                                    baseColor:
+                                                        Color(0xFFF7F7F7),
+                                                    highlightColor:
+                                                        Colors.grey[300]!,
+                                                    child: SizedBox.shrink(),
                                                   )
                                                 : Text(
-                                                    'Hello, $name',
+                                                    messagesRandom[
+                                                        currentIndexMessagesRandom],
                                                     style: TextStyle(
                                                       fontSize: Get.textTheme
                                                           .titleSmall!.fontSize,
                                                       fontWeight:
-                                                          FontWeight.w500,
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
-                                            Text(
-                                              'you can do it!',
-                                              style: TextStyle(
-                                                fontSize: Get.textTheme
-                                                    .titleSmall!.fontSize,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
                                           ],
                                         ),
                                       ],
@@ -1030,6 +1128,28 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  Future<void> loadMessages() async {
+    final String jsonString =
+        await rootBundle.loadString('assets/text/text.json');
+    final List<dynamic> jsonData = json.decode(jsonString);
+
+    setState(() {
+      messagesRandom = jsonData.cast<String>();
+    });
+
+    // เริ่ม Timer หลังโหลดข้อความเสร็จ
+    startMessageRotation();
+  }
+
+  void startMessageRotation() {
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      setState(() {
+        currentIndexMessagesRandom =
+            (currentIndexMessagesRandom + 1) % messagesRandom.length;
+      });
+    });
   }
 
   void searchMyBoards() {

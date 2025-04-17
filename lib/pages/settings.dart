@@ -137,11 +137,10 @@ class _SettingsPageState extends State<SettingsPage> {
         }
         return Scaffold(
           appBar: null,
-          body: Center(
+          body: SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: width * 0.05,
-                vertical: height * 0.05,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

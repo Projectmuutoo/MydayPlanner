@@ -270,620 +270,629 @@ class _RegisterPageState extends State<RegisterPage> {
       },
       child: Scaffold(
         appBar: null,
-        body: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: width * 0.05,
-                vertical: height * 0.05,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          InkWell(
-                            onTap: backToLoginPage,
-                            child: Row(
-                              children: [
-                                SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                  color: const Color.fromRGBO(0, 0, 0, 0.6),
-                                ),
-                                Text(
-                                  'back',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: FontWeight.normal,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: width * 0.05,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: backToLoginPage,
+                              child: Row(
+                                children: [
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
                                     color: const Color.fromRGBO(0, 0, 0, 0.6),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Image.asset(
-                            "assets/images/LogoApp.png",
-                            height: height * 0.07,
-                            fit: BoxFit.contain,
-                          ),
-                        ],
-                      ),
-                      Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: height * 0.02,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Register',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.displaySmall!.fontSize,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'Please register to login.',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: height * 0.02,
-                  ),
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.03,
-                            ),
-                            child: Text(
-                              'Name',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextField(
-                        controller: nameController,
-                        focusNode: nameFocusNode,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(20),
-                        ],
-                        keyboardType: TextInputType.text,
-                        cursorColor: Colors.black,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                        ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          hintText: isTyping ? '' : 'Enter your name',
-                          hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                            color: colorAlearName,
-                          ),
-                          prefixIcon: IconButton(
-                            onPressed: null,
-                            icon: SvgPicture.string(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          constraints: BoxConstraints(
-                            maxHeight: height * 0.05,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearName == Colors.red ? 1 : 0.5,
-                              color: colorAlearName,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearName == Colors.red ? 1 : 0.5,
-                              color: colorAlearName,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (colorAlearName == Colors.red)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                alearName,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: colorAlearName,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.03,
-                            ),
-                            child: Text(
-                              'Email',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextField(
-                        controller: emailController,
-                        focusNode: emailFocusNode,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(150),
-                        ],
-                        keyboardType: TextInputType.emailAddress,
-                        cursorColor: Colors.black,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: isTyping ? '' : 'Enter your email address',
-                          hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                            color: colorAlearEmail,
-                          ),
-                          prefixIcon: IconButton(
-                            onPressed: null,
-                            icon: SvgPicture.string(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          suffixIcon: alearIconEmail.isNotEmpty
-                              ? IconButton(
-                                  onPressed: null,
-                                  icon: SvgPicture.string(
-                                    alearIconEmail,
-                                    color: colorAlearEmail == Colors.red
-                                        ? Colors.red
-                                        : Colors.green,
-                                  ),
-                                )
-                              : null,
-                          constraints: BoxConstraints(
-                            maxHeight: height * 0.05,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearEmail == Colors.red ? 1 : 0.5,
-                              color: colorAlearEmail,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearEmail == Colors.red ? 1 : 0.5,
-                              color: colorAlearEmail,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (colorAlearEmail == Colors.red)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                alearEmail,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: colorAlearEmail,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.03,
-                            ),
-                            child: Text(
-                              'Password',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextField(
-                        controller: passwordController,
-                        focusNode: passwordFocusNode,
-                        keyboardType: TextInputType.visiblePassword,
-                        obscureText: !isCheckedPassword,
-                        cursorColor: Colors.black,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: isTyping ? '' : 'Enter your password',
-                          hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                            color: colorAlearPassword,
-                          ),
-                          prefixIcon: IconButton(
-                            onPressed: null,
-                            icon: SvgPicture.string(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              isCheckedPassword = !isCheckedPassword;
-                              setState(() {});
-                            },
-                            icon: Icon(
-                              isCheckedPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          constraints: BoxConstraints(
-                            maxHeight: height * 0.05,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearPassword == Colors.red ? 1 : 0.5,
-                              color: colorAlearPassword,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearPassword == Colors.red ? 1 : 0.5,
-                              color: colorAlearPassword,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (colorAlearPassword == Colors.red)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                alearPassword,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: colorAlearPassword,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: width * 0.03,
-                            ),
-                            child: Text(
-                              'Confirm password',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      TextField(
-                        controller: confirmPasswordController,
-                        focusNode: confirmPasswordFocusNode,
-                        keyboardType: TextInputType.visiblePassword,
-                        obscureText: !isCheckedConfirmPassword,
-                        cursorColor: Colors.black,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                        ),
-                        decoration: InputDecoration(
-                          hintText:
-                              isTyping ? '' : 'Enter your confirm password',
-                          hintStyle: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                            color: colorAlearConfirmPassword,
-                          ),
-                          prefixIcon: IconButton(
-                            onPressed: null,
-                            icon: SvgPicture.string(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              isCheckedConfirmPassword =
-                                  !isCheckedConfirmPassword;
-                              setState(() {});
-                            },
-                            icon: Icon(
-                              isCheckedConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: const Color(0xff7B7B7B),
-                            ),
-                          ),
-                          constraints: BoxConstraints(
-                            maxHeight: height * 0.05,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: width * 0.02,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearConfirmPassword == Colors.red
-                                  ? 1
-                                  : 0.5,
-                              color: colorAlearConfirmPassword,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              width: colorAlearConfirmPassword == Colors.red
-                                  ? 1
-                                  : 0.5,
-                              color: colorAlearConfirmPassword,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (colorAlearConfirmPassword == Colors.red)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: width * 0.03,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                alearConfirmPassword,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: colorAlearConfirmPassword,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      SizedBox(
-                        height: height * 0.02,
-                      ),
-                      // แสดงสถานะ CAPTCHA
-                      !iamHuman
-                          ? Container(
-                              padding: EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isCaptchaVerified
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.grey.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isCaptchaVerified
-                                      ? Colors.green
-                                      : Colors.grey,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  isCaptchaVerified
-                                      ? Icon(
-                                          Icons.check_circle,
-                                          color: Colors.green,
-                                          size: 18,
-                                        )
-                                      : SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                  SizedBox(width: 12),
-                                  Flexible(
-                                    child: Text(
-                                      isCaptchaVerified
-                                          ? "Verification Complete"
-                                          : "Verification Required",
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.bodyMedium!.fontSize,
-                                        color: isCaptchaVerified
-                                            ? Colors.green
-                                            : Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  Text(
+                                    'back',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleLarge!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                      color: const Color.fromRGBO(0, 0, 0, 0.6),
                                     ),
                                   ),
                                 ],
                               ),
-                            )
-                          : InkWell(
-                              onTap: () {
-                                setState(() {
-                                  isCaptchaVerified = true;
-                                  iamHuman = false;
-                                  coloralearRecaptcha = Colors.green;
-                                  alearRecaptcha = '';
-                                });
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Image.asset(
+                              "assets/images/LogoApp.png",
+                              height: height * 0.07,
+                              fit: BoxFit.contain,
+                            ),
+                          ],
+                        ),
+                        Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom: height * 0.02,
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.displaySmall!.fontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  'Please register to login.',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleLarge!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: height * 0.02,
+                    ),
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                              ),
+                              child: Text(
+                                'Name',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextField(
+                          controller: nameController,
+                          focusNode: nameFocusNode,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(20),
+                          ],
+                          keyboardType: TextInputType.text,
+                          cursorColor: Colors.black,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            counterText: '',
+                            hintText: isTyping ? '' : 'Enter your name',
+                            hintStyle: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: colorAlearName,
+                            ),
+                            prefixIcon: IconButton(
+                              onPressed: null,
+                              icon: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            constraints: BoxConstraints(
+                              maxHeight: height * 0.05,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearName == Colors.red ? 1 : 0.5,
+                                color: colorAlearName,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearName == Colors.red ? 1 : 0.5,
+                                color: colorAlearName,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (colorAlearName == Colors.red)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  alearName,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: colorAlearName,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                              ),
+                              child: Text(
+                                'Email',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextField(
+                          controller: emailController,
+                          focusNode: emailFocusNode,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(150),
+                          ],
+                          keyboardType: TextInputType.emailAddress,
+                          cursorColor: Colors.black,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                isTyping ? '' : 'Enter your email address',
+                            hintStyle: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: colorAlearEmail,
+                            ),
+                            prefixIcon: IconButton(
+                              onPressed: null,
+                              icon: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            suffixIcon: alearIconEmail.isNotEmpty
+                                ? IconButton(
+                                    onPressed: null,
+                                    icon: SvgPicture.string(
+                                      alearIconEmail,
+                                      color: colorAlearEmail == Colors.red
+                                          ? Colors.red
+                                          : Colors.green,
+                                    ),
+                                  )
+                                : null,
+                            constraints: BoxConstraints(
+                              maxHeight: height * 0.05,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearEmail == Colors.red ? 1 : 0.5,
+                                color: colorAlearEmail,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearEmail == Colors.red ? 1 : 0.5,
+                                color: colorAlearEmail,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (colorAlearEmail == Colors.red)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  alearEmail,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: colorAlearEmail,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                              ),
+                              child: Text(
+                                'Password',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextField(
+                          controller: passwordController,
+                          focusNode: passwordFocusNode,
+                          keyboardType: TextInputType.visiblePassword,
+                          obscureText: !isCheckedPassword,
+                          cursorColor: Colors.black,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: isTyping ? '' : 'Enter your password',
+                            hintStyle: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: colorAlearPassword,
+                            ),
+                            prefixIcon: IconButton(
+                              onPressed: null,
+                              icon: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                isCheckedPassword = !isCheckedPassword;
+                                setState(() {});
                               },
-                              child: Container(
+                              icon: Icon(
+                                isCheckedPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            constraints: BoxConstraints(
+                              maxHeight: height * 0.05,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width:
+                                    colorAlearPassword == Colors.red ? 1 : 0.5,
+                                color: colorAlearPassword,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width:
+                                    colorAlearPassword == Colors.red ? 1 : 0.5,
+                                color: colorAlearPassword,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (colorAlearPassword == Colors.red)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  alearPassword,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: colorAlearPassword,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                              ),
+                              child: Text(
+                                'Confirm password',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextField(
+                          controller: confirmPasswordController,
+                          focusNode: confirmPasswordFocusNode,
+                          keyboardType: TextInputType.visiblePassword,
+                          obscureText: !isCheckedConfirmPassword,
+                          cursorColor: Colors.black,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                isTyping ? '' : 'Enter your confirm password',
+                            hintStyle: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: colorAlearConfirmPassword,
+                            ),
+                            prefixIcon: IconButton(
+                              onPressed: null,
+                              icon: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                isCheckedConfirmPassword =
+                                    !isCheckedConfirmPassword;
+                                setState(() {});
+                              },
+                              icon: Icon(
+                                isCheckedConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: const Color(0xff7B7B7B),
+                              ),
+                            ),
+                            constraints: BoxConstraints(
+                              maxHeight: height * 0.05,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearConfirmPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
+                                color: colorAlearConfirmPassword,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                width: colorAlearConfirmPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
+                                color: colorAlearConfirmPassword,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (colorAlearConfirmPassword == Colors.red)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              left: width * 0.03,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  alearConfirmPassword,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: colorAlearConfirmPassword,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        // แสดงสถานะ CAPTCHA
+                        !iamHuman
+                            ? Container(
                                 padding: EdgeInsets.symmetric(
                                   vertical: 12,
                                   horizontal: 16,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.withOpacity(0.1),
+                                  color: isCaptchaVerified
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.grey.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: coloralearRecaptcha,
+                                    color: isCaptchaVerified
+                                        ? Colors.green
+                                        : Colors.grey,
                                     width: 1,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.string(
-                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12c.001 5.515 4.487 10.001 10 10.001 5.514 0 10-4.486 10.001-10.001 0-5.514-4.486-10-10.001-10zm0 18.001c-4.41 0-7.999-3.589-8-8.001 0-4.411 3.589-8 8-8 4.412 0 8.001 3.589 8.001 8-.001 4.412-3.59 8.001-8.001 8.001z"></path></svg>',
-                                          color: Colors.grey,
-                                        ),
-                                        SizedBox(width: 12),
-                                        Text(
-                                          "I am human",
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme.bodyMedium!.fontSize,
-                                            color: Colors.grey,
-                                            fontWeight: FontWeight.w500,
+                                    isCaptchaVerified
+                                        ? Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                            size: 18,
+                                          )
+                                        : SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.grey,
+                                            ),
                                           ),
+                                    SizedBox(width: 12),
+                                    Flexible(
+                                      child: Text(
+                                        isCaptchaVerified
+                                            ? "Verification Complete"
+                                            : "Verification Required",
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.bodyMedium!.fontSize,
+                                          color: isCaptchaVerified
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ],
                                 ),
+                              )
+                            : InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    isCaptchaVerified = true;
+                                    iamHuman = false;
+                                    coloralearRecaptcha = Colors.green;
+                                    alearRecaptcha = '';
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: coloralearRecaptcha,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12c.001 5.515 4.487 10.001 10 10.001 5.514 0 10-4.486 10.001-10.001 0-5.514-4.486-10-10.001-10zm0 18.001c-4.41 0-7.999-3.589-8-8.001 0-4.411 3.589-8 8-8 4.412 0 8.001 3.589 8.001 8-.001 4.412-3.59 8.001-8.001 8.001z"></path></svg>',
+                                            color: Colors.grey,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            "I am human",
+                                            style: TextStyle(
+                                              fontSize: Get.textTheme
+                                                  .bodyMedium!.fontSize,
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
+                        if (coloralearRecaptcha == Colors.red)
+                          SizedBox(
+                            height: height * 0.01,
+                          ),
+                        if (coloralearRecaptcha == Colors.red)
+                          Text(
+                            alearRecaptcha,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: coloralearRecaptcha,
                             ),
-                      if (coloralearRecaptcha == Colors.red)
+                          ),
                         SizedBox(
-                          height: height * 0.01,
+                          height: height * 0.02,
                         ),
-                      if (coloralearRecaptcha == Colors.red)
+                        ElevatedButton(
+                          onPressed: register,
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(
+                              width,
+                              height * 0.04,
+                            ),
+                            backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Sign up',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
                         Text(
-                          alearRecaptcha,
+                          'Already have an account?',
                           style: TextStyle(
                             fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: coloralearRecaptcha,
+                            color: const Color.fromRGBO(0, 0, 0, 0.6),
                           ),
                         ),
-                      SizedBox(
-                        height: height * 0.02,
-                      ),
-                      ElevatedButton(
-                        onPressed: register,
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size(
-                            width,
-                            height * 0.04,
-                          ),
-                          backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                        InkWell(
+                          onTap: goToLogin,
+                          child: Text(
+                            'Sign in.',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          'Sign up',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: height * 0.02,
-                      ),
-                      Text(
-                        'Already have an account?',
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize,
-                          fontWeight: FontWeight.normal,
-                          color: const Color.fromRGBO(0, 0, 0, 0.6),
-                        ),
-                      ),
-                      InkWell(
-                        onTap: goToLogin,
-                        child: Text(
-                          'Sign in.',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

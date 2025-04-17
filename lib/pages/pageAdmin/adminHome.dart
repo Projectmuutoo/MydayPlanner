@@ -35,44 +35,45 @@ class _AdminhomePageState extends State<AdminhomePage> {
       canPop: false,
       child: Scaffold(
         appBar: null,
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.05,
-              vertical: height * 0.03,
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Admin',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.displaySmall!.fontSize,
-                        fontWeight: FontWeight.w500,
-                        color: Color.fromRGBO(0, 122, 255, 1),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        logout(context);
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: width * 0.01,
-                          vertical: height * 0.01,
-                        ),
-                        child: SvgPicture.string(
-                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M16 13v-2H7V8l-5 4 5 4v-3z"></path><path d="M20 3h-9c-1.103 0-2 .897-2 2v4h2V5h9v14h-9v-4H9v4c0 1.103.897 2 2 2h9c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2z"></path></svg>',
-                          height: height * 0.03,
-                          fit: BoxFit.contain,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: width * 0.05,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Admin',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.displaySmall!.fontSize,
+                          fontWeight: FontWeight.w500,
+                          color: Color.fromRGBO(0, 122, 255, 1),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      InkWell(
+                        onTap: () {
+                          logout(context);
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.01,
+                            vertical: height * 0.01,
+                          ),
+                          child: SvgPicture.string(
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M16 13v-2H7V8l-5 4 5 4v-3z"></path><path d="M20 3h-9c-1.103 0-2 .897-2 2v4h2V5h9v14h-9v-4H9v4c0 1.103.897 2 2 2h9c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2z"></path></svg>',
+                            height: height * 0.03,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
