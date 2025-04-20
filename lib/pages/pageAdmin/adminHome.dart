@@ -1,9 +1,7 @@
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/logoutUserPostRequest.dart';
 import 'package:mydayplanner/models/response/logoutUserPostResponse.dart';
-import 'package:mydayplanner/pages/login.dart';
-import 'package:mydayplanner/pages/splash.dart';
-import 'package:mydayplanner/shared/appData.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 
 class AdminhomePage extends StatefulWidget {
   const AdminhomePage({super.key});
@@ -38,8 +35,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: width * 0.05,
+              padding: EdgeInsets.only(
+                right: width * 0.05,
+                left: width * 0.05,
+                top: height * 0.01,
               ),
               child: Column(
                 children: [

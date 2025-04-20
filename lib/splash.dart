@@ -1,7 +1,5 @@
-import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mydayplanner/pages/delayChange.dart';
+import 'package:mydayplanner/delayChange.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

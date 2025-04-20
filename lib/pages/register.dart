@@ -32,32 +32,35 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // Controller สำหรับเก็บค่า input
+  // ---------------------- 🎯 Controllers (TextEditing) ----------------------
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
 
+// ---------------------- 🎯 Controllers (FocusNode) ----------------------
   FocusNode nameFocusNode = FocusNode();
   FocusNode emailFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
   FocusNode confirmPasswordFocusNode = FocusNode();
 
+// ---------------------- 🕒 Timer ----------------------
   Timer? _debounce;
 
-  // สร้าง WebViewController
+// ---------------------- 🌐 WebView ----------------------
   late final WebViewController _controller;
 
-  final String siteKey = dotenv.env['RECAPTCHA_SITE_KEY'] ?? '';
-
+// ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
 
+// ---------------------- ✅ State Flags ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
   bool isCaptchaVerified = false;
   bool iamHuman = false;
 
+// ---------------------- 🔤 Strings (Validation / Alert Messages) ----------------------
   String alearIconEmail = '';
   String alearName = '';
   String alearEmail = '';
@@ -66,11 +69,15 @@ class _RegisterPageState extends State<RegisterPage> {
   String alearRecaptcha = '';
   String warning = '';
 
+// ---------------------- 🎨 Colors ----------------------
   Color colorAlearName = Colors.black;
   Color colorAlearEmail = Colors.black;
   Color colorAlearPassword = Colors.black;
   Color colorAlearConfirmPassword = Colors.black;
   Color coloralearRecaptcha = Colors.grey;
+
+// ---------------------- 🔐 Keys ----------------------
+  final String siteKey = dotenv.env['RECAPTCHA_SITE_KEY'] ?? '';
 
   @override
   void initState() {
@@ -274,8 +281,9 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: width * 0.05,
+                padding: EdgeInsets.only(
+                  right: width * 0.05,
+                  left: width * 0.05,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
@@ -287,22 +295,28 @@ class _RegisterPageState extends State<RegisterPage> {
                           children: [
                             InkWell(
                               onTap: backToLoginPage,
-                              child: Row(
-                                children: [
-                                  SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                    color: const Color.fromRGBO(0, 0, 0, 0.6),
-                                  ),
-                                  Text(
-                                    'back',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
-                                      fontWeight: FontWeight.normal,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.01,
+                                ),
+                                child: Row(
+                                  children: [
+                                    SvgPicture.string(
+                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
                                       color: const Color.fromRGBO(0, 0, 0, 0.6),
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      'back',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleLarge!.fontSize,
+                                        fontWeight: FontWeight.normal,
+                                        color:
+                                            const Color.fromRGBO(0, 0, 0, 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -880,12 +894,17 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         InkWell(
                           onTap: goToLogin,
-                          child: Text(
-                            'Sign in.',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.black,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: width * 0.02,
+                            ),
+                            child: Text(
+                              'Sign in.',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),

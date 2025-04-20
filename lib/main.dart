@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mydayplanner/pages/splash.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/firebase_options.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -20,7 +20,7 @@ void main() async {
     persistenceEnabled: true,
   );
   FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug, // สำหรับ debug
+    androidProvider: AndroidProvider.playIntegrity,
   );
   FirebaseAuth.instance.setLanguageCode("th");
   await dotenv.load(fileName: ".env");

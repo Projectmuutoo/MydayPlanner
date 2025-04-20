@@ -3,15 +3,19 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:bcrypt/bcrypt.dart';
+import 'package:flutter/services.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/deleteUserDeleteRequest.dart';
 import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
+import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
 import 'package:mydayplanner/models/request/logoutUserPostRequest.dart';
+import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
 import 'package:mydayplanner/models/response/logoutUserPostResponse.dart';
+import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
 import 'package:mydayplanner/pages/pageMember/navBar.dart';
-import 'package:mydayplanner/pages/splash.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,38 +38,55 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  // ---------------------- 🧠 Logic / Data ----------------------
   var box = GetStorage();
   late Future<void> loadData;
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  TextEditingController editNameCtl = TextEditingController();
-  TextEditingController editPasswordCtl = TextEditingController();
-  TextEditingController passwordVerifyCtl = TextEditingController();
-  TextEditingController passwordConfirmDeleteCtl = TextEditingController();
-  int lists = 400;
-  int group = 200;
-  int priority = 200;
+  final ImagePicker picker = ImagePicker();
+
+// ---------------------- 🧍‍♂️ User Info ----------------------
   String name = '';
   String userEmail = '';
   String userProfile = '';
   String userPassword = '';
+  String warning = '';
+
+// ---------------------- 🧮 State / Counter ----------------------
+  int lists = 400;
+  int group = 200;
+  int priority = 200;
   int itemCount = 1;
+
+// ---------------------- 🎛️ UI State ----------------------
   bool isLoadings = true;
   bool showShimmer = true;
   bool editInformation = false;
-  final ImagePicker picker = ImagePicker();
-  XFile? image;
-  File? savedFile;
   bool notitext = false;
-  bool isCheckedPasswordConfirmDelete = false;
   bool isTyping = false;
   bool isTypingPasswordVerify = false;
   bool isTypingPassword = false;
   bool isCheckedPassword = false;
   bool isCheckedPasswordVerify = false;
+  bool isCheckedPasswordConfirmDelete = false;
   bool isTogglePushNotification = false;
   bool isToggleEmailNotification = false;
+
+// ---------------------- 🎯 Controllers ----------------------
+  TextEditingController editNameCtl = TextEditingController();
+  TextEditingController editPasswordCtl = TextEditingController();
+  TextEditingController passwordVerifyCtl = TextEditingController();
+  TextEditingController passwordConfirmDeleteCtl = TextEditingController();
+
+// ---------------------- 👁️ Focus Nodes ----------------------
   FocusNode editNameFocusNode = FocusNode();
   FocusNode editPasswordFocusNode = FocusNode();
+
+// ---------------------- 🖼️ Image / File ----------------------
+  XFile? image;
+  File? savedFile;
+
+  // 📋 Global Keys
+  GlobalKey iconKey = GlobalKey();
 
   @override
   void initState() {
@@ -136,11 +157,13 @@ class _SettingsPageState extends State<SettingsPage> {
           });
         }
         return Scaffold(
-          appBar: null,
           body: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: width * 0.05,
+              padding: EdgeInsets.only(
+                right: width * 0.05,
+                left: width * 0.05,
+                top: height * 0.01,
+                bottom: height * 0.01,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -150,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          InkWell(
+                          GestureDetector(
                             onTap: () {
                               if (context.read<Appdata>().keepPage.keepPage) {
                                 BackPageSettingToHome keep =
@@ -181,9 +204,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(
-                            width: width * 0.05,
-                          ),
+                          SizedBox(width: width * 0.1),
                         ],
                       ),
                       Container(
@@ -783,7 +804,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    InkWell(
+                                    GestureDetector(
                                       onTap: () {
                                         Get.back();
                                         editNameCtl.removeListener(() {});
@@ -819,22 +840,27 @@ class _SettingsPageState extends State<SettingsPage> {
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    SizedBox(
-                                      width: width * 0.05,
-                                    ),
+                                    SizedBox(width: width * 0.1),
                                   ],
                                 ),
                                 SizedBox(
                                   height: height * 0.02,
                                 ),
                                 InkWell(
+                                  key: iconKey,
                                   onTap: () {
+                                    final RenderBox renderBox = iconKey
+                                        .currentContext!
+                                        .findRenderObject() as RenderBox;
+                                    final Offset offset =
+                                        renderBox.localToGlobal(Offset.zero);
+                                    final Size size = renderBox.size;
                                     showMenu(
                                       context: context,
                                       position: RelativeRect.fromLTRB(
-                                        1,
-                                        height * 0.22,
-                                        0,
+                                        offset.dx,
+                                        offset.dy + size.height,
+                                        width - offset.dx - size.width * 2.5,
                                         0,
                                       ),
                                       color: Colors.white,
@@ -1045,7 +1071,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ? InkWell(
                                         onTap: () {
                                           if (savedFile != null) {
-                                            confirmInformation();
+                                            confirmInformation(
+                                              '',
+                                              '',
+                                              'newUrl',
+                                            );
                                           }
                                         },
                                         child: SvgPicture.string(
@@ -1108,7 +1138,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                         isTyping
                                             ? InkWell(
                                                 onTap: () {
-                                                  confirmInformation();
+                                                  confirmInformation(
+                                                    'newName',
+                                                    '',
+                                                    '',
+                                                  );
                                                 },
                                                 child: Padding(
                                                   padding: EdgeInsets.symmetric(
@@ -1128,7 +1162,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                   ),
                                                 ),
                                               )
-                                            : InkWell(
+                                            : GestureDetector(
                                                 onTap: () {
                                                   isTyping = true;
                                                   setState(() {});
@@ -1577,7 +1611,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                         isTypingPassword
                                             ? InkWell(
                                                 onTap: () {
-                                                  confirmInformation();
+                                                  confirmInformation(
+                                                    '',
+                                                    'newPassword',
+                                                    '',
+                                                  );
                                                 },
                                                 child: Padding(
                                                   padding: EdgeInsets.symmetric(
@@ -1597,7 +1635,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                   ),
                                                 ),
                                               )
-                                            : InkWell(
+                                            : GestureDetector(
                                                 onTap: () {
                                                   isTypingPassword = true;
                                                   setState(() {});
@@ -1659,153 +1697,186 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-//รอปรับปรุง method นี้!!!!!!!!!!!!!!
-  void confirmInformation() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+  void confirmInformation(
+    String newName,
+    String newPassword,
+    String newUrl,
+  ) async {
+    log("message");
+    // var config = await Configuration.getConfig();
+    // var url = config['apiEndpoint'];
+    // bool hasSuccess = false;
 
-    String downloadUrl = "";
-    loadingDialog();
+    // loadingDialog(); // แสดงโหลดล่วงหน้า
 
-    if (savedFile != null) {
-      // สร้างอ้างอิงไปยัง Firebase Storage
-      Reference storageReference = FirebaseStorage.instance.ref().child(
-          'uploadsImageProfile/${DateTime.now().millisecondsSinceEpoch}_${savedFile!.path.split('/').last}');
+    // // 1. เปลี่ยนชื่อ
+    // if (newName.isNotEmpty) {
+    //   final res = await http.put(
+    //     Uri.parse("$url/profile/api/edit_profile"),
+    //     headers: {"Content-Type": "application/json; charset=utf-8"},
+    //     body: editProfileUserPutRequestToJson(
+    //       EditProfileUserPutRequest(
+    //         email: userEmail,
+    //         profileData: ProfileData(
+    //           name: editNameCtl.text,
+    //           hashedPassword: null,
+    //           profile: null,
+    //         ),
+    //       ),
+    //     ),
+    //   );
 
-      // อัพโหลดไฟล์และรอจนกว่าจะเสร็จสิ้น
-      UploadTask uploadTask = storageReference.putFile(savedFile!);
-      TaskSnapshot taskSnapshot = await uploadTask;
+    //   if (res.statusCode == 200) {
+    //     hasSuccess = true;
+    //     editNameCtl.clear();
+    //   }
+    // }
 
-      // รับ URL ของรูปที่อัพโหลดสำเร็จ
-      downloadUrl = await taskSnapshot.ref.getDownloadURL();
+    // // 2. เปลี่ยนรหัสผ่าน
+    // if (newPassword.isNotEmpty) {
+    //   final res = await http.put(
+    //     Uri.parse("$url/profile/api/edit_profile"),
+    //     headers: {"Content-Type": "application/json; charset=utf-8"},
+    //     body: editProfileUserPutRequestToJson(
+    //       EditProfileUserPutRequest(
+    //         email: userEmail,
+    //         profileData: ProfileData(
+    //           name: null,
+    //           hashedPassword: editPasswordCtl.text,
+    //           profile: null,
+    //         ),
+    //       ),
+    //     ),
+    //   );
 
-      // ลบรูปเดิมถ้า URL เดิมใน SQL (userProfile) ตรงกับ URL ใน Firebase
-      if (userProfile.isNotEmpty && userProfile != 'none-url') {
-        Reference oldImageRef =
-            FirebaseStorage.instance.refFromURL(userProfile);
-        String oldDownloadUrl = await oldImageRef.getDownloadURL();
+    //   if (res.statusCode == 200) {
+    //     box.write('password', editPasswordCtl.text);
+    //     hasSuccess = true;
+    //     editPasswordCtl.clear();
+    //   }
+    // }
 
-        if (userProfile == oldDownloadUrl) {
-          await oldImageRef.delete();
-        }
-      }
-    }
+    // // 3. เปลี่ยนรูปโปรไฟล์
+    // if (newUrl.isNotEmpty && savedFile != null) {
+    //   String downloadUrl = "";
 
-    //ถ้าหากว่า user ไม่ได้เปลี่ยนรหัสผ่านก็ยังคงเป็นรหัสเดิม
-    if (editPasswordCtl.text.isEmpty) {
-      box.write('password', box.read('password'));
-    }
+    //   final storageReference = FirebaseStorage.instance.ref().child(
+    //         'uploadsImageProfile/${DateTime.now().millisecondsSinceEpoch}_${savedFile!.path.split('/').last}',
+    //       );
 
-    var responseEditProfile = await http.put(
-      Uri.parse("$url/profile/api/edit_profile"),
-      headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: editProfileUserPutRequestToJson(
-        EditProfileUserPutRequest(
-          email: userEmail,
-          profileData: ProfileData(
-            name: editNameCtl.text.isNotEmpty ? editNameCtl.text : name,
-            hashedPassword: editPasswordCtl.text.isNotEmpty
-                ? editPasswordCtl.text
-                : box.read('password'), //ตรงนี้มีปัญหา
-            //
-//--------------------------------------------------------------------------
+    //   final uploadTask = storageReference.putFile(savedFile!);
+    //   final snapshot = await uploadTask;
 
-//ตรงนี้มีปัญหาถ้า user ไม่ได้เปลี่ยนรหัส แล้วรหัสยังเป็น '-' อยู่แล้วใน sql ไม่ต้องเปลี่ยนแปลงอะไร
-//ที่มีปัญหาคือส่ง password ส่งค่าว่างไปอัพเดทใน sql แทน
-//สรุปคือถ้า user ไม่ได้อัพเดท password ให้ backend กำหนด feild password เป็น '-' เหมือนเดิม
+    //   downloadUrl = await snapshot.ref.getDownloadURL();
 
-//--------------------------------------------------------------------------
-            //
-            profile: savedFile != null ? downloadUrl : userProfile,
-          ),
-        ),
-      ),
-    );
+    //   if (userProfile.isNotEmpty && userProfile != 'none-url') {
+    //     final oldRef = FirebaseStorage.instance.refFromURL(userProfile);
+    //     String oldUrl = await oldRef.getDownloadURL();
+    //     if (userProfile == oldUrl) {
+    //       await oldRef.delete();
+    //     }
+    //   }
 
-    if (responseEditProfile.statusCode == 200) {
-      Get.back();
-      if (editPasswordCtl.text.isNotEmpty) {
-        box.write('password', editPasswordCtl.text);
-      }
-      savedFile = null;
-      isTyping = false;
-      isTypingPassword = false;
-      editNameCtl.clear();
-      editPasswordCtl.clear();
-      isCheckedPassword = false;
-      loadDataAsync();
+    //   final res = await http.put(
+    //     Uri.parse("$url/profile/api/edit_profile"),
+    //     headers: {"Content-Type": "application/json; charset=utf-8"},
+    //     body: editProfileUserPutRequestToJson(
+    //       EditProfileUserPutRequest(
+    //         email: userEmail,
+    //         profileData: ProfileData(
+    //           name: null,
+    //           hashedPassword: null,
+    //           profile: downloadUrl,
+    //         ),
+    //       ),
+    //     ),
+    //   );
 
-      BackPageSettingToHome keep = BackPageSettingToHome();
-      keep.keepPage = true;
-      context.read<Appdata>().keepPage = keep;
+    //   if (res.statusCode == 200) {
+    //     hasSuccess = true;
+    //     savedFile = null;
+    //   }
+    // }
 
-      Future.delayed(const Duration(milliseconds: 500), () {
-        editNameFocusNode.unfocus();
-        editPasswordFocusNode.unfocus();
-        Get.defaultDialog(
-          title: "",
-          titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width * 0.04,
-            vertical: MediaQuery.of(context).size.height * 0.02,
-          ),
-          content: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/success.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Successfully!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color.fromRGBO(0, 122, 255, 1),
-                ),
-              ),
-              Text(
-                'Update your profile successfully',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 1,
-              ),
-              child: Text(
-                'Ok',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-      });
-    } else {
-      Get.back();
-    }
+    // // ถ้ามีอย่างใดอย่างหนึ่งสำเร็จ
+    // if (hasSuccess) {
+    //   Get.back(); // ปิด loading dialog
+    //   isTyping = false;
+    //   isTypingPassword = false;
+    //   isCheckedPassword = false;
+    //   loadDataAsync();
+
+    //   BackPageSettingToHome keep = BackPageSettingToHome();
+    //   keep.keepPage = true;
+    //   context.read<Appdata>().keepPage = keep;
+
+    //   Future.delayed(const Duration(milliseconds: 500), () {
+    //     editNameFocusNode.unfocus();
+    //     editPasswordFocusNode.unfocus();
+    //     Get.defaultDialog(
+    //       title: "",
+    //       titlePadding: EdgeInsets.zero,
+    //       backgroundColor: Colors.white,
+    //       contentPadding: EdgeInsets.symmetric(
+    //         horizontal: MediaQuery.of(context).size.width * 0.04,
+    //         vertical: MediaQuery.of(context).size.height * 0.02,
+    //       ),
+    //       content: Column(
+    //         children: [
+    //           Image.asset(
+    //             "assets/images/aleart/success.png",
+    //             height: MediaQuery.of(context).size.height * 0.1,
+    //             fit: BoxFit.contain,
+    //           ),
+    //           SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+    //           Text(
+    //             'Successfully!!',
+    //             style: TextStyle(
+    //               fontSize: Get.textTheme.headlineSmall!.fontSize,
+    //               fontWeight: FontWeight.w500,
+    //               color: Color.fromRGBO(0, 122, 255, 1),
+    //             ),
+    //           ),
+    //           Text(
+    //             'Update your profile successfully',
+    //             style: TextStyle(
+    //               fontSize: Get.textTheme.titleMedium!.fontSize,
+    //               color: Colors.black,
+    //             ),
+    //             textAlign: TextAlign.center,
+    //           ),
+    //         ],
+    //       ),
+    //       actions: [
+    //         ElevatedButton(
+    //           onPressed: () {
+    //             Get.back();
+    //           },
+    //           style: ElevatedButton.styleFrom(
+    //             fixedSize: Size(
+    //               MediaQuery.of(context).size.width,
+    //               MediaQuery.of(context).size.height * 0.05,
+    //             ),
+    //             backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+    //             shape: RoundedRectangleBorder(
+    //               borderRadius: BorderRadius.circular(12),
+    //             ),
+    //             elevation: 1,
+    //           ),
+    //           child: Text(
+    //             'Ok',
+    //             style: TextStyle(
+    //               fontSize: Get.textTheme.titleLarge!.fontSize,
+    //               color: Colors.white,
+    //             ),
+    //           ),
+    //         ),
+    //       ],
+    //     );
+    //   });
+    // } else {
+    //   Get.back();
+    // }
   }
 
   void firstPageShow() {
@@ -1861,7 +1932,7 @@ class _SettingsPageState extends State<SettingsPage> {
       headers: {"Content-Type": "application/json; charset=utf-8"},
       body: logoutUserPostRequestToJson(
         LogoutUserPostRequest(
-          email: box.read('email'),
+          email: userEmail,
         ),
       ),
     );
@@ -1933,7 +2004,36 @@ class _SettingsPageState extends State<SettingsPage> {
                       height: height * 0.01,
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        //ส่ง OTP ไปที่ email
+                        // แสดง Loading Dialog
+                        loadingDialog();
+                        var responseOtp = await http.post(
+                          Uri.parse("$url/otp/api/otp"),
+                          headers: {
+                            "Content-Type": "application/json; charset=utf-8"
+                          },
+                          body: sendOtpPostRequestToJson(
+                            SendOtpPostRequest(
+                              recipient: userEmail,
+                            ),
+                          ),
+                        );
+
+                        if (responseOtp.statusCode == 200) {
+                          Get.back();
+
+                          SendOtpPostResponst sendOTPResponse =
+                              sendOtpPostResponstFromJson(responseOtp.body);
+
+                          //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+                          verifyOTP(
+                            userEmail,
+                            sendOTPResponse.otp,
+                            sendOTPResponse.ref,
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         fixedSize: Size(
                           MediaQuery.of(context).size.width,
@@ -2168,7 +2268,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                         },
                                         body: logoutUserPostRequestToJson(
                                           LogoutUserPostRequest(
-                                            email: box.read('email'),
+                                            email: userEmail,
                                           ),
                                         ),
                                       );
@@ -2292,5 +2392,320 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
     }
+  }
+
+  void verifyOTP(String email, String codeOTP, String ref) async {
+    // สร้าง FocusNodes สำหรับทุกช่อง
+    final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
+    final otpControllers = List<TextEditingController>.generate(
+        6, (index) => TextEditingController());
+
+    if (mounted) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (BuildContext bc) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              double width = MediaQuery.of(context).size.width;
+              double height = MediaQuery.of(context).size.height;
+
+              return WillPopScope(
+                onWillPop: () async => false,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.04,
+                    vertical: height * 0.06,
+                  ),
+                  child: SizedBox(
+                    height: height,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Verification Code',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.headlineMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              'We have send the OTP code verification to',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              obfuscateEmail(email),
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        Form(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(
+                              6,
+                              (index) {
+                                return SizedBox(
+                                  height: height * 0.08,
+                                  width: width * 0.14,
+                                  child: TextFormField(
+                                    focusNode: focusNodes[index],
+                                    controller: otpControllers[index],
+                                    cursorColor: Colors.grey,
+                                    onChanged: (value) {
+                                      if (value.length == 1) {
+                                        if (index < 5) {
+                                          focusNodes[index + 1]
+                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                        } else {
+                                          FocusScope.of(context)
+                                              .unfocus(); // ปิดคีย์บอร์ด
+                                          verifyEnteredOTP(
+                                            otpControllers,
+                                            codeOTP,
+                                            email,
+                                          ); // ตรวจสอบ OTP
+                                        }
+                                      } else if (value.isEmpty && index > 0) {
+                                        focusNodes[index - 1]
+                                            .requestFocus(); // กลับไปช่องก่อนหน้า
+                                      }
+                                    },
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(1),
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: InputDecoration(
+                                      focusColor: Colors.black,
+                                      filled: true,
+                                      fillColor: Colors.white, // สีพื้นหลัง
+                                      contentPadding:
+                                          EdgeInsets.all(8), // ระยะห่างภายใน
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            12), // มุมโค้ง
+                                        borderSide: BorderSide(
+                                          color: Colors.grey, // สีกรอบปกติ
+                                          width: 2, // ความหนาของกรอบ
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey
+                                              .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
+                                          width: 2,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: warning.isNotEmpty
+                                              ? Color(int.parse('0xff$warning'))
+                                              : Colors.grey,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      hintText: "-", // ข้อความตัวอย่าง
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        if (warning.isNotEmpty)
+                          SizedBox(
+                            height: height * 0.02,
+                          ),
+                        if (warning.isNotEmpty)
+                          Text(
+                            'OTP code is invalid',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.red,
+                            ),
+                          ),
+                        SizedBox(
+                          height: height * 0.02,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'OTP copied',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            SizedBox(
+                              width: width * 0.01,
+                            ),
+                            InkWell(
+                              onTap: () async {
+                                // ดึงข้อความจาก Clipboard
+                                ClipboardData? data =
+                                    await Clipboard.getData('text/plain');
+                                if (data != null && data.text != null) {
+                                  String copiedText = data.text!;
+                                  if (copiedText.length == 6) {
+                                    // ใส่ข้อความลงใน TextControllers
+                                    for (int i = 0;
+                                        i < copiedText.length;
+                                        i++) {
+                                      otpControllers[i].text = copiedText[i];
+                                      // โฟกัสไปยังช่องสุดท้าย
+                                      if (i == 5) {
+                                        focusNodes[i].requestFocus();
+                                      }
+                                    }
+                                    verifyEnteredOTP(
+                                      otpControllers,
+                                      codeOTP,
+                                      email,
+                                    ); // ตรวจสอบ OTP
+                                  } else {
+                                    warning = 'F21F1F';
+                                    setState(() {});
+                                  }
+                                }
+                              },
+                              child: Text(
+                                'Paste',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'ref: $ref',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+  }
+
+  // ฟังก์ชันตรวจสอบ OTP
+  void verifyEnteredOTP(
+    List<TextEditingController> otpControllers,
+    String codeOTP,
+    String email,
+  ) async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+    String enteredOTP = otpControllers
+        .map((controller) => controller.text)
+        .join(); // รวมค่าที่ป้อน
+    if (enteredOTP == codeOTP) {
+      // แสดง Loading Dialog
+      loadingDialog();
+      var responseDelete = await http.delete(
+        Uri.parse("$url/user/account"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: deleteUserDeleteRequestToJson(
+          DeleteUserDeleteRequest(
+            email: userEmail,
+          ),
+        ),
+      );
+      if (responseDelete.statusCode == 200) {
+        Get.back();
+        Get.back();
+
+        Future.delayed(const Duration(seconds: 1), () async {
+          loadingDialog();
+          var responseLogot = await http.post(
+            Uri.parse("$url/signin_up/api/logout"),
+            headers: {"Content-Type": "application/json; charset=utf-8"},
+            body: logoutUserPostRequestToJson(
+              LogoutUserPostRequest(
+                email: userEmail,
+              ),
+            ),
+          );
+          if (responseLogot.statusCode == 200) {
+            Get.back();
+            await googleSignIn.signOut();
+            // Sign out from Firebase if needed
+            await FirebaseAuth.instance.signOut();
+          }
+
+          Get.to(() => SplashPage());
+          box.remove('email');
+          box.remove('password');
+        });
+      } else {
+        Get.back();
+      }
+    } else {
+      warning = 'F21F1F';
+      setState(() {});
+    }
+  }
+
+  String obfuscateEmail(String email) {
+    // แยกส่วนก่อนและหลัง '@'
+    int atIndex = email.indexOf('@');
+
+    String localPart = email.substring(0, atIndex); // ส่วนก่อน '@'
+    String domainPart = email.substring(atIndex); // ส่วนหลัง '@'
+
+    // กำหนดจำนวนตัวอักษรที่จะแสดงเป็นปกติ (3 ตัว)
+    int visibleChars = localPart.length > 3 ? 3 : localPart.length;
+
+    // แสดงตัวอักษรต้น
+    String visiblePart = localPart.substring(0, visibleChars);
+    // แปลงตัวอักษรที่เหลือเป็น '*'
+    String obfuscatedPart = '*' * (localPart.length - visibleChars);
+
+    // รวมข้อความที่แปลงแล้ว
+    return visiblePart + obfuscatedPart + domainPart;
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:mydayplanner/pages/login.dart';
 import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:mydayplanner/pages/pageMember/navBar.dart';

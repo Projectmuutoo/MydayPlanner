@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/request/resetPasswordPutRequest.dart';
@@ -21,14 +19,19 @@ class ResetpasswordPage extends StatefulWidget {
 }
 
 class _ResetpasswordPageState extends State<ResetpasswordPage> {
+// ---------------------- 🧮 State ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
   int step = 1;
+
+// ---------------------- 🎯 Controllers ----------------------
   TextEditingController emailCtl = TextEditingController();
   TextEditingController otpCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
   TextEditingController confirmPasswordCtl = TextEditingController();
+
+// ---------------------- 🔤 Strings ----------------------
   String textNotification = '';
   String otp = '';
 
@@ -46,8 +49,10 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: width * 0.05,
+              padding: EdgeInsets.only(
+                right: width * 0.05,
+                left: width * 0.05,
+                top: height * 0.01,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.max,
@@ -59,22 +64,27 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         children: [
                           InkWell(
                             onTap: backToLoginPage,
-                            child: Row(
-                              children: [
-                                SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                  color: Colors.grey,
-                                ),
-                                Text(
-                                  'back',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: FontWeight.normal,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.01,
+                              ),
+                              child: Row(
+                                children: [
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
                                     color: Colors.grey,
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    'back',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleLarge!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -469,19 +479,21 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               color: Colors.grey,
                             ),
                           ),
-                          SizedBox(
-                            width: width * 0.01,
-                          ),
                           InkWell(
                             onTap: () {
                               goToLoginPage();
                             },
-                            child: Text(
-                              'Sign in.',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.black,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.01,
+                              ),
+                              child: Text(
+                                'Sign in.',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ),

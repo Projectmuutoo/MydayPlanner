@@ -28,25 +28,40 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  late Future<void> loadData;
-  bool isTyping = false;
+  // 📦 Storage
+  var box = GetStorage();
+
+// 📊 Integer Variables
+  int itemCount = 1;
+
+// 🔤 String Variables
+  String textNotification = '';
+  String warning = '';
+  String selectedRole = 'All';
+
+// 📥 TextEditingController
   TextEditingController emailCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
   TextEditingController otpCtl = TextEditingController();
-  late List<User> allUsers = [];
+
+// 🧠 Boolean Variables
+  bool isTyping = false;
   bool isCheckedPassword = false;
-  List<User> filteredUsers = [];
-  String selectedRole = 'All';
   bool isDropdownOpen = false;
   bool isDropdownOpenUser = false;
-  Map<String, bool> isDropdownOpenUserMap = {};
-  String textNotification = '';
-  String warning = '';
-  int itemCount = 1;
   bool isLoadings = true;
   bool showShimmer = true;
   bool displayEditAdmin = false;
-  var box = GetStorage();
+
+// 📈 List Variables
+  late List<User> allUsers = [];
+  List<User> filteredUsers = [];
+
+// 🧠 Map Variables
+  Map<String, bool> isDropdownOpenUserMap = {};
+
+// 🔮 Future
+  late Future<void> loadData;
 
   @override
   void initState() {
@@ -120,6 +135,7 @@ class _UserPageState extends State<UserPage> {
                       padding: EdgeInsets.only(
                         right: width * 0.05,
                         left: width * 0.05,
+                        top: height * 0.01,
                       ),
                       child: Stack(
                         children: [

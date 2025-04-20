@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:developer';
-
 import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -34,18 +31,29 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+// ---------------------- 🎯 Controllers (TextEditing) ----------------------
+  TextEditingController emailCtl = TextEditingController();
+  TextEditingController passwordCtl = TextEditingController();
+
+// ---------------------- 🎯 Controllers (FocusNode) ----------------------
+  FocusNode emailFocusNode = FocusNode();
+  FocusNode passwordFocusNode = FocusNode();
+
+// ---------------------- ✅ State Flags ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedEmail = false;
-  TextEditingController emailCtl = TextEditingController();
-  TextEditingController passwordCtl = TextEditingController();
-  String textNotification = '';
+
+// ---------------------- 🔐 Auth ----------------------
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  String warning = '';
   int signInAttempts = 0;
+
+// ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
-  FocusNode emailFocusNode = FocusNode();
-  FocusNode passwordFocusNode = FocusNode();
+
+// ---------------------- 🔤 Strings ----------------------
+  String textNotification = '';
+  String warning = '';
 
   @override
   void initState() {
@@ -81,9 +89,9 @@ class _LoginPageState extends State<LoginPage> {
               child: Center(
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: width * 0.05,
-                      vertical: height * 0.05,
+                    padding: EdgeInsets.only(
+                      right: width * 0.05,
+                      left: width * 0.05,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.max,
@@ -291,13 +299,18 @@ class _LoginPageState extends State<LoginPage> {
                                 children: [
                                   InkWell(
                                     onTap: forgotPassword,
-                                    child: Text(
-                                      'Forgot password?',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                        fontWeight: FontWeight.normal,
-                                        color: Colors.black,
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: width * 0.02,
+                                      ),
+                                      child: Text(
+                                        'Forgot password?',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleMedium!.fontSize,
+                                          fontWeight: FontWeight.normal,
+                                          color: Colors.black,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -399,12 +412,18 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             InkWell(
                               onTap: goToRegisterPage,
-                              child: Text(
-                                'Create yours now.',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.black,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.02,
+                                ),
+                                child: Text(
+                                  'Create yours now.',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                             ),
@@ -635,14 +654,16 @@ class _LoginPageState extends State<LoginPage> {
 
       if (responseLoginGoogle.statusCode == 200) {
         Get.back();
-
         showNotification('');
 
         GoogleLoginUserPostResponse responseGoogleLogin =
             googleLoginUserPostResponseFromJson(responseLoginGoogle.body);
         if (responseGoogleLogin.success) {
-          //เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
+          //เก็บ email, password user ไว้ใน storage ไว้ใช้ด้วย
           box.write('email', googleUser.email);
+          if (getUserByEmailPostResponst.hashedPassword == '-') {
+            box.write('password', "-");
+          }
           //เข้า home ไปเรียบร้อบละ
           if (responseGoogleLogin.role == "admin") {
             Get.to(() => const NavbaradminPage());
