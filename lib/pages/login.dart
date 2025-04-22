@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -84,7 +86,6 @@ class _LoginPageState extends State<LoginPage> {
             }
           },
           child: Scaffold(
-            appBar: null,
             body: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
@@ -466,6 +467,7 @@ class _LoginPageState extends State<LoginPage> {
     // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
     if (googleUser == null) {
       Get.back();
+      if (!mounted) return;
       setState(() {});
       return;
     }
@@ -731,7 +733,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool isValidEmail(String email) {
-    return email.contains('@') && email.contains('.');
+    final RegExp emailRegExp = RegExp(
+        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com)$");
+    return emailRegExp.hasMatch(email);
   }
 
   void loadingDialog() {
@@ -873,9 +877,9 @@ class _LoginPageState extends State<LoginPage> {
             box.write('password', passwordCtl.text);
             //แยกทางใครทางมัน
             if (getUserByEmailResponse.role == "admin") {
-              Get.to(() => const NavbaradminPage());
+              Get.offAll(() => const NavbaradminPage());
             } else {
-              Get.to(() => const NavbarPage());
+              Get.offAll(() => const NavbarPage());
             }
           }
         } else {
@@ -1214,6 +1218,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ); // ตรวจสอบ OTP
                                   } else {
                                     warning = 'F21F1F';
+                                    if (!mounted) return;
                                     setState(() {});
                                   }
                                 }
@@ -1275,6 +1280,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (responseIsverify.statusCode == 200) {
         Get.back();
+        if (!mounted) return;
         setState(() {});
 
         loadingDialog();
@@ -1289,6 +1295,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         if (responseGetuser.statusCode == 200) {
           Get.back();
+          if (!mounted) return;
           setState(() {});
 
           GetUserByEmailPostResponst responseGetUserByEmail =
@@ -1298,20 +1305,23 @@ class _LoginPageState extends State<LoginPage> {
           box.write('email', email);
           //เข้าไปเรียบร้อบละ
           if (responseGetUserByEmail.role == "admin") {
-            Get.to(() => const NavbaradminPage());
+            Get.offAll(() => const NavbaradminPage());
           } else {
-            Get.to(() => const NavbarPage());
+            Get.offAll(() => const NavbarPage());
           }
         }
       } else {
         Get.back();
+        if (!mounted) return;
         setState(() {});
       }
 
       warning = '';
+      if (!mounted) return;
       setState(() {});
     } else {
       warning = 'F21F1F';
+      if (!mounted) return;
       setState(() {});
     }
   }

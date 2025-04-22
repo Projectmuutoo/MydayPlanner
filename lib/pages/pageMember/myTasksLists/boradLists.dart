@@ -39,7 +39,6 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
     double height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: null,
       body: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(

@@ -31,14 +31,12 @@ class _AdminhomePageState extends State<AdminhomePage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: null,
         body: SafeArea(
           child: Center(
             child: Padding(
               padding: EdgeInsets.only(
                 right: width * 0.05,
                 left: width * 0.05,
-                top: height * 0.01,
               ),
               child: Column(
                 children: [
@@ -55,7 +53,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                       ),
                       InkWell(
                         onTap: () {
-                          logout(context);
+                          logout();
                         },
                         child: Padding(
                           padding: EdgeInsets.symmetric(
@@ -96,7 +94,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
     );
   }
 
-  void logout(BuildContext context) async {
+  void logout() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
@@ -120,7 +118,9 @@ class _AdminhomePageState extends State<AdminhomePage> {
       // Sign out from Firebase if needed
       await FirebaseAuth.instance.signOut();
       if (response.success) {
-        Get.to(() => SplashPage());
+        box.remove('email');
+        box.remove('password');
+        Get.offAll(() => SplashPage());
       }
     }
   }

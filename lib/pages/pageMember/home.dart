@@ -21,6 +21,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -106,69 +107,76 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadDataAsync() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
-
-    var responseGetUser = await http.post(
-      Uri.parse("$url/user/api/get_user"),
-      headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: getUserByEmailPostRequestToJson(
-        GetUserByEmailPostRequest(
-          email: box.read('email'),
-        ),
-      ),
-    );
-
-    if (responseGetUser.statusCode == 200) {
-      GetUserByEmailPostResponst responst =
-          getUserByEmailPostResponstFromJson(responseGetUser.body);
-      name = responst.name;
-      userId = responst.userId;
-      userProfile = responst.profile;
-
-      var responseGetBoardGroup0 = await http.post(
-        Uri.parse("$url/board/boardbyID"),
+    try {
+      var responseGetUser = await http.post(
+        Uri.parse("$url/user/api/get_user"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: getBoardByIdUserPostRequestToJson(
-          GetBoardByIdUserPostRequest(
-            userId: userId,
-            group: 0,
-          ),
-        ),
-      );
-      var responseGetBoardGroup1 = await http.post(
-        Uri.parse("$url/board/boardbyID"),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: getBoardByIdUserPostRequestToJson(
-          GetBoardByIdUserPostRequest(
-            userId: userId,
-            group: 1,
+        body: getUserByEmailPostRequestToJson(
+          GetUserByEmailPostRequest(
+            email: box.read('email'),
           ),
         ),
       );
 
-      boardsLists = getBoardByIdUserListsPostResponseFromJson(
-          responseGetBoardGroup0.body);
-      boardsGroup = getBoardByIdUserGroupsPostResponseFromJson(
-          responseGetBoardGroup1.body);
+      if (responseGetUser.statusCode == 200) {
+        GetUserByEmailPostResponst responst =
+            getUserByEmailPostResponstFromJson(responseGetUser.body);
+        name = getFirstName(responst.name);
+        userId = responst.userId;
+        userProfile = responst.profile;
 
-      if (listsFontWeight == FontWeight.w600) {
-        boards = boardsLists;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          moveSliderToKey(listKey);
-        });
-      } else if (groupFontWeight == FontWeight.w600) {
-        boards = boardsGroup;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          moveSliderToKey(groupKey);
+        var responseGetBoardGroup0 = await http.post(
+          Uri.parse("$url/board/boardbyID"),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: getBoardByIdUserPostRequestToJson(
+            GetBoardByIdUserPostRequest(
+              userId: userId,
+              group: 0,
+            ),
+          ),
+        );
+        var responseGetBoardGroup1 = await http.post(
+          Uri.parse("$url/board/boardbyID"),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: getBoardByIdUserPostRequestToJson(
+            GetBoardByIdUserPostRequest(
+              userId: userId,
+              group: 1,
+            ),
+          ),
+        );
+
+        boardsLists = getBoardByIdUserListsPostResponseFromJson(
+            responseGetBoardGroup0.body);
+        boardsGroup = getBoardByIdUserGroupsPostResponseFromJson(
+            responseGetBoardGroup1.body);
+
+        if (listsFontWeight == FontWeight.w600) {
+          boards = boardsLists;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            moveSliderToKey(listKey);
+          });
+        } else if (groupFontWeight == FontWeight.w600) {
+          boards = boardsGroup;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            moveSliderToKey(groupKey);
+          });
+        }
+
+        isLoadings = false;
+        if (!mounted) return;
+        setState(() {});
+
+        Timer(Duration(seconds: 2), () {
+          showShimmer = false;
+          if (!mounted) return;
+          setState(() {});
         });
       }
-
-      isLoadings = false;
-      setState(() {});
-
-      Timer(Duration(seconds: 2), () {
-        showShimmer = false;
-        setState(() {});
-      });
+    } catch (e) {
+      if (box.read('email') == null) {
+        Get.offAll(() => SplashPage());
+      }
     }
   }
 
@@ -186,6 +194,7 @@ class _HomePageState extends State<HomePage> {
           Future.delayed(Duration(seconds: 1), () {
             if (mounted) {
               itemCount = boards.isEmpty ? 1 : boards.length;
+              if (!mounted) return;
               setState(() {});
             }
           });
@@ -206,7 +215,6 @@ class _HomePageState extends State<HomePage> {
               }
             },
             child: Scaffold(
-              appBar: null,
               body: SafeArea(
                 child: RefreshIndicator(
                   color: Colors.grey,
@@ -309,95 +317,32 @@ class _HomePageState extends State<HomePage> {
                                                         Color(0xFFF7F7F7),
                                                     highlightColor:
                                                         Colors.grey[300]!,
-                                                    child: name.length >= 21
-                                                        ? SizedBox(
-                                                            width: width * 0.4,
-                                                            child: Container(
-                                                              width: _calculateTextWidth(
-                                                                  'Hello, $name',
-                                                                  Get
-                                                                      .textTheme
-                                                                      .titleSmall!
-                                                                      .fontSize!),
-                                                              height: Get
+                                                    child: Container(
+                                                      width:
+                                                          _calculateTextWidth(
+                                                              'Hello, $name',
+                                                              Get
                                                                   .textTheme
                                                                   .titleSmall!
-                                                                  .fontSize,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                          )
-                                                        : Container(
-                                                            width: _calculateTextWidth(
-                                                                'Hello, $name',
-                                                                Get
-                                                                    .textTheme
-                                                                    .titleSmall!
-                                                                    .fontSize!),
-                                                            height: Get
-                                                                .textTheme
-                                                                .titleSmall!
-                                                                .fontSize,
-                                                            color: Colors.white,
-                                                          ),
+                                                                  .fontSize!),
+                                                      height: Get.textTheme
+                                                          .titleSmall!.fontSize,
+                                                      color: Colors.white,
+                                                    ),
                                                   )
-                                                : SizedBox(
-                                                    height: height * 0.02,
-                                                    width: width * 0.4,
-                                                    child: name.length >= 21
-                                                        ? Marquee(
-                                                            text:
-                                                                'Hello, $name',
-                                                            style: TextStyle(
-                                                              fontSize: Get
-                                                                  .textTheme
-                                                                  .titleSmall!
-                                                                  .fontSize,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                            scrollAxis:
-                                                                Axis.horizontal,
-                                                            blankSpace: 20.0,
-                                                            velocity: 30.0,
-                                                            pauseAfterRound:
-                                                                Duration(
-                                                                    seconds: 1),
-                                                            startPadding: 0,
-                                                            accelerationDuration:
-                                                                Duration(
-                                                                    seconds: 1),
-                                                            accelerationCurve:
-                                                                Curves.linear,
-                                                            decelerationDuration:
-                                                                Duration(
-                                                                    milliseconds:
-                                                                        500),
-                                                            decelerationCurve:
-                                                                Curves.easeOut,
-                                                          )
-                                                        : Text(
-                                                            'Hello, $name',
-                                                            style: TextStyle(
-                                                              fontSize: Get
-                                                                  .textTheme
-                                                                  .titleMedium!
-                                                                  .fontSize,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
+                                                : Text(
+                                                    'Hello, $name',
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleMedium!
+                                                          .fontSize,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                             isLoadings || showShimmer
-                                                ? Shimmer.fromColors(
-                                                    baseColor:
-                                                        Color(0xFFF7F7F7),
-                                                    highlightColor:
-                                                        Colors.grey[300]!,
-                                                    child: SizedBox.shrink(),
-                                                  )
+                                                ? SizedBox.shrink()
                                                 : Text(
                                                     messagesRandom[
                                                         currentIndexMessagesRandom],
@@ -516,11 +461,9 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               width: width,
                               height: height * 0.12,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: Color.fromRGBO(242, 242, 246, 1),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(40),
-                                ),
+                                borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
                                     offset: Offset(0, 1),
@@ -797,12 +740,10 @@ class _HomePageState extends State<HomePage> {
                                 child: Container(
                                   width: width * 0.1,
                                   height: height * 0.06,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Color(0xFF007AFF),
                                     shape: BoxShape.rectangle,
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(22),
-                                    ),
+                                    borderRadius: BorderRadius.circular(22),
                                   ),
                                 ),
                               ),
@@ -828,11 +769,9 @@ class _HomePageState extends State<HomePage> {
                                       horizontal: width * 0.01,
                                       vertical: height * 0.01,
                                     ),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: Color(0xFFF2F2F6),
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(18),
-                                      ),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: SingleChildScrollView(
                                       child: Padding(
@@ -854,13 +793,11 @@ class _HomePageState extends State<HomePage> {
                                                     child: Container(
                                                       width: width * 0.4,
                                                       height: height * 0.15,
-                                                      decoration:
-                                                          const BoxDecoration(
+                                                      decoration: BoxDecoration(
                                                         color: Colors.white,
                                                         borderRadius:
-                                                            BorderRadius.all(
-                                                          Radius.circular(12),
-                                                        ),
+                                                            BorderRadius
+                                                                .circular(12),
                                                       ),
                                                     ),
                                                   ),
@@ -1121,270 +1058,306 @@ class _HomePageState extends State<HomePage> {
                                       horizontal: width * 0.01,
                                       vertical: height * 0.01,
                                     ),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: Color(0xFFF2F2F6),
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(18),
-                                      ),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
-                                    child: ListView.builder(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.01,
-                                      ),
-                                      itemCount: boards.length +
-                                          1, // +1 สำหรับปุ่มสร้างบอร์ดใหม่
-                                      itemBuilder: (context, index) {
-                                        if (isLoadings || showShimmer) {
-                                          return Shimmer.fromColors(
-                                            baseColor: Color(0xFFF7F7F7),
-                                            highlightColor: Colors.grey[300]!,
-                                            child: Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.013,
-                                              ),
-                                              child: Container(
-                                                width: width,
-                                                height: height * 0.07,
-                                                decoration: const BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                    Radius.circular(12),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        } else {
-                                          if (index < boards.length) {
-                                            final board = boards[index];
-                                            if (!boardInfoKeys
-                                                .containsKey(board.boardName)) {
-                                              boardInfoKeys[board.boardName] =
-                                                  GlobalKey();
-                                            }
-                                            final bool isSelected =
-                                                focusedBoardName ==
-                                                    board.boardName;
-                                            return Padding(
-                                              key: boardInfoKeys[
-                                                  board.boardName],
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.013,
-                                              ),
-                                              child: Transform.scale(
-                                                scale: isSelected ? 1.05 : 1.0,
-                                                child: AnimatedContainer(
-                                                  duration: Duration(
-                                                      milliseconds: 200),
-                                                  width: width,
-                                                  height: height * 0.07,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                    boxShadow: isSelected
-                                                        ? [
-                                                            BoxShadow(
-                                                              color: Colors
-                                                                  .black26,
-                                                              blurRadius: 10,
-                                                              offset:
-                                                                  Offset(0, 5),
-                                                            )
-                                                          ]
-                                                        : [
-                                                            BoxShadow(
-                                                              color: Color(
-                                                                  0xFF979595),
-                                                              blurRadius: 3,
-                                                              offset:
-                                                                  Offset(0, 1),
-                                                              spreadRadius: 0.1,
-                                                            )
-                                                          ],
-                                                  ),
-                                                  child: Stack(
-                                                    children: [
-                                                      Material(
-                                                        color: const Color
-                                                            .fromARGB(
-                                                            0, 10, 6, 6),
-                                                        child: InkWell(
+                                    child: SingleChildScrollView(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.01,
+                                        ),
+                                        child: Column(
+                                          children: isLoadings || showShimmer
+                                              ? List.generate(
+                                                  itemCount,
+                                                  (index) => Shimmer.fromColors(
+                                                    baseColor:
+                                                        Color(0xFFF7F7F7),
+                                                    highlightColor:
+                                                        Colors.grey[300]!,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.only(
+                                                        bottom: height * 0.013,
+                                                      ),
+                                                      child: Container(
+                                                        width: width,
+                                                        height: height * 0.07,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Colors.white,
                                                           borderRadius:
                                                               BorderRadius
                                                                   .circular(12),
-                                                          onTap: () =>
-                                                              goToMyList(board
-                                                                  .boardName),
-                                                          onLongPress: () {
-                                                            setState(() {
-                                                              focusedBoardName =
-                                                                  focusedBoardName ==
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              : [
+                                                  ...boards.map(
+                                                    (board) {
+                                                      if (!boardInfoKeys
+                                                          .containsKey(board
+                                                              .boardName)) {
+                                                        boardInfoKeys[board
+                                                                .boardName] =
+                                                            GlobalKey();
+                                                      }
+                                                      final bool isSelected =
+                                                          focusedBoardName ==
+                                                              board.boardName;
+
+                                                      return Padding(
+                                                        key: boardInfoKeys[
+                                                            board.boardName],
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                          bottom:
+                                                              height * 0.013,
+                                                        ),
+                                                        child: Transform.scale(
+                                                          scale: isSelected
+                                                              ? 1.05
+                                                              : 1.0,
+                                                          child:
+                                                              AnimatedContainer(
+                                                            duration: Duration(
+                                                                milliseconds:
+                                                                    200),
+                                                            width: width,
+                                                            height:
+                                                                height * 0.07,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color:
+                                                                  Colors.white,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                              boxShadow:
+                                                                  isSelected
+                                                                      ? [
+                                                                          BoxShadow(
+                                                                            color:
+                                                                                Colors.black26,
+                                                                            blurRadius:
+                                                                                10,
+                                                                            offset:
+                                                                                Offset(0, 5),
+                                                                          )
+                                                                        ]
+                                                                      : [
+                                                                          BoxShadow(
+                                                                            color:
+                                                                                Color(0xFF979595),
+                                                                            blurRadius:
+                                                                                3,
+                                                                            offset:
+                                                                                Offset(0, 1),
+                                                                            spreadRadius:
+                                                                                0.1,
+                                                                          )
+                                                                        ],
+                                                            ),
+                                                            child: Stack(
+                                                              children: [
+                                                                Material(
+                                                                  color: const Color
+                                                                      .fromARGB(
+                                                                      0,
+                                                                      10,
+                                                                      6,
+                                                                      6),
+                                                                  child:
+                                                                      InkWell(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            12),
+                                                                    onTap: () =>
+                                                                        goToMyList(
+                                                                            board.boardName),
+                                                                    onLongPress:
+                                                                        () {
+                                                                      setState(
+                                                                          () {
+                                                                        focusedBoardName = focusedBoardName ==
+                                                                                board.boardName
+                                                                            ? null
+                                                                            : board.boardName;
+                                                                      });
+                                                                      showInfoMenuBoard(
+                                                                          context,
                                                                           board
-                                                                              .boardName
-                                                                      ? null
-                                                                      : board
-                                                                          .boardName;
-                                                            });
-                                                            showInfoMenuBoard(
-                                                                context,
-                                                                board
-                                                                    .boardName);
-                                                          },
-                                                          child: Center(
-                                                            child: Padding(
-                                                              padding: EdgeInsets
-                                                                  .symmetric(
-                                                                horizontal:
-                                                                    width *
-                                                                        0.02,
+                                                                              .boardName);
+                                                                    },
+                                                                    child:
+                                                                        Center(
+                                                                      child:
+                                                                          Padding(
+                                                                        padding:
+                                                                            EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              width * 0.02,
+                                                                        ),
+                                                                        child:
+                                                                            Text(
+                                                                          board
+                                                                              .boardName,
+                                                                          style:
+                                                                              TextStyle(
+                                                                            fontSize:
+                                                                                Get.textTheme.titleMedium!.fontSize,
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
+                                                                            color:
+                                                                                Colors.black,
+                                                                          ),
+                                                                          textAlign:
+                                                                              TextAlign.center,
+                                                                          maxLines:
+                                                                              1,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                if (focusedBoardName !=
+                                                                        null &&
+                                                                    !isSelected)
+                                                                  Positioned
+                                                                      .fill(
+                                                                    child:
+                                                                        ClipRRect(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              12),
+                                                                      child:
+                                                                          BackdropFilter(
+                                                                        filter: ImageFilter.blur(
+                                                                            sigmaX:
+                                                                                6,
+                                                                            sigmaY:
+                                                                                6),
+                                                                        child:
+                                                                            Container(
+                                                                          color: Colors
+                                                                              .black
+                                                                              .withOpacity(0.1),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  // ปุ่มสร้างบอร์ดใหม่
+                                                  Container(
+                                                    width: width,
+                                                    height: height * 0.07,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      color: Colors.white,
+                                                    ),
+                                                    child: Material(
+                                                      color: Colors.transparent,
+                                                      child: InkWell(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                        onTap: createNewBoard,
+                                                        child: Stack(
+                                                          alignment:
+                                                              Alignment.center,
+                                                          children: [
+                                                            if (focusedBoardName !=
+                                                                null)
+                                                              ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            12),
+                                                                child:
+                                                                    BackdropFilter(
+                                                                  filter: ImageFilter
+                                                                      .blur(
+                                                                          sigmaX:
+                                                                              6,
+                                                                          sigmaY:
+                                                                              6),
+                                                                  child:
+                                                                      Container(
+                                                                    color: Colors
+                                                                        .black
+                                                                        .withOpacity(
+                                                                            0.1),
+                                                                  ),
+                                                                ),
                                                               ),
-                                                              child: Text(
-                                                                board.boardName,
+
+                                                            if (focusedBoardName !=
+                                                                null) ...[
+                                                              Text(
+                                                                '+',
                                                                 style:
                                                                     TextStyle(
                                                                   fontSize: Get
                                                                       .textTheme
-                                                                      .titleMedium!
+                                                                      .headlineSmall!
                                                                       .fontSize,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w500,
-                                                                  color: Colors
-                                                                      .black,
+                                                                  color: Color(
+                                                                      0x66007AFF),
+                                                                  shadows: [
+                                                                    Shadow(
+                                                                      blurRadius:
+                                                                          8,
+                                                                      color: Colors
+                                                                          .blueAccent,
+                                                                      offset:
+                                                                          Offset(
+                                                                              0,
+                                                                              0),
+                                                                    )
+                                                                  ],
                                                                 ),
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                maxLines: 1,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
                                                               ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      if (focusedBoardName !=
-                                                              null &&
-                                                          !isSelected)
-                                                        Positioned.fill(
-                                                          child: ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12),
-                                                            child:
-                                                                BackdropFilter(
-                                                              filter: ImageFilter
-                                                                  .blur(
-                                                                      sigmaX: 6,
-                                                                      sigmaY:
-                                                                          6),
-                                                              child: Container(
-                                                                color: Colors
-                                                                    .black
-                                                                    .withOpacity(
-                                                                        0.1),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          } else {
-                                            // ปุ่มสร้างบอร์ดใหม่
-                                            return Container(
-                                              width: width,
-                                              height: height * 0.07,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                color: Colors.white,
-                                              ),
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  onTap: createNewBoard,
-                                                  child: Stack(
-                                                    alignment: Alignment.center,
-                                                    children: [
-                                                      // ถ้า focusedBoardName != null ให้ใส่ effect blur ด้านหลัง
-                                                      if (focusedBoardName !=
-                                                          null)
-                                                        ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          child: BackdropFilter(
-                                                            filter: ImageFilter
-                                                                .blur(
-                                                                    sigmaX: 6,
-                                                                    sigmaY: 6),
-                                                            child: Container(
-                                                              color: Colors
-                                                                  .black
-                                                                  .withOpacity(
-                                                                      0.1),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      // ตัวอักษรซ้อน 2 ชั้นเพื่อให้ดูเบลอ (ชั้นล่างมัว)
-                                                      if (focusedBoardName !=
-                                                          null) ...[
-                                                        Text(
-                                                          '+',
-                                                          style: TextStyle(
-                                                            fontSize: Get
-                                                                .textTheme
-                                                                .headlineSmall!
-                                                                .fontSize,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: Color(
-                                                                0x66007AFF), // จางลง
-                                                            shadows: [
-                                                              Shadow(
-                                                                blurRadius: 8,
-                                                                color: Colors
-                                                                    .blueAccent,
-                                                                offset: Offset(
-                                                                    0, 0),
-                                                              )
                                                             ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                      // ตัวอักษรคม
-                                                      Text(
-                                                        '+',
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .headlineSmall!
-                                                              .fontSize,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              Color(0xFF007AFF),
+                                                            // ตัวอักษรคม
+                                                            Text(
+                                                              '+',
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .headlineSmall!
+                                                                    .fontSize,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                                color: Color(
+                                                                    0xFF007AFF),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-                                                    ],
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
+                                                ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1401,6 +1374,11 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  String getFirstName(String fullName) {
+    List<String> parts = fullName.trim().split(' ');
+    return parts.isNotEmpty ? parts.first : '';
   }
 
   showInfoMenuBoard(BuildContext context, String boardName) {
@@ -1665,6 +1643,7 @@ class _HomePageState extends State<HomePage> {
         await rootBundle.loadString('assets/text/text.json');
     final List<dynamic> jsonData = json.decode(jsonString);
 
+    if (!mounted) return;
     setState(() {
       messagesRandom = jsonData.cast<String>();
     });
@@ -1675,6 +1654,7 @@ class _HomePageState extends State<HomePage> {
 
   void startMessageRotation() {
     _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      if (!mounted) return;
       setState(() {
         currentIndexMessagesRandom =
             (currentIndexMessagesRandom + 1) % messagesRandom.length;
@@ -1876,6 +1856,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () async {
                             if (boardCtl.text.isEmpty) {
                               textError = 'Please enter your board name';
+                              if (!mounted) return;
                               setState(() {});
                               return;
                             }
@@ -1900,10 +1881,12 @@ class _HomePageState extends State<HomePage> {
                                 loadDataAsync();
                                 boardCtl.clear();
                                 textError = '';
+                                if (!mounted) return;
                                 setState(() {});
                               } else {
                                 Get.back();
                                 textError = 'Error!';
+                                if (!mounted) return;
                                 setState(() {});
                               }
                             } else if (groupFontWeight == FontWeight.w600) {
@@ -1926,10 +1909,12 @@ class _HomePageState extends State<HomePage> {
                                 loadDataAsync();
                                 boardCtl.clear();
                                 textError = '';
+                                if (!mounted) return;
                                 setState(() {});
                               } else {
                                 Get.back();
                                 textError = 'Error!';
+                                if (!mounted) return;
                                 setState(() {});
                               }
                             }

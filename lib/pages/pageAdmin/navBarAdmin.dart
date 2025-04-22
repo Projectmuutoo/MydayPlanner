@@ -39,7 +39,6 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: null,
         bottomNavigationBar: BottomNavigationBar(
           items: [
             BottomNavigationBarItem(

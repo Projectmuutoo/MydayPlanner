@@ -105,65 +105,6 @@ class _RegisterPageState extends State<RegisterPage> {
       ));
   }
 
-  void _onTextChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(Duration(milliseconds: 500), () async {
-      if (!emailFocusNode.hasFocus) return;
-
-      final email = emailController.text.trim();
-      if (email.isEmpty) {
-        setState(() {
-          alearEmail = '';
-          alearIconEmail = '';
-          colorAlearEmail = Colors.black;
-        });
-        return;
-      }
-      if (!isValidEmail(email)) {
-        setState(() {
-          alearEmail = 'Invalid email format';
-          colorAlearEmail = Colors.red;
-          alearIconEmail = '';
-        });
-        return;
-      }
-
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
-
-      var response = await http.post(
-        Uri.parse("$url/user/api/get_user"),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: getUserByEmailPostRequestToJson(
-          GetUserByEmailPostRequest(email: email),
-        ),
-      );
-
-      if (response.statusCode == 404) {
-        setState(() {
-          alearEmail = '';
-          alearIconEmail =
-              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>';
-          colorAlearEmail = Colors.green;
-        });
-      } else {
-        setState(() {
-          alearEmail = 'This email is already in use';
-          alearIconEmail =
-              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>';
-          colorAlearEmail = Colors.red;
-        });
-      }
-    });
-  }
-
-  void _onFocusChange() {
-    if (!emailFocusNode.hasFocus) {
-      // ถ้าเลิก focus ก็ยกเลิก timer
-      _debounce?.cancel();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     //horizontal left right
@@ -186,6 +127,7 @@ class _RegisterPageState extends State<RegisterPage> {
           confirmPasswordFocusNode.unfocus();
         }
         bool hasError = false;
+        if (!mounted) return;
         setState(() {
           // Name validation
           if (nameController.text.isEmpty) {
@@ -215,6 +157,12 @@ class _RegisterPageState extends State<RegisterPage> {
           if (passwordController.text.isEmpty) {
             alearPassword = 'Please enter your password';
             colorAlearPassword = Colors.red;
+            hasError = true;
+          } else if (!isValidPassword(passwordController.text)) {
+            alearPassword =
+                'Password must contain at least 8 digits\nor lowercase letters';
+            colorAlearPassword = Colors.red;
+            hasError = true;
           } else {
             colorAlearPassword = Colors.green;
             alearPassword = '';
@@ -260,6 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (responseGetuser.statusCode == 404) {
           // อีเมลยังไม่ถูกใช้ -> ผ่าน
+          if (!mounted) return;
           setState(() {
             alearIconEmail =
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>';
@@ -267,6 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
         } else {
           // อีเมลนี้ถูกใช้แล้ว
 
+          if (!mounted) return;
           setState(() {
             alearIconEmail =
                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>';
@@ -276,7 +226,6 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       },
       child: Scaffold(
-        appBar: null,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -920,6 +869,69 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  void _onTextChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(Duration(milliseconds: 500), () async {
+      if (!emailFocusNode.hasFocus) return;
+
+      final email = emailController.text.trim();
+      if (email.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          alearEmail = '';
+          alearIconEmail = '';
+          colorAlearEmail = Colors.black;
+        });
+        return;
+      }
+      if (!isValidEmail(email)) {
+        if (!mounted) return;
+        setState(() {
+          alearEmail = 'Invalid email format';
+          colorAlearEmail = Colors.red;
+          alearIconEmail = '';
+        });
+        return;
+      }
+
+      var config = await Configuration.getConfig();
+      var url = config['apiEndpoint'];
+
+      var response = await http.post(
+        Uri.parse("$url/user/api/get_user"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: getUserByEmailPostRequestToJson(
+          GetUserByEmailPostRequest(email: email),
+        ),
+      );
+
+      if (response.statusCode == 404) {
+        if (!mounted) return;
+        setState(() {
+          alearEmail = '';
+          alearIconEmail =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>';
+          colorAlearEmail = Colors.green;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          alearEmail = 'This email is already in use';
+          alearIconEmail =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>';
+          colorAlearEmail = Colors.red;
+        });
+      }
+    });
+  }
+
+  void _onFocusChange() {
+    if (!emailFocusNode.hasFocus) {
+      // ถ้าเลิก focus ก็ยกเลิก timer
+      _debounce?.cancel();
+    }
+  }
+
   void backToLoginPage() {
     Get.back();
   }
@@ -929,8 +941,18 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   bool isValidEmail(String email) {
-    final emailRegex = RegExp(r"^[\w\.-]+@[\w\.-]+\.\w+$");
-    return emailRegex.hasMatch(email);
+    final RegExp emailRegExp = RegExp(
+        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com)$");
+    return emailRegExp.hasMatch(email);
+  }
+
+  bool isValidPassword(String password) {
+    if (password.length < 8) return false;
+
+    // นับจำนวนตัวเลขและตัวพิมพ์เล็กรวมกัน
+    int count = RegExp(r'[0-9a-z]').allMatches(password).length;
+
+    return count >= 8;
   }
 
   void loadingDialog() {
@@ -952,6 +974,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void register() async {
     bool hasError = false;
 
+    if (!mounted) return;
     setState(() {
       // Name validation
       if (nameController.text.isEmpty) {
@@ -981,6 +1004,11 @@ class _RegisterPageState extends State<RegisterPage> {
       // Password validation
       if (passwordController.text.isEmpty) {
         alearPassword = 'Please enter your password';
+        colorAlearPassword = Colors.red;
+        hasError = true;
+      } else if (!isValidPassword(passwordController.text)) {
+        alearPassword =
+            'Password must contain at least 8 digits\nor lowercase letters';
         colorAlearPassword = Colors.red;
         hasError = true;
       } else {
@@ -1035,6 +1063,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (responseGetuser.statusCode == 404) {
       // อีเมลยังไม่ถูกใช้ -> ผ่าน
+      if (!mounted) return;
       setState(() {
         alearIconEmail =
             '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>';
@@ -1042,245 +1071,249 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // แสดง Loading Dialog
       // loadingDialog();
-      // var responseRegisterAccount = await http.post(
-      //   Uri.parse("$url/user/api/create_acc"),
-      //   headers: {"Content-Type": "application/json; charset=utf-8"},
-      //   body: registerAccountPostRequestToJson(
-      //     RegisterAccountPostRequest(
-      //       name: nameController.text,
-      //       email: emailController.text.trim(),
-      //       hashedPassword: passwordController.text,
-      //       profile: "none-url",
-      //     ),
-      //   ),
-      // );
-
-      // if (responseRegisterAccount.statusCode == 201) {
-      //   Get.back();
-
-      //   RegisterAccountPostResponse responseGetUserByEmail =
-      //       registerAccountPostResponseFromJson(responseRegisterAccount.body);
-
-      //   if (responseGetUserByEmail.userId > 0) {
-      //     nameFocusNode.unfocus();
-      //     emailFocusNode.unfocus();
-      //     passwordFocusNode.unfocus();
-      //     confirmPasswordFocusNode.unfocus();
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/success.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Successfully!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color.fromRGBO(0, 122, 255, 1),
-                ),
-              ),
-              Text(
-                'You have successfully registered for a new membership',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+      var responseRegisterAccount = await http.post(
+        Uri.parse("$url/user/api/create_acc"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: registerAccountPostRequestToJson(
+          RegisterAccountPostRequest(
+            name: nameController.text,
+            email: emailController.text.trim(),
+            hashedPassword: passwordController.text,
+            profile: "none-url",
           ),
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              Get.to(() => const LoginPage());
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              nameController.clear();
-              emailController.clear();
-              passwordController.clear();
-              confirmPasswordController.clear();
-              isCaptchaVerified = false;
-              setState(() {
-                alearIconEmail = '';
-                colorAlearName = Colors.black;
-                colorAlearEmail = Colors.black;
-                colorAlearPassword = Colors.black;
-                colorAlearConfirmPassword = Colors.black;
-                coloralearRecaptcha = Colors.grey;
-              });
-              initCaptchaClient();
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color.fromRGBO(231, 243, 255, 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Back',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
-                color: Color.fromRGBO(0, 122, 255, 1),
-              ),
-            ),
-          ),
-        ],
       );
-      // Aleart Verify Account
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: Column(
-          children: [
-            Image.asset(
-              "assets/images/aleart/question.png",
-              height: MediaQuery.of(context).size.height * 0.1,
-              fit: BoxFit.contain,
+
+      if (responseRegisterAccount.statusCode == 201) {
+        Get.back();
+
+        RegisterAccountPostResponse responseGetUserByEmail =
+            registerAccountPostResponseFromJson(responseRegisterAccount.body);
+
+        if (responseGetUserByEmail.userId > 0) {
+          nameFocusNode.unfocus();
+          emailFocusNode.unfocus();
+          passwordFocusNode.unfocus();
+          confirmPasswordFocusNode.unfocus();
+          Get.defaultDialog(
+            title: '',
+            titlePadding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            barrierDismissible: false,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+              vertical: MediaQuery.of(context).size.height * 0.02,
             ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-            Text(
-              'Confirm now?',
-              style: TextStyle(
-                fontSize: Get.textTheme.headlineSmall!.fontSize,
-                fontWeight: FontWeight.w500,
-                color: Color.fromRGBO(0, 122, 255, 1),
+            content: WillPopScope(
+              onWillPop: () async => false,
+              child: Column(
+                children: [
+                  Image.asset(
+                    "assets/images/aleart/success.png",
+                    height: MediaQuery.of(context).size.height * 0.1,
+                    fit: BoxFit.contain,
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                  Text(
+                    'Successfully!!',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.headlineSmall!.fontSize,
+                      fontWeight: FontWeight.w500,
+                      color: Color.fromRGBO(0, 122, 255, 1),
+                    ),
+                  ),
+                  Text(
+                    'You have successfully registered for a new membership',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-            Text(
-              'Your account must verify your email first',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              Get.back();
-              // แสดง Loading Dialog
-              loadingDialog();
-              var responseOtp = await http.post(
-                Uri.parse("$url/otp/api/otp"),
-                headers: {"Content-Type": "application/json; charset=utf-8"},
-                body: sendOtpPostRequestToJson(
-                  SendOtpPostRequest(
-                    recipient: emailController.text.trim(),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                  Get.to(() => const LoginPage());
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Login',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Colors.white,
                   ),
                 ),
-              );
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                  nameController.clear();
+                  emailController.clear();
+                  passwordController.clear();
+                  confirmPasswordController.clear();
+                  isCaptchaVerified = false;
+                  if (!mounted) return;
+                  setState(() {
+                    alearIconEmail = '';
+                    colorAlearName = Colors.black;
+                    colorAlearEmail = Colors.black;
+                    colorAlearPassword = Colors.black;
+                    colorAlearConfirmPassword = Colors.black;
+                    coloralearRecaptcha = Colors.grey;
+                  });
+                  initCaptchaClient();
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Color.fromRGBO(0, 122, 255, 1),
+                  ),
+                ),
+              ),
+            ],
+          );
+          // Aleart Verify Account
+          Get.defaultDialog(
+            title: '',
+            titlePadding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
+            content: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/question.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Confirm now?',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromRGBO(0, 122, 255, 1),
+                  ),
+                ),
+                Text(
+                  'Your account must verify your email first',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () async {
+                  Get.back();
+                  // แสดง Loading Dialog
+                  loadingDialog();
+                  var responseOtp = await http.post(
+                    Uri.parse("$url/otp/api/otp"),
+                    headers: {
+                      "Content-Type": "application/json; charset=utf-8"
+                    },
+                    body: sendOtpPostRequestToJson(
+                      SendOtpPostRequest(
+                        recipient: emailController.text.trim(),
+                      ),
+                    ),
+                  );
 
-              if (responseOtp.statusCode == 200) {
-                Get.back();
+                  if (responseOtp.statusCode == 200) {
+                    Get.back();
 
-                SendOtpPostResponst sendOTPResponse =
-                    sendOtpPostResponstFromJson(responseOtp.body);
+                    SendOtpPostResponst sendOTPResponse =
+                        sendOtpPostResponstFromJson(responseOtp.body);
 
-                //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-                verifyOTP(
-                  emailController.text,
-                  sendOTPResponse.otp,
-                  sendOTPResponse.ref,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
+                    //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+                    verifyOTP(
+                      emailController.text,
+                      sendOTPResponse.otp,
+                      sendOTPResponse.ref,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Color.fromRGBO(0, 122, 255, 1),
+                  ),
+                ),
               ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Confirm',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color.fromRGBO(231, 243, 255, 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Back',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
-                color: Color.fromRGBO(0, 122, 255, 1),
-              ),
-            ),
-          ),
-        ],
-      );
-      //   }
-      // }
+            ],
+          );
+        }
+      }
     } else {
       // อีเมลนี้ถูกใช้แล้ว
+      if (!mounted) return;
       setState(() {
         alearIconEmail =
             '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>';
@@ -1340,6 +1373,7 @@ class _RegisterPageState extends State<RegisterPage> {
         final data = jsonDecode(response.body);
         //ถ้า score มากกว่า 0.7 จะมองเป็นมนุษย์
         if (data['success'] == true && data['score'] > 0.7) {
+          if (!mounted) return;
           setState(() {
             isCaptchaVerified = true;
             iamHuman = false;
@@ -1347,6 +1381,7 @@ class _RegisterPageState extends State<RegisterPage> {
           log("CAPTCHA Verified Successfully");
         } else {
           // แสดง button ให้ผู้ใช้ยืนยันตัวตนด้วยการกดปุ่ม
+          if (!mounted) return;
           setState(() {
             iamHuman = true;
           });
@@ -1697,6 +1732,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     ); // ตรวจสอบ OTP
                                   } else {
                                     warning = 'F21F1F';
+                                    if (!mounted) return;
                                     setState(() {});
                                   }
                                 }
@@ -1757,6 +1793,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (responseIsverify.statusCode == 200) {
         Get.back();
+        if (!mounted) return;
         setState(() {});
 
         loadingDialog();
@@ -1771,6 +1808,7 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         if (responseGetuser.statusCode == 200) {
           Get.back();
+          if (!mounted) return;
           setState(() {});
 
           //เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
@@ -1780,13 +1818,16 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       } else {
         Get.back();
+        if (!mounted) return;
         setState(() {});
       }
 
       warning = '';
+      if (!mounted) return;
       setState(() {});
     } else {
       warning = 'F21F1F';
+      if (!mounted) return;
       setState(() {});
     }
   }

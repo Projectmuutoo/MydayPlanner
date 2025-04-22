@@ -45,7 +45,6 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: null,
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -536,7 +535,9 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   }
 
   bool isValidEmail(String email) {
-    return email.contains('@') && email.contains('.');
+    final RegExp emailRegExp = RegExp(
+        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com)$");
+    return emailRegExp.hasMatch(email);
   }
 
   void showNotification(String message) {
@@ -604,6 +605,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         showNotification('ref: ${sendOTPResponse.ref}');
 
         step = 2;
+        if (!mounted) return;
         setState(() {});
       }
     } else {
@@ -620,6 +622,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     if (otpCtl.text.trim() == otp.trim()) {
       textNotification = '';
       step = 3;
+      if (!mounted) return;
       setState(() {});
     } else {
       showNotification('OTP code is invalid');
@@ -651,6 +654,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     if (response.statusCode == 200) {
       step = 1;
       textNotification = '';
+      if (!mounted) return;
       setState(() {});
 
       Future.delayed(

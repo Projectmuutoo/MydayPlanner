@@ -50,6 +50,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String userProfile = '';
   String userPassword = '';
   String warning = '';
+  String textNotification = '';
 
 // ---------------------- 🧮 State / Counter ----------------------
   int lists = 400;
@@ -95,6 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
     // for (var i in re) {
     //   log(i);
     // }
+
     firstPageShow();
     loadData = loadDataAsync();
   }
@@ -109,32 +111,39 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> loadDataAsync() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
-
-    var responseGetUser = await http.post(
-      Uri.parse("$url/user/api/get_user"),
-      headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: getUserByEmailPostRequestToJson(
-        GetUserByEmailPostRequest(
-          email: box.read('email'),
+    try {
+      var responseGetUser = await http.post(
+        Uri.parse("$url/user/api/get_user"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: getUserByEmailPostRequestToJson(
+          GetUserByEmailPostRequest(
+            email: box.read('email'),
+          ),
         ),
-      ),
-    );
+      );
 
-    if (responseGetUser.statusCode == 200) {
-      GetUserByEmailPostResponst responst =
-          getUserByEmailPostResponstFromJson(responseGetUser.body);
-      name = responst.name;
-      userEmail = responst.email;
-      userPassword = responst.hashedPassword;
-      userProfile = responst.profile;
+      if (responseGetUser.statusCode == 200) {
+        GetUserByEmailPostResponst responst =
+            getUserByEmailPostResponstFromJson(responseGetUser.body);
+        name = responst.name;
+        userEmail = responst.email;
+        userPassword = responst.hashedPassword;
+        userProfile = responst.profile;
 
-      isLoadings = false;
-      setState(() {});
-
-      Timer(Duration(seconds: 2), () {
-        showShimmer = false;
+        isLoadings = false;
+        if (!mounted) return;
         setState(() {});
-      });
+
+        Timer(Duration(seconds: 2), () {
+          showShimmer = false;
+          if (!mounted) return;
+          setState(() {});
+        });
+      }
+    } catch (e) {
+      if (box.read('email') == null) {
+        Get.offAll(() => SplashPage());
+      }
     }
   }
 
@@ -152,6 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Future.delayed(Duration(seconds: 1), () {
             if (mounted) {
               itemCount = name.isEmpty ? 1 : name.length;
+              if (!mounted) return;
               setState(() {});
             }
           });
@@ -712,7 +722,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         borderRadius: BorderRadius.circular(8),
                         child: InkWell(
                           onTap: () {
-                            logout(context);
+                            logout();
                           },
                           borderRadius: BorderRadius.circular(8),
                           child: Padding(
@@ -747,6 +757,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void myProfile() async {
+    if (box.read('email') == null) {
+      Get.to(() => const SplashPage());
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -761,12 +774,14 @@ class _SettingsPageState extends State<SettingsPage> {
             editNameCtl.addListener(() {
               if (context.mounted) {
                 isTyping = editNameCtl.text.isNotEmpty;
+                if (!mounted) return;
                 setState(() {});
               }
             });
             editPasswordCtl.addListener(() {
               if (context.mounted) {
                 isTypingPassword = editPasswordCtl.text.isNotEmpty;
+                if (!mounted) return;
                 setState(() {});
               }
             });
@@ -819,6 +834,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                         isCheckedPasswordConfirmDelete = false;
                                         passwordConfirmDeleteCtl.clear();
                                         notitext = false;
+                                        showNotification('');
                                       },
                                       child: Padding(
                                         padding: EdgeInsets.symmetric(
@@ -903,6 +919,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                               source: ImageSource.gallery);
                                           if (image != null) {
                                             savedFile = File(image!.path);
+                                            if (!mounted) return;
                                             setState(() {});
                                           }
                                         } else if (value == 'เลือกไฟล์') {
@@ -912,6 +929,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                           if (result != null) {
                                             savedFile =
                                                 File(result.files.first.path!);
+                                            if (!mounted) return;
                                             setState(() {});
                                           }
                                         } else if (value == 'ถ่ายรูป') {
@@ -919,6 +937,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                               source: ImageSource.camera);
                                           if (image != null) {
                                             savedFile = File(image!.path);
+                                            if (!mounted) return;
                                             setState(() {});
                                           }
                                         }
@@ -1075,6 +1094,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                               '',
                                               '',
                                               'newUrl',
+                                              setState,
                                             );
                                           }
                                         },
@@ -1105,6 +1125,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                           child: TextField(
                                             controller: editNameCtl,
                                             focusNode: editNameFocusNode,
+                                            inputFormatters: [
+                                              LengthLimitingTextInputFormatter(
+                                                  20),
+                                            ],
                                             keyboardType: TextInputType.text,
                                             cursorColor: Colors.black,
                                             style: TextStyle(
@@ -1142,6 +1166,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                     'newName',
                                                     '',
                                                     '',
+                                                    setState,
                                                   );
                                                 },
                                                 child: Padding(
@@ -1615,6 +1640,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                     '',
                                                     'newPassword',
                                                     '',
+                                                    setState,
                                                   );
                                                 },
                                                 child: Padding(
@@ -1650,6 +1676,21 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                   ],
                                 ),
+                                if (textNotification.isNotEmpty)
+                                  SizedBox(
+                                    height: height * 0.01,
+                                  ),
+                                if (textNotification.isNotEmpty)
+                                  Text(
+                                    textNotification,
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.red,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                               ],
                             ),
                             Column(
@@ -1697,12 +1738,26 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  void showNotification(String message) {
+    textNotification = message;
+    setState(() {});
+  }
+
+  bool isValidPassword(String password) {
+    if (password.length < 8) return false;
+
+    // นับจำนวนตัวเลขและตัวพิมพ์เล็กรวมกัน
+    int count = RegExp(r'[0-9a-z]').allMatches(password).length;
+
+    return count >= 8;
+  }
+
   void confirmInformation(
     String newName,
     String newPassword,
     String newUrl,
+    StateSetter setState1,
   ) async {
-    log("message");
     // var config = await Configuration.getConfig();
     // var url = config['apiEndpoint'];
     // bool hasSuccess = false;
@@ -1734,26 +1789,34 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // // 2. เปลี่ยนรหัสผ่าน
     // if (newPassword.isNotEmpty) {
-    //   final res = await http.put(
-    //     Uri.parse("$url/profile/api/edit_profile"),
-    //     headers: {"Content-Type": "application/json; charset=utf-8"},
-    //     body: editProfileUserPutRequestToJson(
-    //       EditProfileUserPutRequest(
-    //         email: userEmail,
-    //         profileData: ProfileData(
-    //           name: null,
-    //           hashedPassword: editPasswordCtl.text,
-    //           profile: null,
-    //         ),
+    //   if (!isValidPassword(editPasswordCtl.text)) {
+    //     showNotification(
+    //         'Password must contain at least 8 digits\nor lowercase letters');
+    //     setState1(() {});
+    //     return;
+    //   }
+    //   showNotification('');
+    //     setState1(() {});
+    // final res = await http.put(
+    //   Uri.parse("$url/profile/api/edit_profile"),
+    //   headers: {"Content-Type": "application/json; charset=utf-8"},
+    //   body: editProfileUserPutRequestToJson(
+    //     EditProfileUserPutRequest(
+    //       email: userEmail,
+    //       profileData: ProfileData(
+    //         name: null,
+    //         hashedPassword: editPasswordCtl.text,
+    //         profile: null,
     //       ),
     //     ),
-    //   );
+    //   ),
+    // );
 
-    //   if (res.statusCode == 200) {
-    //     box.write('password', editPasswordCtl.text);
-    //     hasSuccess = true;
-    //     editPasswordCtl.clear();
-    //   }
+    // if (res.statusCode == 200) {
+    //   box.write('password', editPasswordCtl.text);
+    //   hasSuccess = true;
+    //   editPasswordCtl.clear();
+    // }
     // }
 
     // // 3. เปลี่ยนรูปโปรไฟล์
@@ -1921,7 +1984,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void logout(BuildContext context) async {
+  void logout() async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
@@ -1945,8 +2008,13 @@ class _SettingsPageState extends State<SettingsPage> {
       // Sign out from Firebase if needed
       await FirebaseAuth.instance.signOut();
       if (response.success) {
-        Get.to(() => SplashPage());
+        box.remove('email');
+        box.remove('password');
+        Get.offAll(() => SplashPage());
       }
+    } else {
+      Get.back();
+      Get.offAll(() => SplashPage());
     }
   }
 
@@ -2597,6 +2665,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ); // ตรวจสอบ OTP
                                   } else {
                                     warning = 'F21F1F';
+                                    if (!mounted) return;
                                     setState(() {});
                                   }
                                 }
@@ -2677,7 +2746,7 @@ class _SettingsPageState extends State<SettingsPage> {
             await FirebaseAuth.instance.signOut();
           }
 
-          Get.to(() => SplashPage());
+          Get.offAll(() => SplashPage());
           box.remove('email');
           box.remove('password');
         });
@@ -2686,6 +2755,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
     } else {
       warning = 'F21F1F';
+      if (!mounted) return;
       setState(() {});
     }
   }
