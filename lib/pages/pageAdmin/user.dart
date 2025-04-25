@@ -2,14 +2,18 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:ui' as ui;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/adminVerifyPutRequest.dart';
 import 'package:mydayplanner/models/request/createAdminPostRequest.dart';
 import 'package:mydayplanner/models/request/deleteUserDeleteRequest.dart';
 import 'package:mydayplanner/models/request/editActiveUserPutRequest.dart';
+import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
+import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
 import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
+import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
 import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +22,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:shimmer/shimmer.dart';
 
 class UserPage extends StatefulWidget {
@@ -38,7 +43,7 @@ class _UserPageState extends State<UserPage> {
   String textNotification = '';
   String warning = '';
   String selectedRole = 'All';
-
+  int countToRequest = 1;
 // 📥 TextEditingController
   TextEditingController emailCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
@@ -52,10 +57,21 @@ class _UserPageState extends State<UserPage> {
   bool isLoadings = true;
   bool showShimmer = true;
   bool displayEditAdmin = false;
+  bool canResend = true;
+  bool hasStartedCountdown = false;
+  bool blockOTP = false;
+  bool stopBlockOTP = false;
+  bool signupSuccess = false;
+
+  String? expiresAtEmail;
+
+  Timer? timer;
+  int start = 900; // 15 นาที = 900 วินาที
+  String countTheTime = "15:00"; // เวลาเริ่มต้น
 
 // 📈 List Variables
-  late List<User> allUsers = [];
-  List<User> filteredUsers = [];
+  late List<AllUserGetResponse> allUsers = [];
+  List<AllUserGetResponse> filteredUsers = [];
 
 // 🧠 Map Variables
   Map<String, bool> isDropdownOpenUserMap = {};
@@ -73,12 +89,11 @@ class _UserPageState extends State<UserPage> {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
 
-    var responseAllUser =
-        await http.get(Uri.parse('$url/user/api/get_all_user'));
+    var responseAllUser = await http.get(Uri.parse('$url/user/getalluser'));
     if (responseAllUser.statusCode == 200) {
-      AllUserGetResponse response =
+      List<AllUserGetResponse> response =
           allUserGetResponseFromJson(responseAllUser.body);
-      allUsers = response.users;
+      allUsers = response;
       filteredUsers = allUsers
           .where((user) => user.userId != 1)
           .toList()
@@ -98,8 +113,6 @@ class _UserPageState extends State<UserPage> {
         if (!mounted) return;
         setState(() {});
       });
-    } else {
-      log('message');
     }
   }
 
@@ -367,17 +380,17 @@ class _UserPageState extends State<UserPage> {
                                                                                     children: [
                                                                                       SizedBox(width: width * 0.01),
                                                                                       Text(
-                                                                                        'a ${user.role == 'admin' ? 'admin' : 'member'} on ${formatDate(user.createAt.toString())} - ${user.isVerify == 1 ? 'validated' : 'Invalidated'}',
+                                                                                        'a ${user.role == 'admin' ? 'admin' : 'member'} on ${formatDate(user.createdAt.toString())} - ${user.isVerify == '1' ? 'validated' : 'Invalidated'}',
                                                                                         style: TextStyle(
                                                                                           fontSize: Get.textTheme.titleSmall!.fontSize,
                                                                                           fontWeight: FontWeight.normal,
                                                                                         ),
                                                                                       ),
                                                                                       SvgPicture.string(
-                                                                                        user.isVerify == 1 ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
+                                                                                        user.isVerify == '1' ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m10 15.586-3.293-3.293-1.414 1.414L10 18.414l9.707-9.707-1.414-1.414z"></path></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
                                                                                         height: height * 0.03,
                                                                                         fit: BoxFit.contain,
-                                                                                        color: user.isVerify == 1 ? Colors.green : Colors.red,
+                                                                                        color: user.isVerify == '1' ? Colors.green : Colors.red,
                                                                                       ),
                                                                                     ],
                                                                                   ),
@@ -1156,7 +1169,7 @@ class _UserPageState extends State<UserPage> {
             // แสดง Loading Dialog
             loadingDialog();
             var responseLogot = await http.delete(
-              Uri.parse("$url/user/account"),
+              Uri.parse("$url/user/deleteuser"),
               headers: {"Content-Type": "application/json; charset=utf-8"},
               body: deleteUserDeleteRequestToJson(
                 DeleteUserDeleteRequest(
@@ -1338,7 +1351,7 @@ class _UserPageState extends State<UserPage> {
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
               child: SizedBox(
-                height: height * 0.35,
+                height: height * 0.4,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -1488,7 +1501,7 @@ class _UserPageState extends State<UserPage> {
                           ),
                         ),
                         SizedBox(
-                          height: height * 0.01,
+                          height: height * 0.02,
                         ),
                         if (textNotification.isNotEmpty)
                           Text(
@@ -1533,7 +1546,7 @@ class _UserPageState extends State<UserPage> {
                             showNotification('');
                             setState(() {});
 
-                            checkAndContinue;
+                            checkAndContinue();
                           },
                           style: ElevatedButton.styleFrom(
                             fixedSize: Size(
@@ -1578,43 +1591,77 @@ class _UserPageState extends State<UserPage> {
     var url = config['apiEndpoint'];
 
     loadingDialog();
-    var responseCreate = await http.post(
-      Uri.parse("$url/admin/api/create_acc"),
+    var responseGetuser = await http.post(
+      Uri.parse("$url/user/getemail"),
       headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: createAdminPostRequestToJson(
-        CreateAdminPostRequest(
+      body: getUserByEmailPostRequestToJson(
+        GetUserByEmailPostRequest(
           email: emailCtl.text,
-          hashedPassword: passwordCtl.text,
         ),
       ),
     );
 
-    if (responseCreate.statusCode == 201) {
-      Get.back();
+    Get.back();
+    if (!mounted) return;
 
+    if (responseGetuser.statusCode == 200) {
+      showNotification('This email is already in use');
+      return;
+    } else {
       loadingDialog();
-      var responseOtp = await http.post(
-        Uri.parse("$url/otp/api/otp"),
+      var responseCreate = await http.post(
+        Uri.parse("$url/admin/createadmin"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: sendOtpPostRequestToJson(
-          SendOtpPostRequest(
-            recipient: emailCtl.text,
+        body: createAdminPostRequestToJson(
+          CreateAdminPostRequest(
+            email: emailCtl.text,
+            hashedPassword: passwordCtl.text,
           ),
         ),
       );
 
-      if (responseOtp.statusCode == 200) {
+      if (responseCreate.statusCode == 201) {
         Get.back();
-        showNotification('');
 
-        SendOtpPostResponst sendOTPResponse =
-            sendOtpPostResponstFromJson(responseOtp.body);
-        //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-        verifyOTP(
-          emailCtl.text,
-          sendOTPResponse.otp,
-          sendOTPResponse.ref,
+        loadingDialog();
+        var responseOtp = await http.post(
+          Uri.parse("$url/auth/requestverifyOTP"),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: sendOtpPostRequestToJson(
+            SendOtpPostRequest(
+              email: emailCtl.text,
+            ),
+          ),
         );
+
+        if (responseOtp.statusCode == 200) {
+          Get.back();
+          showNotification('');
+
+          SendOtpPostResponst sendOTPResponse =
+              sendOtpPostResponstFromJson(responseOtp.body);
+          //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+          verifyOTP(
+            emailCtl.text,
+            sendOTPResponse.ref,
+          );
+        } else {
+          Get.back();
+          var result = await FirebaseFirestore.instance
+              .collection('EmailBlocked')
+              .doc(emailCtl.text)
+              .get();
+          var data = result.data();
+          if (data != null) {
+            stopBlockOTP = true;
+            canResend = false;
+            expiresAtEmail = formatTimestampTo12HourTimeWithSeconds(
+                data['expiresAt'] as Timestamp);
+            showNotification(
+                'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+            return;
+          }
+        }
       }
     }
   }
@@ -1626,7 +1673,7 @@ class _UserPageState extends State<UserPage> {
 
   bool isValidEmail(String email) {
     final RegExp emailRegExp = RegExp(
-        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com)$");
+        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$");
     return emailRegExp.hasMatch(email);
   }
 
@@ -1877,368 +1924,826 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
-  void verifyOTP(String email, String codeOTP, String ref) async {
+  void verifyOTP(String email, String ref) async {
     // สร้าง FocusNodes สำหรับทุกช่อง
     final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
     final otpControllers = List<TextEditingController>.generate(
         6, (index) => TextEditingController());
 
-    if (mounted) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        isDismissible: false,
-        enableDrag: false,
-        builder: (BuildContext bc) {
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              double width = MediaQuery.of(context).size.width;
-              double height = MediaQuery.of(context).size.height;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            double width = MediaQuery.of(context).size.width;
+            double height = MediaQuery.of(context).size.height;
 
-              return WillPopScope(
-                onWillPop: () async => false,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: width * 0.04,
-                    vertical: height * 0.06,
-                  ),
-                  child: SizedBox(
-                    height: height,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Verification Code',
-                              style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.headlineMedium!.fontSize,
-                                fontWeight: FontWeight.w500,
+            if (!hasStartedCountdown) {
+              hasStartedCountdown = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                startCountdown(setState, ref);
+              });
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              startOtpExpiryTimer(email, setState);
+            });
+
+            return WillPopScope(
+              onWillPop: () async {
+                return signupSuccess ? true : false;
+              },
+              child: Scaffold(
+                body: SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: width * 0.04,
+                      left: width * 0.04,
+                      top: height * 0.06,
+                    ),
+                    child: SizedBox(
+                      height: height,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Verification Code',
+                                    style: TextStyle(
+                                      fontSize: Get
+                                          .textTheme.headlineMedium!.fontSize,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              'We have send the OTP code verification to',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
+                              Row(
+                                children: [
+                                  Text(
+                                    'We have send the OTP code verification to',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              obfuscateEmail(email),
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.w500,
+                              Row(
+                                children: [
+                                  Text(
+                                    email,
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: height * 0.02,
-                        ),
-                        Form(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(
-                              6,
-                              (index) {
-                                return SizedBox(
-                                  height: height * 0.08,
-                                  width: width * 0.14,
-                                  child: TextFormField(
-                                    focusNode: focusNodes[index],
-                                    controller: otpControllers[index],
-                                    cursorColor: Colors.grey,
-                                    onChanged: (value) {
-                                      if (value.length == 1) {
-                                        if (index < 5) {
-                                          focusNodes[index + 1]
-                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
-                                        } else {
-                                          FocusScope.of(context)
-                                              .unfocus(); // ปิดคีย์บอร์ด
+                              SizedBox(
+                                height: height * 0.02,
+                              ),
+                              Form(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(
+                                    6,
+                                    (index) {
+                                      return SizedBox(
+                                        height: height * 0.08,
+                                        width: width * 0.14,
+                                        child: TextFormField(
+                                          focusNode: focusNodes[index],
+                                          controller: otpControllers[index],
+                                          cursorColor: Colors.grey,
+                                          onChanged: (value) {
+                                            if (value.length == 1) {
+                                              if (index < 5) {
+                                                focusNodes[index + 1]
+                                                    .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                              } else {
+                                                FocusScope.of(context)
+                                                    .unfocus(); // ปิดคีย์บอร์ด
+                                                verifyEnteredOTP(
+                                                  otpControllers,
+                                                  email,
+                                                  ref,
+                                                  setState,
+                                                ).then((success) {
+                                                  if (success) {
+                                                    signupSuccess = true;
+                                                    Get.back(); // ปิด modal
+                                                    Get.back(); // ปิด modal
+                                                    Get.defaultDialog(
+                                                      title: "",
+                                                      titlePadding:
+                                                          EdgeInsets.zero,
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                        horizontal:
+                                                            MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                0.04,
+                                                        vertical: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height *
+                                                            0.02,
+                                                      ),
+                                                      content: Column(
+                                                        children: [
+                                                          Image.asset(
+                                                            "assets/images/aleart/success.png",
+                                                            height: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .height *
+                                                                0.1,
+                                                            fit: BoxFit.contain,
+                                                          ),
+                                                          SizedBox(
+                                                              height: MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .height *
+                                                                  0.01),
+                                                          Text(
+                                                            'Successfully!!',
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .headlineSmall!
+                                                                  .fontSize,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: Color
+                                                                  .fromRGBO(
+                                                                      0,
+                                                                      122,
+                                                                      255,
+                                                                      1),
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            'Create account successfully',
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .titleMedium!
+                                                                  .fontSize,
+                                                              color:
+                                                                  Colors.black,
+                                                            ),
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      actions: [
+                                                        ElevatedButton(
+                                                          onPressed: () {
+                                                            Get.back();
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            fixedSize: Size(
+                                                              MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width,
+                                                              MediaQuery.of(
+                                                                          context)
+                                                                      .size
+                                                                      .height *
+                                                                  0.05,
+                                                            ),
+                                                            backgroundColor:
+                                                                Color.fromRGBO(
+                                                                    0,
+                                                                    122,
+                                                                    255,
+                                                                    1),
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                            ),
+                                                            elevation: 1,
+                                                          ),
+                                                          child: Text(
+                                                            'Ok',
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .titleLarge!
+                                                                  .fontSize,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  }
+                                                }); // ตรวจสอบ OTP
+                                              }
+                                            } else if (value.isEmpty &&
+                                                index > 0) {
+                                              focusNodes[index - 1]
+                                                  .requestFocus(); // กลับไปช่องก่อนหน้า
+                                            }
+                                          },
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium,
+                                          keyboardType: TextInputType.number,
+                                          textAlign: TextAlign.center,
+                                          inputFormatters: [
+                                            LengthLimitingTextInputFormatter(1),
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
+                                          ],
+                                          decoration: InputDecoration(
+                                            focusColor: Colors.black,
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            contentPadding: EdgeInsets.all(8),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                color: Colors.grey.shade300,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide(
+                                                color: warning.isNotEmpty
+                                                    ? Color(int.parse(
+                                                        '0xff$warning'))
+                                                    : Colors.grey,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            hintText: "-",
+                                            hintStyle: TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              if (blockOTP || warning.isNotEmpty)
+                                SizedBox(
+                                  height: height * 0.02,
+                                ),
+                              if (warning.isNotEmpty)
+                                Text(
+                                  'OTP code is invalid',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              if (blockOTP)
+                                Text(
+                                  'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.red,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              SizedBox(
+                                height: height * 0.02,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'OTP copied',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: width * 0.01,
+                                  ),
+                                  InkWell(
+                                    onTap: () async {
+                                      // ดึงข้อความจาก Clipboard
+                                      ClipboardData? data =
+                                          await Clipboard.getData('text/plain');
+                                      if (data != null && data.text != null) {
+                                        String copiedText = data.text!;
+                                        if (copiedText.length == 6) {
+                                          // ใส่ข้อความลงใน TextControllers
+                                          for (int i = 0;
+                                              i < copiedText.length;
+                                              i++) {
+                                            otpControllers[i].text =
+                                                copiedText[i];
+                                            // โฟกัสไปยังช่องสุดท้าย
+                                            if (i == 5) {
+                                              focusNodes[i].requestFocus();
+                                            }
+                                          }
                                           verifyEnteredOTP(
                                             otpControllers,
-                                            codeOTP,
                                             email,
-                                          ); // ตรวจสอบ OTP
+                                            ref,
+                                            setState,
+                                          ).then((success) {
+                                            if (success) {
+                                              signupSuccess = true;
+                                              Get.back(); // ปิด modal
+                                              Get.back(); // ปิด modal
+                                              Get.defaultDialog(
+                                                title: "",
+                                                titlePadding: EdgeInsets.zero,
+                                                backgroundColor: Colors.white,
+                                                contentPadding:
+                                                    EdgeInsets.symmetric(
+                                                  horizontal:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .width *
+                                                          0.04,
+                                                  vertical:
+                                                      MediaQuery.of(context)
+                                                              .size
+                                                              .height *
+                                                          0.02,
+                                                ),
+                                                content: Column(
+                                                  children: [
+                                                    Image.asset(
+                                                      "assets/images/aleart/success.png",
+                                                      height:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .height *
+                                                              0.1,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                    SizedBox(
+                                                        height: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height *
+                                                            0.01),
+                                                    Text(
+                                                      'Successfully!!',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .headlineSmall!
+                                                            .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Color.fromRGBO(
+                                                            0, 122, 255, 1),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'Create account successfully',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleMedium!
+                                                            .fontSize,
+                                                        color: Colors.black,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ],
+                                                ),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Get.back();
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      fixedSize: Size(
+                                                        MediaQuery.of(context)
+                                                            .size
+                                                            .width,
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .height *
+                                                            0.05,
+                                                      ),
+                                                      backgroundColor:
+                                                          Color.fromRGBO(
+                                                              0, 122, 255, 1),
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                      elevation: 1,
+                                                    ),
+                                                    child: Text(
+                                                      'Ok',
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleLarge!
+                                                            .fontSize,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            }
+                                          }); // ตรวจสอบ OTP
+                                        } else {
+                                          warning = 'F21F1F';
+                                          if (!mounted) return;
+                                          setState(() {});
                                         }
-                                      } else if (value.isEmpty && index > 0) {
-                                        focusNodes[index - 1]
-                                            .requestFocus(); // กลับไปช่องก่อนหน้า
                                       }
                                     },
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium,
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    inputFormatters: [
-                                      LengthLimitingTextInputFormatter(1),
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    decoration: InputDecoration(
-                                      focusColor: Colors.black,
-                                      filled: true,
-                                      fillColor: Colors.white, // สีพื้นหลัง
-                                      contentPadding:
-                                          EdgeInsets.all(8), // ระยะห่างภายใน
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            12), // มุมโค้ง
-                                        borderSide: BorderSide(
-                                          color: Colors.grey, // สีกรอบปกติ
-                                          width: 2, // ความหนาของกรอบ
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.01),
+                                      child: Text(
+                                        'Paste',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleMedium!.fontSize,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
                                         ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey
-                                              .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
-                                          width: 2,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: warning.isNotEmpty
-                                              ? Color(int.parse('0xff$warning'))
-                                              : Colors.grey,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      hintText: "-", // ข้อความตัวอย่าง
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey,
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        if (warning.isNotEmpty)
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                        if (warning.isNotEmpty)
-                          Text(
-                            'OTP code is invalid',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.red,
-                            ),
-                          ),
-                        SizedBox(
-                          height: height * 0.02,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'OTP copied',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
+                                ],
                               ),
-                            ),
-                            SizedBox(
-                              width: width * 0.01,
-                            ),
-                            InkWell(
-                              onTap: () async {
-                                // ดึงข้อความจาก Clipboard
-                                ClipboardData? data =
-                                    await Clipboard.getData('text/plain');
-                                if (data != null && data.text != null) {
-                                  String copiedText = data.text!;
-                                  if (copiedText.length == 6) {
-                                    // ใส่ข้อความลงใน TextControllers
-                                    for (int i = 0;
-                                        i < copiedText.length;
-                                        i++) {
-                                      otpControllers[i].text = copiedText[i];
-                                      // โฟกัสไปยังช่องสุดท้าย
-                                      if (i == 5) {
-                                        focusNodes[i].requestFocus();
-                                      }
-                                    }
-                                    verifyEnteredOTP(
-                                      otpControllers,
-                                      codeOTP,
-                                      email,
-                                    ); // ตรวจสอบ OTP
-                                  } else {
-                                    warning = 'F21F1F';
-                                    if (!mounted) return;
-                                    setState(() {});
-                                  }
-                                }
-                              },
-                              child: Text(
-                                'Paste',
+                              Text(
+                                'ref: $ref',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.blue,
-                                  decoration: TextDecoration.underline,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          'ref: $ref',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleSmall!.fontSize,
-                            fontWeight: FontWeight.normal,
+                              SizedBox(height: height * 0.01),
+                              Text(
+                                countTheTime,
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                              SizedBox(height: height * 0.01),
+                              InkWell(
+                                onTap: canResend
+                                    ? () async {
+                                        countToRequest++;
+
+                                        if (countToRequest > 3) {
+                                          Map<String, dynamic> data = {
+                                            'email': email,
+                                            'createdAt': Timestamp.fromDate(
+                                                DateTime.now()),
+                                            'expiresAt': Timestamp.fromDate(
+                                              DateTime.now()
+                                                  .add(Duration(minutes: 10)),
+                                            ),
+                                          };
+                                          await FirebaseFirestore.instance
+                                              .collection('EmailBlocked')
+                                              .doc(email)
+                                              .set(data);
+                                          blockOTP = true;
+                                          stopBlockOTP = true;
+                                          canResend = false;
+                                          expiresAtEmail =
+                                              formatTimestampTo12HourTimeWithSeconds(
+                                                  data['expiresAt']
+                                                      as Timestamp);
+                                          if (mounted) {
+                                            setState(() {});
+                                          }
+                                          return;
+                                        }
+
+                                        var config =
+                                            await Configuration.getConfig();
+                                        var url = config['apiEndpoint'];
+                                        loadingDialog();
+                                        var responseOtp = await http.post(
+                                          Uri.parse(
+                                              "$url/auth/requestverifyOTP"),
+                                          headers: {
+                                            "Content-Type":
+                                                "application/json; charset=utf-8"
+                                          },
+                                          body: sendOtpPostRequestToJson(
+                                            SendOtpPostRequest(
+                                              email: email,
+                                            ),
+                                          ),
+                                        );
+
+                                        if (responseOtp.statusCode == 200) {
+                                          Get.back();
+                                          SendOtpPostResponst sendOTPResponse =
+                                              sendOtpPostResponstFromJson(
+                                                  responseOtp.body);
+
+                                          ref = sendOTPResponse.ref;
+                                          if (timer != null &&
+                                              timer!.isActive) {
+                                            timer!.cancel();
+                                          }
+
+                                          hasStartedCountdown = true;
+                                          canResend =
+                                              false; // ล็อกการกดชั่วคราว
+                                          warning = '';
+                                          for (var controller
+                                              in otpControllers) {
+                                            controller.clear();
+                                          }
+
+                                          setState(() {});
+                                          startCountdown(setState, ref);
+                                          // รอ 30 วิค่อยให้กดได้อีก
+                                          Future.delayed(Duration(seconds: 30),
+                                              () {
+                                            if (mounted) {
+                                              setState(() {
+                                                canResend = true;
+                                              });
+                                            }
+                                          });
+                                        } else {
+                                          Get.back();
+                                          var result = await FirebaseFirestore
+                                              .instance
+                                              .collection('EmailBlocked')
+                                              .doc(email)
+                                              .get();
+                                          var data = result.data();
+                                          if (data != null) {
+                                            stopBlockOTP = true;
+                                            canResend = false;
+                                            expiresAtEmail =
+                                                formatTimestampTo12HourTimeWithSeconds(
+                                                    data['expiresAt']
+                                                        as Timestamp);
+                                            showNotification(
+                                                'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+                                            return;
+                                          }
+                                        }
+                                      }
+                                    : null,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.01),
+                                  child: Text(
+                                    'Resend Code',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                      color:
+                                          canResend ? Colors.blue : Colors.grey,
+                                      decoration: canResend
+                                          ? TextDecoration.underline
+                                          : TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          if (stopBlockOTP)
+                            Column(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Get.back();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    fixedSize: Size(
+                                      width,
+                                      height * 0.04,
+                                    ),
+                                    backgroundColor: Colors.black,
+                                    elevation: 1,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Back',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
-          );
-        },
-      );
-    }
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      if (timer != null && timer!.isActive) {
+        timer!.cancel();
+      }
+    });
   }
 
   // ฟังก์ชันตรวจสอบ OTP
-  void verifyEnteredOTP(
+  Future<bool> verifyEnteredOTP(
     List<TextEditingController> otpControllers,
-    String codeOTP,
     String email,
+    String ref,
+    StateSetter setState1,
   ) async {
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
     String enteredOTP = otpControllers
         .map((controller) => controller.text)
         .join(); // รวมค่าที่ป้อน
-    if (enteredOTP == codeOTP) {
+    if (enteredOTP.length == 6) {
       // แสดง Loading Dialog
       loadingDialog();
-      var responseIsverify = await http.put(
-        Uri.parse("$url/admin/api/is_verify"),
+      var responseIsverify = await http.post(
+        Uri.parse("$url/auth/verifyOTP"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: adminVerifyPutRequestToJson(
-          AdminVerifyPutRequest(
+        body: isVerifyUserPutRequestToJson(
+          IsVerifyUserPutRequest(
             email: email,
+            ref: ref,
+            otp: enteredOTP,
+            record: "verify",
           ),
         ),
       );
 
-      if (responseIsverify.statusCode == 200) {
-        Get.back();
-        Get.back();
-        Get.back();
-        emailCtl.text = '';
-        passwordCtl.text = '';
-        loadDataAsync();
-        if (!mounted) return;
-        setState(() {});
+      // Close loading dialog first
+      Get.back();
 
-        Get.defaultDialog(
-          title: "",
-          titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width * 0.04,
-            vertical: MediaQuery.of(context).size.height * 0.02,
-          ),
-          content: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/success.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Successfully!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color.fromRGBO(0, 122, 255, 1),
-                ),
-              ),
-              Text(
-                'Create account successfully',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 1,
-              ),
-              child: Text(
-                'Ok',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
+      if (responseIsverify.statusCode == 200) {
+        setState1(() {
+          warning = ''; // Clear warning when successful
+        });
+
+        loadingDialog();
+        var responseGetuser = await http.post(
+          Uri.parse("$url/user/getemail"),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: getUserByEmailPostRequestToJson(
+            GetUserByEmailPostRequest(
+              email: email,
             ),
-          ],
+          ),
         );
-      } else {
+
         Get.back();
+        if (responseGetuser.statusCode == 200) {
+          await FirebaseFirestore.instance
+              .collection('OTPRecords')
+              .doc(ref)
+              .delete();
+          await FirebaseFirestore.instance
+              .collection('EmailBlocked')
+              .doc(email)
+              .delete();
+          if (timer != null && timer!.isActive) {
+            timer!.cancel();
+          }
+
+          return true;
+        }
+      } else {
+        setState1(() {
+          warning = 'F21F1F';
+        });
+        return false;
       }
-      warning = '';
-      if (!mounted) return;
-      setState(() {});
+      return false;
     } else {
-      warning = 'F21F1F';
-      if (!mounted) return;
-      setState(() {});
+      return false;
     }
   }
 
-  String obfuscateEmail(String email) {
-    // แยกส่วนก่อนและหลัง '@'
-    int atIndex = email.indexOf('@');
+  void startCountdown(StateSetter setState, String ref) {
+    // ยกเลิก timer เดิมถ้ามี
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
 
-    String localPart = email.substring(0, atIndex); // ส่วนก่อน '@'
-    String domainPart = email.substring(atIndex); // ส่วนหลัง '@'
+    // รีเซ็ตค่าเริ่มต้น
+    start = 900;
+    countTheTime = "15:00";
 
-    // กำหนดจำนวนตัวอักษรที่จะแสดงเป็นปกติ (3 ตัว)
-    int visibleChars = localPart.length > 3 ? 3 : localPart.length;
+    // เริ่ม timer ใหม่
+    timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      if (start == 0) {
+        timer.cancel();
+        await FirebaseFirestore.instance
+            .collection('OTPRecords_verify')
+            .doc(ref)
+            .delete();
+        canResend = true;
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        start--;
+        if (mounted) {
+          setState(() {
+            countTheTime = formatTime(start);
+          });
+        }
+      }
+    });
+  }
 
-    // แสดงตัวอักษรต้น
-    String visiblePart = localPart.substring(0, visibleChars);
-    // แปลงตัวอักษรที่เหลือเป็น '*'
-    String obfuscatedPart = '*' * (localPart.length - visibleChars);
+  String formatTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$secs';
+  }
 
-    // รวมข้อความที่แปลงแล้ว
-    return visiblePart + obfuscatedPart + domainPart;
+  void startOtpExpiryTimer(String email, StateSetter setState) async {
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('EmailBlocked')
+        .doc(email)
+        .get();
+
+    var data = snapshot.data() as Map<String, dynamic>?;
+    if (data == null || data['expiresAt'] == null) return;
+
+    Timestamp expiresAt = data['expiresAt'] as Timestamp;
+    DateTime expireTime = expiresAt.toDate();
+    DateTime now = DateTime.now();
+
+    if (now.isAfter(expireTime)) {
+      stopBlockOTP = false;
+      blockOTP = false;
+      canResend = true;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  String formatTimestampTo12HourTimeWithSeconds(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    String formattedTime = DateFormat('hh:mm:ss a').format(dateTime);
+    return formattedTime;
   }
 }

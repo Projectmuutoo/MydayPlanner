@@ -11,18 +11,18 @@ String sendOtpPostRequestToJson(SendOtpPostRequest data) =>
     json.encode(data.toJson());
 
 class SendOtpPostRequest {
-  String recipient;
+  String email;
 
   SendOtpPostRequest({
-    required this.recipient,
+    required this.email,
   });
 
   factory SendOtpPostRequest.fromJson(Map<String, dynamic> json) =>
       SendOtpPostRequest(
-        recipient: json["recipient"],
+        email: json["email"],
       );
 
   Map<String, dynamic> toJson() => {
-        "recipient": recipient,
+        "email": email,
       };
 }

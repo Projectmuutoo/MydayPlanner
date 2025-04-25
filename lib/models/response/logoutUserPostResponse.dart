@@ -11,22 +11,22 @@ String logoutUserPostResponseToJson(LogoutUserPostResponse data) =>
     json.encode(data.toJson());
 
 class LogoutUserPostResponse {
-  bool success;
+  String email;
   String message;
 
   LogoutUserPostResponse({
-    required this.success,
+    required this.email,
     required this.message,
   });
 
   factory LogoutUserPostResponse.fromJson(Map<String, dynamic> json) =>
       LogoutUserPostResponse(
-        success: json["success"],
+        email: json["email"],
         message: json["message"],
       );
 
   Map<String, dynamic> toJson() => {
-        "success": success,
+        "email": email,
         "message": message,
       };
 }

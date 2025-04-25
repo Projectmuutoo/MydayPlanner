@@ -17,9 +17,9 @@ class GetUserByEmailPostResponst {
   String hashedPassword;
   String profile;
   String role;
+  String isVerify;
   String isActive;
-  int isVerify;
-  DateTime createAt;
+  String createdAt;
 
   GetUserByEmailPostResponst({
     required this.userId,
@@ -28,33 +28,33 @@ class GetUserByEmailPostResponst {
     required this.hashedPassword,
     required this.profile,
     required this.role,
-    required this.isActive,
     required this.isVerify,
-    required this.createAt,
+    required this.isActive,
+    required this.createdAt,
   });
 
   factory GetUserByEmailPostResponst.fromJson(Map<String, dynamic> json) =>
       GetUserByEmailPostResponst(
-        userId: json["user_id"],
-        name: json["name"],
-        email: json["email"],
-        hashedPassword: json["hashed_password"],
-        profile: json["profile"],
-        role: json["role"],
-        isActive: json["is_active"],
-        isVerify: json["is_verify"],
-        createAt: DateTime.parse(json["create_at"]),
+        userId: json["UserID"],
+        name: json["Name"],
+        email: json["Email"],
+        hashedPassword: json["HashedPassword"],
+        profile: json["Profile"],
+        role: json["Role"],
+        isVerify: json["IsVerify"],
+        isActive: json["IsActive"],
+        createdAt: json["CreatedAt"],
       );
 
   Map<String, dynamic> toJson() => {
-        "user_id": userId,
-        "name": name,
-        "email": email,
-        "hashed_password": hashedPassword,
-        "profile": profile,
-        "role": role,
-        "is_active": isActive,
-        "is_verify": isVerify,
-        "create_at": createAt.toIso8601String(),
+        "UserID": userId,
+        "Name": name,
+        "Email": email,
+        "HashedPassword": hashedPassword,
+        "Profile": profile,
+        "Role": role,
+        "IsVerify": isVerify,
+        "IsActive": isActive,
+        "CreatedAt": createdAt,
       };
 }

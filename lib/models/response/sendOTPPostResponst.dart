@@ -12,25 +12,21 @@ String sendOtpPostResponstToJson(SendOtpPostResponst data) =>
 
 class SendOtpPostResponst {
   String message;
-  String otp;
   String ref;
 
   SendOtpPostResponst({
     required this.message,
-    required this.otp,
     required this.ref,
   });
 
   factory SendOtpPostResponst.fromJson(Map<String, dynamic> json) =>
       SendOtpPostResponst(
         message: json["message"],
-        otp: json["OTP"],
-        ref: json["REF"],
+        ref: json["ref"],
       );
 
   Map<String, dynamic> toJson() => {
         "message": message,
-        "OTP": otp,
-        "REF": ref,
+        "ref": ref,
       };
 }

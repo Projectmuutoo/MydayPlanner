@@ -17,41 +17,81 @@ String getBoardByIdUserGroupsPostResponseToJson(
 class GetBoardByIdUserGroupsPostResponse {
   int boardId;
   String boardName;
-  DateTime createAt;
-  int createBy;
-  int boardUserId;
-  int userId;
-  DateTime addedAt;
+  String createdAt;
+  int createdBy;
+  Creator creator;
 
   GetBoardByIdUserGroupsPostResponse({
     required this.boardId,
     required this.boardName,
-    required this.createAt,
-    required this.createBy,
-    required this.boardUserId,
-    required this.userId,
-    required this.addedAt,
+    required this.createdAt,
+    required this.createdBy,
+    required this.creator,
   });
 
   factory GetBoardByIdUserGroupsPostResponse.fromJson(
           Map<String, dynamic> json) =>
       GetBoardByIdUserGroupsPostResponse(
-        boardId: json["board_id"],
-        boardName: json["board_name"],
-        createAt: DateTime.parse(json["create_at"]),
-        createBy: json["create_by"],
-        boardUserId: json["board_user_id"],
-        userId: json["user_id"],
-        addedAt: DateTime.parse(json["added_at"]),
+        boardId: json["BoardID"],
+        boardName: json["BoardName"],
+        createdAt: json["CreatedAt"],
+        createdBy: json["CreatedBy"],
+        creator: Creator.fromJson(json["Creator"]),
       );
 
   Map<String, dynamic> toJson() => {
-        "board_id": boardId,
-        "board_name": boardName,
-        "create_at": createAt.toIso8601String(),
-        "create_by": createBy,
-        "board_user_id": boardUserId,
-        "user_id": userId,
-        "added_at": addedAt.toIso8601String(),
+        "BoardID": boardId,
+        "BoardName": boardName,
+        "CreatedAt": createdAt,
+        "CreatedBy": createdBy,
+        "Creator": creator.toJson(),
+      };
+}
+
+class Creator {
+  int userId;
+  String name;
+  String email;
+  String hashedPassword;
+  String profile;
+  String role;
+  String isVerify;
+  String isActive;
+  String createdAt;
+
+  Creator({
+    required this.userId,
+    required this.name,
+    required this.email,
+    required this.hashedPassword,
+    required this.profile,
+    required this.role,
+    required this.isVerify,
+    required this.isActive,
+    required this.createdAt,
+  });
+
+  factory Creator.fromJson(Map<String, dynamic> json) => Creator(
+        userId: json["UserID"],
+        name: json["Name"],
+        email: json["Email"],
+        hashedPassword: json["HashedPassword"],
+        profile: json["Profile"],
+        role: json["Role"],
+        isVerify: json["IsVerify"],
+        isActive: json["IsActive"],
+        createdAt: json["CreatedAt"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "UserID": userId,
+        "Name": name,
+        "Email": email,
+        "HashedPassword": hashedPassword,
+        "Profile": profile,
+        "Role": role,
+        "IsVerify": isVerify,
+        "IsActive": isActive,
+        "CreatedAt": createdAt,
       };
 }

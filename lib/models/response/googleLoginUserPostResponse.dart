@@ -11,26 +11,50 @@ String googleLoginUserPostResponseToJson(GoogleLoginUserPostResponse data) =>
     json.encode(data.toJson());
 
 class GoogleLoginUserPostResponse {
-  bool success;
   String message;
-  String role;
+  String status;
+  User user;
 
   GoogleLoginUserPostResponse({
-    required this.success,
     required this.message,
-    required this.role,
+    required this.status,
+    required this.user,
   });
 
   factory GoogleLoginUserPostResponse.fromJson(Map<String, dynamic> json) =>
       GoogleLoginUserPostResponse(
-        success: json["success"],
         message: json["message"],
-        role: json["role"],
+        status: json["status"],
+        user: User.fromJson(json["user"]),
       );
 
   Map<String, dynamic> toJson() => {
-        "success": success,
         "message": message,
-        "role": role,
+        "status": status,
+        "user": user.toJson(),
+      };
+}
+
+class User {
+  String email;
+  int id;
+  String name;
+
+  User({
+    required this.email,
+    required this.id,
+    required this.name,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) => User(
+        email: json["email"],
+        id: json["id"],
+        name: json["name"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "email": email,
+        "id": id,
+        "name": name,
       };
 }

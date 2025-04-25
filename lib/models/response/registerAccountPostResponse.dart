@@ -12,21 +12,21 @@ String registerAccountPostResponseToJson(RegisterAccountPostResponse data) =>
 
 class RegisterAccountPostResponse {
   String message;
-  int userId;
+  String status;
 
   RegisterAccountPostResponse({
     required this.message,
-    required this.userId,
+    required this.status,
   });
 
   factory RegisterAccountPostResponse.fromJson(Map<String, dynamic> json) =>
       RegisterAccountPostResponse(
         message: json["message"],
-        userId: json["user_id"],
+        status: json["status"],
       );
 
   Map<String, dynamic> toJson() => {
         "message": message,
-        "user_id": userId,
+        "status": status,
       };
 }

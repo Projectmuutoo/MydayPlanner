@@ -101,7 +101,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
     // แสดง Loading Dialog
     loadingDialog();
     var responseLogot = await http.post(
-      Uri.parse("$url/signin_up/api/logout"),
+      Uri.parse("$url/auth/signout"),
       headers: {"Content-Type": "application/json; charset=utf-8"},
       body: logoutUserPostRequestToJson(
         LogoutUserPostRequest(
@@ -117,11 +117,14 @@ class _AdminhomePageState extends State<AdminhomePage> {
       await googleSignIn.signOut();
       // Sign out from Firebase if needed
       await FirebaseAuth.instance.signOut();
-      if (response.success) {
+      if (response.email == box.read('email')) {
         box.remove('email');
         box.remove('password');
         Get.offAll(() => SplashPage());
       }
+    } else {
+      Get.back();
+      Get.offAll(() => SplashPage());
     }
   }
 }

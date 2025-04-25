@@ -22,7 +22,7 @@ void main() async {
   FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.playIntegrity,
   );
-  FirebaseAuth.instance.setLanguageCode("th");
+  FirebaseAuth.instance.setLanguageCode('th');
   await dotenv.load(fileName: ".env");
   await GetStorage.init();
   initializeDateFormatting().then((_) {

@@ -11,22 +11,22 @@ String getBoardByIdUserPostRequestToJson(GetBoardByIdUserPostRequest data) =>
     json.encode(data.toJson());
 
 class GetBoardByIdUserPostRequest {
-  int userId;
-  int group;
+  String userId;
+  String isGroup;
 
   GetBoardByIdUserPostRequest({
     required this.userId,
-    required this.group,
+    required this.isGroup,
   });
 
   factory GetBoardByIdUserPostRequest.fromJson(Map<String, dynamic> json) =>
       GetBoardByIdUserPostRequest(
-        userId: json["userID"],
-        group: json["group"],
+        userId: json["UserId"],
+        isGroup: json["is_group"],
       );
 
   Map<String, dynamic> toJson() => {
-        "userID": userId,
-        "group": group,
+        "UserId": userId,
+        "is_group": isGroup,
       };
 }

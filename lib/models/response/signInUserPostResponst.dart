@@ -11,25 +11,25 @@ String signInUserPostResponstToJson(SignInUserPostResponst data) =>
     json.encode(data.toJson());
 
 class SignInUserPostResponst {
-  bool success;
+  String email;
   String message;
   String role;
 
   SignInUserPostResponst({
-    required this.success,
+    required this.email,
     required this.message,
     required this.role,
   });
 
   factory SignInUserPostResponst.fromJson(Map<String, dynamic> json) =>
       SignInUserPostResponst(
-        success: json["success"],
+        email: json["email"],
         message: json["message"],
         role: json["role"],
       );
 
   Map<String, dynamic> toJson() => {
-        "success": success,
+        "email": email,
         "message": message,
         "role": role,
       };

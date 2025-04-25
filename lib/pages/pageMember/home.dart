@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   int currentIndexMessagesRandom = 0;
 
 // 🔤 String Variables
+  String emailUser = '';
   String name = '';
   String userProfile = '';
   String? focusedBoardName;
@@ -109,7 +110,7 @@ class _HomePageState extends State<HomePage> {
     var url = config['apiEndpoint'];
     try {
       var responseGetUser = await http.post(
-        Uri.parse("$url/user/api/get_user"),
+        Uri.parse("$url/user/getemail"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: getUserByEmailPostRequestToJson(
           GetUserByEmailPostRequest(
@@ -121,27 +122,28 @@ class _HomePageState extends State<HomePage> {
       if (responseGetUser.statusCode == 200) {
         GetUserByEmailPostResponst responst =
             getUserByEmailPostResponstFromJson(responseGetUser.body);
+        emailUser = responst.email;
         name = getFirstName(responst.name);
         userId = responst.userId;
         userProfile = responst.profile;
 
         var responseGetBoardGroup0 = await http.post(
-          Uri.parse("$url/board/boardbyID"),
+          Uri.parse("$url/boards/getboards"),
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: getBoardByIdUserPostRequestToJson(
             GetBoardByIdUserPostRequest(
-              userId: userId,
-              group: 0,
+              userId: responst.email,
+              isGroup: '0',
             ),
           ),
         );
         var responseGetBoardGroup1 = await http.post(
-          Uri.parse("$url/board/boardbyID"),
+          Uri.parse("$url/boards/getboards"),
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: getBoardByIdUserPostRequestToJson(
             GetBoardByIdUserPostRequest(
-              userId: userId,
-              group: 1,
+              userId: responst.email,
+              isGroup: '1',
             ),
           ),
         );
@@ -1863,18 +1865,19 @@ class _HomePageState extends State<HomePage> {
                             loadingDialog();
                             if (listsFontWeight == FontWeight.w600) {
                               var responseCreateBoradList = await http.post(
-                                  Uri.parse("$url/board/createBoard"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8"
-                                  },
-                                  body: createBoardListsPostRequestToJson(
-                                    CreateBoardListsPostRequest(
-                                      boardName: boardCtl.text,
-                                      createBy: userId,
-                                      isGroup: 0,
-                                    ),
-                                  ));
+                                Uri.parse("$url/boards/createboard"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: createBoardListsPostRequestToJson(
+                                  CreateBoardListsPostRequest(
+                                    boardName: boardCtl.text,
+                                    createdBy: emailUser,
+                                    isGroup: '0',
+                                  ),
+                                ),
+                              );
                               if (responseCreateBoradList.statusCode == 201) {
                                 Get.back();
                                 Get.back();
@@ -1891,18 +1894,19 @@ class _HomePageState extends State<HomePage> {
                               }
                             } else if (groupFontWeight == FontWeight.w600) {
                               var responseCreateBoradGroup = await http.post(
-                                  Uri.parse("$url/board/createBoard"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8"
-                                  },
-                                  body: createBoardListsPostRequestToJson(
-                                    CreateBoardListsPostRequest(
-                                      boardName: boardCtl.text,
-                                      createBy: userId,
-                                      isGroup: 1,
-                                    ),
-                                  ));
+                                Uri.parse("$url/boards/createboard"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: createBoardListsPostRequestToJson(
+                                  CreateBoardListsPostRequest(
+                                    boardName: boardCtl.text,
+                                    createdBy: emailUser,
+                                    isGroup: '1',
+                                  ),
+                                ),
+                              );
                               if (responseCreateBoradGroup.statusCode == 201) {
                                 Get.back();
                                 Get.back();
