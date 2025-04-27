@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Appdata with ChangeNotifier {
-  late KeepRoleUser keepUser;
-  late NavBarSelectedPage navBarPage;
-  late KeepIdBoard idBoard;
-  late BackPageSettingToHome keepPage;
+  KeepRoleUser keepUser = KeepRoleUser();
+  NavBarSelectedPage navBarPage = NavBarSelectedPage();
+  KeepIdBoard idBoard = KeepIdBoard();
+  BackPageSettingToHome keepPage = BackPageSettingToHome();
 }
 
 class KeepRoleUser {
@@ -22,4 +22,6 @@ class KeepIdBoard {
 
 class BackPageSettingToHome {
   bool keepPage = false;
+  bool changeProfile = false;
+  bool changeName = false;
 }

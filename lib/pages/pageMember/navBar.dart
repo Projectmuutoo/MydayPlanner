@@ -147,7 +147,10 @@ class _NavbarPageState extends State<NavbarPage> {
         unselectedItemColor: Color.fromRGBO(151, 149, 149, 1),
         type: BottomNavigationBarType.fixed,
       ),
-      body: pageOptions[context.read<Appdata>().navBarPage.selectedPage],
+      body: IndexedStack(
+        index: context.watch<Appdata>().navBarPage.selectedPage,
+        children: pageOptions,
+      ),
     );
   }
 }

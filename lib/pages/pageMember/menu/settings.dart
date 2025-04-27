@@ -134,14 +134,10 @@ class _SettingsPageState extends State<SettingsPage> {
         userPassword = responst.hashedPassword;
         userProfile = responst.profile;
 
-        isLoadings = false;
         if (!mounted) return;
-        setState(() {});
-
-        Timer(Duration(seconds: 2), () {
+        setState(() {
+          isLoadings = false;
           showShimmer = false;
-          if (!mounted) return;
-          setState(() {});
         });
       }
     } catch (e) {
@@ -163,11 +159,10 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           Future.delayed(Duration(seconds: 1), () {
-            if (mounted) {
+            if (!mounted) return;
+            setState(() {
               itemCount = name.isEmpty ? 1 : name.length;
-              if (!mounted) return;
-              setState(() {});
-            }
+            });
           });
         }
         return PopScope(
@@ -201,6 +196,18 @@ class _SettingsPageState extends State<SettingsPage> {
                                       BackPageSettingToHome keep =
                                           BackPageSettingToHome();
                                       keep.keepPage = false;
+                                      keep.changeProfile = context
+                                              .read<Appdata>()
+                                              .keepPage
+                                              .changeProfile
+                                          ? true
+                                          : false;
+                                      keep.changeName = context
+                                              .read<Appdata>()
+                                              .keepPage
+                                              .changeName
+                                          ? true
+                                          : false;
                                       context.read<Appdata>().keepPage = keep;
                                       Get.to(() => NavbarPage());
                                     } else {
@@ -465,9 +472,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         if (!isTogglePushNotification) {
                                           log('noti push');
                                         }
-                                        isTogglePushNotification =
-                                            !isTogglePushNotification;
-                                        setState(() {});
+                                        setState(() {
+                                          isTogglePushNotification =
+                                              !isTogglePushNotification;
+                                        });
                                       },
                                       icon: Icon(
                                         isTogglePushNotification
@@ -547,9 +555,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         if (!isToggleEmailNotification) {
                                           log('noti email');
                                         }
-                                        isToggleEmailNotification =
-                                            !isToggleEmailNotification;
-                                        setState(() {});
+                                        setState(() {
+                                          isToggleEmailNotification =
+                                              !isToggleEmailNotification;
+                                        });
                                       },
                                       icon: Icon(
                                         isToggleEmailNotification
@@ -668,10 +677,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           box.write('groupTF', false);
                                           box.write('PriorityTF', false);
 
-                                          lists = 400;
-                                          group = 200;
-                                          priority = 200;
-                                          setState(() {});
+                                          setState(() {
+                                            lists = 400;
+                                            group = 200;
+                                            priority = 200;
+                                          });
                                         }
                                       },
                                       child: Container(
@@ -712,10 +722,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           box.write('groupTF', true);
                                           box.write('PriorityTF', false);
 
-                                          lists = 200;
-                                          group = 400;
-                                          priority = 200;
-                                          setState(() {});
+                                          setState(() {
+                                            lists = 200;
+                                            group = 400;
+                                            priority = 200;
+                                          });
                                         }
                                       },
                                       child: Container(
@@ -810,16 +821,18 @@ class _SettingsPageState extends State<SettingsPage> {
 
             editNameCtl.addListener(() {
               if (context.mounted) {
-                isTyping = editNameCtl.text.isNotEmpty;
                 if (!mounted) return;
-                setState(() {});
+                setState(() {
+                  isTyping = editNameCtl.text.isNotEmpty;
+                });
               }
             });
             editPasswordCtl.addListener(() {
               if (context.mounted) {
-                isTypingPassword = editPasswordCtl.text.isNotEmpty;
                 if (!mounted) return;
-                setState(() {});
+                setState(() {
+                  isTypingPassword = editPasswordCtl.text.isNotEmpty;
+                });
               }
             });
 
@@ -828,12 +841,14 @@ class _SettingsPageState extends State<SettingsPage> {
               child: GestureDetector(
                 onTap: () {
                   if (editNameFocusNode.hasFocus) {
-                    editNameFocusNode.unfocus();
-                    setState(() {});
+                    setState(() {
+                      editNameFocusNode.unfocus();
+                    });
                   }
                   if (editPasswordFocusNode.hasFocus) {
-                    editPasswordFocusNode.unfocus();
-                    setState(() {});
+                    setState(() {
+                      editPasswordFocusNode.unfocus();
+                    });
                   }
                 },
                 child: Scaffold(
@@ -954,27 +969,30 @@ class _SettingsPageState extends State<SettingsPage> {
                                           image = await picker.pickImage(
                                               source: ImageSource.gallery);
                                           if (image != null) {
-                                            savedFile = File(image!.path);
                                             if (!mounted) return;
-                                            setState(() {});
+                                            setState(() {
+                                              savedFile = File(image!.path);
+                                            });
                                           }
                                         } else if (value == 'เลือกไฟล์') {
                                           FilePickerResult? result =
                                               await FilePicker.platform
                                                   .pickFiles();
                                           if (result != null) {
-                                            savedFile =
-                                                File(result.files.first.path!);
                                             if (!mounted) return;
-                                            setState(() {});
+                                            setState(() {
+                                              savedFile = File(
+                                                  result.files.first.path!);
+                                            });
                                           }
                                         } else if (value == 'ถ่ายรูป') {
                                           image = await picker.pickImage(
                                               source: ImageSource.camera);
                                           if (image != null) {
-                                            savedFile = File(image!.path);
                                             if (!mounted) return;
-                                            setState(() {});
+                                            setState(() {
+                                              savedFile = File(image!.path);
+                                            });
                                           }
                                         }
                                       }
@@ -994,8 +1012,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                                 top: -height * 0.005,
                                                 child: InkWell(
                                                   onTap: () {
-                                                    savedFile = null;
-                                                    setState(() {});
+                                                    setState(() {
+                                                      savedFile = null;
+                                                    });
                                                   },
                                                   child: SvgPicture.string(
                                                     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
@@ -1225,8 +1244,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                               )
                                             : GestureDetector(
                                                 onTap: () {
-                                                  isTyping = true;
-                                                  setState(() {});
+                                                  setState(() {
+                                                    isTyping = true;
+                                                  });
                                                 },
                                                 child: SvgPicture.string(
                                                   '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
@@ -1311,14 +1331,18 @@ class _SettingsPageState extends State<SettingsPage> {
                                               suffixIcon: IconButton(
                                                 onPressed: () {
                                                   if (userPassword == '-') {
-                                                    isCheckedPassword =
-                                                        !isCheckedPassword;
-                                                    setState(() {});
+                                                    setState(() {
+                                                      isCheckedPassword =
+                                                          !isCheckedPassword;
+                                                    });
                                                   } else {
                                                     if (isCheckedPassword) {
-                                                      isCheckedPassword = false;
-                                                      passwordVerifyCtl.clear();
-                                                      setState(() {});
+                                                      setState(() {
+                                                        isCheckedPassword =
+                                                            false;
+                                                        passwordVerifyCtl
+                                                            .clear();
+                                                      });
                                                       return;
                                                     }
 
@@ -1446,10 +1470,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                                                     IconButton(
                                                                   onPressed:
                                                                       () {
-                                                                    isCheckedPasswordVerify =
-                                                                        !isCheckedPasswordVerify;
                                                                     setState(
-                                                                        () {});
+                                                                        () {
+                                                                      isCheckedPasswordVerify =
+                                                                          !isCheckedPasswordVerify;
+                                                                    });
                                                                   },
                                                                   icon: Icon(
                                                                     isCheckedPasswordVerify
@@ -1526,19 +1551,19 @@ class _SettingsPageState extends State<SettingsPage> {
                                                                         .text,
                                                                     userPassword)) {
                                                                   Get.back();
-                                                                  isCheckedPassword =
-                                                                      !isCheckedPassword;
-                                                                  editPasswordCtl
-                                                                      .clear();
-                                                                  notitext =
-                                                                      false;
-                                                                  setState(
-                                                                      () {});
+                                                                  setState(() {
+                                                                    isCheckedPassword =
+                                                                        !isCheckedPassword;
+                                                                    editPasswordCtl
+                                                                        .clear();
+                                                                    notitext =
+                                                                        false;
+                                                                  });
                                                                 } else {
-                                                                  notitext =
-                                                                      true;
-                                                                  setState(
-                                                                      () {});
+                                                                  setState(() {
+                                                                    notitext =
+                                                                        true;
+                                                                  });
                                                                 }
                                                               },
                                                               style:
@@ -1591,13 +1616,14 @@ class _SettingsPageState extends State<SettingsPage> {
                                                             ElevatedButton(
                                                               onPressed: () {
                                                                 Get.back();
-                                                                isCheckedPassword =
-                                                                    false;
-                                                                notitext =
-                                                                    false;
-                                                                passwordVerifyCtl
-                                                                    .clear();
-                                                                setState(() {});
+                                                                setState(() {
+                                                                  isCheckedPassword =
+                                                                      false;
+                                                                  notitext =
+                                                                      false;
+                                                                  passwordVerifyCtl
+                                                                      .clear();
+                                                                });
                                                               },
                                                               style:
                                                                   ElevatedButton
@@ -1703,8 +1729,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                               )
                                             : GestureDetector(
                                                 onTap: () {
-                                                  isTypingPassword = true;
-                                                  setState(() {});
+                                                  setState(() {
+                                                    isTypingPassword = true;
+                                                  });
                                                 },
                                                 child: SvgPicture.string(
                                                   '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
@@ -1779,8 +1806,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void showNotification(String message) {
-    textNotification = message;
-    setState(() {});
+    setState(() {
+      textNotification = message;
+    });
   }
 
   bool isValidPassword(String password) {
@@ -1806,6 +1834,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // 1. เปลี่ยนชื่อ
     if (newName.isNotEmpty) {
+      if (editNameCtl.text.isEmpty) {
+        Get.back();
+        setState1(() {
+          showNotification('Please enter your name');
+        });
+        return;
+      }
+      setState1(() {
+        showNotification('');
+      });
       final res = await http.put(
         Uri.parse("$url/user/updateprofile"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -1823,7 +1861,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (res.statusCode == 200) {
         hasSuccess = true;
+        name = editNameCtl.text;
         editNameCtl.clear();
+
+        BackPageSettingToHome keep = BackPageSettingToHome();
+        keep.changeName = true;
+        context.read<Appdata>().keepPage = keep;
       }
     }
 
@@ -1831,13 +1874,15 @@ class _SettingsPageState extends State<SettingsPage> {
     if (newPassword.isNotEmpty) {
       if (!isValidPassword(editPasswordCtl.text)) {
         Get.back();
-        showNotification(
-            'Password must contain at least 8 digits\nor lowercase letters');
-        setState1(() {});
+        setState1(() {
+          showNotification(
+              'Password must contain at least 8 digits\nor lowercase letters');
+        });
         return;
       }
-      showNotification('');
-      setState1(() {});
+      setState1(() {
+        showNotification('');
+      });
       final res = await http.put(
         Uri.parse("$url/user/updateprofile"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -1864,22 +1909,25 @@ class _SettingsPageState extends State<SettingsPage> {
     // 3. เปลี่ยนรูปโปรไฟล์
     if (newUrl.isNotEmpty && savedFile != null) {
       String downloadUrl = "";
+      try {
+        final storageReference = FirebaseStorage.instance.ref().child(
+              'uploadsImageProfile/${DateTime.now().millisecondsSinceEpoch}_${savedFile!.path.split('/').last}',
+            );
 
-      final storageReference = FirebaseStorage.instance.ref().child(
-            'uploadsImageProfile/${DateTime.now().millisecondsSinceEpoch}_${savedFile!.path.split('/').last}',
-          );
+        final uploadTask = storageReference.putFile(savedFile!);
+        final snapshot = await uploadTask;
 
-      final uploadTask = storageReference.putFile(savedFile!);
-      final snapshot = await uploadTask;
+        downloadUrl = await snapshot.ref.getDownloadURL();
 
-      downloadUrl = await snapshot.ref.getDownloadURL();
-
-      if (userProfile.isNotEmpty && userProfile != 'none-url') {
-        final oldRef = FirebaseStorage.instance.refFromURL(userProfile);
-        String oldUrl = await oldRef.getDownloadURL();
-        if (userProfile == oldUrl) {
-          await oldRef.delete();
+        if (userProfile.isNotEmpty && userProfile != 'none-url') {
+          final oldRef = FirebaseStorage.instance.refFromURL(userProfile);
+          String oldUrl = await oldRef.getDownloadURL();
+          if (userProfile == oldUrl) {
+            await oldRef.delete();
+          }
         }
+      } catch (e) {
+        log("message");
       }
 
       final res = await http.put(
@@ -1901,19 +1949,28 @@ class _SettingsPageState extends State<SettingsPage> {
         hasSuccess = true;
         savedFile = null;
         userProfile = downloadUrl;
+
+        BackPageSettingToHome keep = BackPageSettingToHome();
+        keep.changeProfile = true;
+        context.read<Appdata>().keepPage = keep;
       }
     }
 
     // ถ้ามีอย่างใดอย่างหนึ่งสำเร็จ
     if (hasSuccess) {
       Get.back(); // ปิด loading dialog
-      isTyping = false;
-      isTypingPassword = false;
-      isCheckedPassword = false;
-      setState1(() {});
+      setState1(() {
+        isTyping = false;
+        isTypingPassword = false;
+        isCheckedPassword = false;
+      });
 
       BackPageSettingToHome keep = BackPageSettingToHome();
       keep.keepPage = true;
+      keep.changeProfile =
+          context.read<Appdata>().keepPage.changeProfile ? true : false;
+      keep.changeName =
+          context.read<Appdata>().keepPage.changeName ? true : false;
       context.read<Appdata>().keepPage = keep;
 
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -1986,26 +2043,27 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void firstPageShow() {
-    if (box.read('listsTF')) {
-      box.write('groupTF', false);
-      box.write('PriorityTF', false);
-      lists = 400;
-      group = 200;
-      priority = 200;
-    } else if (box.read('groupTF')) {
-      box.write('listsTF', false);
-      box.write('PriorityTF', false);
-      lists = 200;
-      group = 400;
-      priority = 200;
-    } else if (box.read('PriorityTF')) {
-      box.write('listsTF', false);
-      box.write('groupTF', false);
-      lists = 200;
-      group = 200;
-      priority = 400;
-    }
-    setState(() {});
+    setState(() {
+      if (box.read('listsTF')) {
+        box.write('groupTF', false);
+        box.write('PriorityTF', false);
+        lists = 400;
+        group = 200;
+        priority = 200;
+      } else if (box.read('groupTF')) {
+        box.write('listsTF', false);
+        box.write('PriorityTF', false);
+        lists = 200;
+        group = 400;
+        priority = 200;
+      } else if (box.read('PriorityTF')) {
+        box.write('listsTF', false);
+        box.write('groupTF', false);
+        lists = 200;
+        group = 200;
+        priority = 400;
+      }
+    });
     BackPageSettingToHome keep = BackPageSettingToHome();
     keep.keepPage = false;
     context.read<Appdata>().keepPage = keep;
@@ -2280,10 +2338,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      notitext = false;
-                      conFirmDeleteCtl.clear();
-                      isConfirmMatched = false;
-                      setState(() {});
+                      setState(() {
+                        notitext = false;
+                        conFirmDeleteCtl.clear();
+                        isConfirmMatched = false;
+                      });
                       Get.back();
                     },
                     style: ElevatedButton.styleFrom(

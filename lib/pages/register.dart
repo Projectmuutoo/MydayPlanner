@@ -547,8 +547,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             suffixIcon: IconButton(
                               onPressed: () {
-                                isCheckedPassword = !isCheckedPassword;
-                                setState(() {});
+                                setState(() {
+                                  isCheckedPassword = !isCheckedPassword;
+                                });
                               },
                               icon: Icon(
                                 isCheckedPassword
@@ -642,9 +643,10 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                             suffixIcon: IconButton(
                               onPressed: () {
-                                isCheckedConfirmPassword =
-                                    !isCheckedConfirmPassword;
-                                setState(() {});
+                                setState(() {
+                                  isCheckedConfirmPassword =
+                                      !isCheckedConfirmPassword;
+                                });
                               },
                               icon: Icon(
                                 isCheckedConfirmPassword
@@ -1170,13 +1172,13 @@ class _RegisterPageState extends State<RegisterPage> {
               ElevatedButton(
                 onPressed: () {
                   Get.back();
-                  nameController.clear();
-                  emailController.clear();
-                  passwordController.clear();
-                  confirmPasswordController.clear();
-                  isCaptchaVerified = false;
                   if (!mounted) return;
                   setState(() {
+                    nameController.clear();
+                    emailController.clear();
+                    passwordController.clear();
+                    confirmPasswordController.clear();
+                    isCaptchaVerified = false;
                     alearIconEmail = '';
                     colorAlearName = Colors.black;
                     colorAlearEmail = Colors.black;
@@ -1495,25 +1497,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  String obfuscateEmail(String email) {
-    // แยกส่วนก่อนและหลัง '@'
-    int atIndex = email.indexOf('@');
-
-    String localPart = email.substring(0, atIndex); // ส่วนก่อน '@'
-    String domainPart = email.substring(atIndex); // ส่วนหลัง '@'
-
-    // กำหนดจำนวนตัวอักษรที่จะแสดงเป็นปกติ (3 ตัว)
-    int visibleChars = localPart.length > 3 ? 3 : localPart.length;
-
-    // แสดงตัวอักษรต้น
-    String visiblePart = localPart.substring(0, visibleChars);
-    // แปลงตัวอักษรที่เหลือเป็น '*'
-    String obfuscatedPart = '*' * (localPart.length - visibleChars);
-
-    // รวมข้อความที่แปลงแล้ว
-    return visiblePart + obfuscatedPart + domainPart;
-  }
-
   void verifyOTP(String email, String ref) async {
     // สร้าง FocusNodes สำหรับทุกช่อง
     final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
@@ -1576,7 +1559,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         Row(
                           children: [
                             Text(
-                              obfuscateEmail(email),
+                              email,
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.w500,
@@ -1725,9 +1708,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                       setState,
                                     ); // ตรวจสอบ OTP
                                   } else {
-                                    warning = 'F21F1F';
-                                    if (!mounted) return;
-                                    setState(() {});
+                                    setState(() {
+                                      warning = 'F21F1F';
+                                    });
                                   }
                                 }
                               },
@@ -1792,26 +1775,26 @@ class _RegisterPageState extends State<RegisterPage> {
                                         sendOtpPostResponstFromJson(
                                             responseOtp.body);
 
-                                    ref = sendOTPResponse.ref;
                                     if (timer != null && timer!.isActive) {
                                       timer!.cancel();
                                     }
-                                    hasStartedCountdown = true;
-                                    canResend = false; // ล็อกการกดชั่วคราว
-                                    warning = '';
-                                    for (var controller in otpControllers) {
-                                      controller.clear();
-                                    }
 
-                                    setState(() {});
+                                    setState(() {
+                                      ref = sendOTPResponse.ref;
+                                      hasStartedCountdown = true;
+                                      canResend = false; // ล็อกการกดชั่วคราว
+                                      warning = '';
+                                      for (var controller in otpControllers) {
+                                        controller.clear();
+                                      }
+                                    });
                                     startCountdown(setState, ref);
                                     // รอ 30 วิค่อยให้กดได้อีก
                                     Future.delayed(Duration(seconds: 30), () {
-                                      if (mounted) {
-                                        setState(() {
-                                          canResend = true;
-                                        });
-                                      }
+                                      if (!mounted) return;
+                                      setState(() {
+                                        canResend = true;
+                                      });
                                     });
                                   }
                                 }
@@ -2180,10 +2163,13 @@ class _RegisterPageState extends State<RegisterPage> {
             .collection('OTPRecords')
             .doc(ref)
             .delete();
-        canResend = true;
-        setState(() {});
+        if (!mounted) return;
+        setState(() {
+          canResend = true;
+        });
       } else {
         start--;
+        if (!mounted) return;
         setState(() {
           countTheTime = formatTime(start);
         });

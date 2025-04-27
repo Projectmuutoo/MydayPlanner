@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -15,12 +16,12 @@ import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
 import 'package:mydayplanner/pages/pageMember/menu/menuReport.dart';
 import 'package:mydayplanner/pages/pageMember/myTasksLists/boradLists.dart';
 import 'package:mydayplanner/pages/pageMember/menu/settings.dart';
-import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -37,7 +38,6 @@ class _HomePageState extends State<HomePage> {
   var box = GetStorage();
 
 // 📊 Integer Variables
-  int userId = 0;
   int itemCount = 1;
   int currentIndexMessagesRandom = 0;
 
@@ -62,6 +62,8 @@ class _HomePageState extends State<HomePage> {
   bool isTyping = false;
   bool isLoadings = true;
   bool showShimmer = true;
+  bool isLoadings2 = true;
+  bool showShimmer2 = true;
   bool hideSearchMyBoards = false;
 
 // 🔲 Double Variables
@@ -80,6 +82,11 @@ class _HomePageState extends State<HomePage> {
 
   Map<String, GlobalKey> boardInfoKeys = {};
 
+  // เพิ่มชื่อ key สำหรับ storage
+  final String emailuserBox = 'emailuserBox';
+  final String nameBox = 'nameBox';
+  final String userProfileBox = 'userProfileBox';
+
 // 🧠 Data (Lists and Future)
   late Future<void> loadData;
   List<GetBoardByIdUserListsPostResponse> boardsLists = [];
@@ -93,10 +100,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // var re = box.getKeys();
+    // for (var i in re) {
+    //   log(i);
+    // }
 
     showDisplays();
-    loadMessages();
-    loadData = loadDataAsync();
+    loadData = loadLocalDataThenFetch();
   }
 
   @override
@@ -105,7 +115,68 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Future<void> loadLocalDataThenFetch() async {
+    await loadMessages();
+    // โหลดจาก storage ก่อน
+    var emailuserBox1 = box.read(emailuserBox);
+    var nameBox1 = box.read(nameBox);
+    var userProfileBox1 = box.read(userProfileBox);
+
+    if (emailuserBox1 != null && nameBox1 != null && userProfileBox1 != null) {
+      if (context.read<Appdata>().keepPage.changeProfile == true &&
+          context.read<Appdata>().keepPage.changeName == true) {
+        await loadDataAsync();
+        return;
+      }
+      if (context.read<Appdata>().keepPage.changeProfile == true) {
+        await loadDataAsync();
+        if (!mounted) return;
+        setState(() {
+          isLoadings2 = false;
+        });
+        context.read<Appdata>().keepPage.changeProfile = false;
+      } else if (context.read<Appdata>().keepPage.changeName == true) {
+        await loadDataAsync();
+        if (!mounted) return;
+        setState(() {
+          showShimmer2 = false;
+        });
+        context.read<Appdata>().keepPage.changeName = false;
+      } else {
+        if (!mounted) return;
+        setState(() {
+          emailUser = emailuserBox1;
+          name = getFirstName(nameBox1);
+          userProfile = userProfileBox1;
+          isLoadings2 = false;
+          showShimmer2 = false;
+        });
+      }
+    }
+
+    // หลังจากนั้นก็ดึงข้อมูลใหม่จาก Server
+    await loadDataAsync();
+  }
+
   Future<void> loadDataAsync() async {
+    var emailuserBox1 = box.read(emailuserBox);
+    var nameBox1 = box.read(nameBox);
+    var userProfileBox1 = box.read(userProfileBox);
+    if (context.read<Appdata>().keepPage.changeProfile == true) {
+      if (!mounted) return;
+      setState(() {
+        emailUser = emailuserBox1;
+        name = getFirstName(nameBox1);
+        showShimmer2 = false;
+      });
+    } else if (context.read<Appdata>().keepPage.changeName == true) {
+      if (!mounted) return;
+      setState(() {
+        emailUser = emailuserBox1;
+        userProfile = userProfileBox1;
+        isLoadings2 = false;
+      });
+    }
     var config = await Configuration.getConfig();
     var url = config['apiEndpoint'];
     try {
@@ -124,7 +195,6 @@ class _HomePageState extends State<HomePage> {
             getUserByEmailPostResponstFromJson(responseGetUser.body);
         emailUser = responst.email;
         name = getFirstName(responst.name);
-        userId = responst.userId;
         userProfile = responst.profile;
 
         var responseGetBoardGroup0 = await http.post(
@@ -153,6 +223,11 @@ class _HomePageState extends State<HomePage> {
         boardsGroup = getBoardByIdUserGroupsPostResponseFromJson(
             responseGetBoardGroup1.body);
 
+        // ⭐ บันทึกข้อมูลใหม่เข้า GetStorage
+        box.write(emailuserBox, emailUser);
+        box.write(nameBox, name);
+        box.write(userProfileBox, userProfile);
+
         if (listsFontWeight == FontWeight.w600) {
           boards = boardsLists;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -165,14 +240,16 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
-        isLoadings = false;
         if (!mounted) return;
-        setState(() {});
+        setState(() {
+          isLoadings = false;
+        });
 
-        Timer(Duration(seconds: 2), () {
-          showShimmer = false;
+        Timer(Duration(milliseconds: 200), () {
           if (!mounted) return;
-          setState(() {});
+          setState(() {
+            showShimmer = false;
+          });
         });
       }
     } catch (e) {
@@ -193,12 +270,11 @@ class _HomePageState extends State<HomePage> {
       future: loadData,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          Future.delayed(Duration(seconds: 1), () {
-            if (mounted) {
+          Future.delayed(Duration.zero, () {
+            if (!mounted) return;
+            setState(() {
               itemCount = boards.isEmpty ? 1 : boards.length;
-              if (!mounted) return;
-              setState(() {});
-            }
+            });
           });
         }
         return PopScope(
@@ -206,14 +282,16 @@ class _HomePageState extends State<HomePage> {
           child: GestureDetector(
             onTap: () {
               if (searchFocusNode.hasFocus) {
+                searchFocusNode.unfocus();
                 setState(() {
                   hideSearchMyBoards = false;
+                  searchCtl.clear();
                 });
-                searchFocusNode.unfocus();
-                searchCtl.clear();
               }
               if (boardCtl.text.isNotEmpty) {
-                boardCtl.clear();
+                setState(() {
+                  boardCtl.clear();
+                });
               }
             },
             child: Scaffold(
@@ -238,7 +316,7 @@ class _HomePageState extends State<HomePage> {
                               !hideSearchMyBoards
                                   ? Row(
                                       children: [
-                                        isLoadings || showShimmer
+                                        isLoadings2
                                             ? Shimmer.fromColors(
                                                 baseColor: Color(0xFFF7F7F7),
                                                 highlightColor:
@@ -313,7 +391,7 @@ class _HomePageState extends State<HomePage> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            isLoadings || showShimmer
+                                            showShimmer2
                                                 ? Shimmer.fromColors(
                                                     baseColor:
                                                         Color(0xFFF7F7F7),
@@ -343,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                                                           FontWeight.bold,
                                                     ),
                                                   ),
-                                            isLoadings || showShimmer
+                                            isLoadings2 || isLoadings2
                                                 ? SizedBox.shrink()
                                                 : Text(
                                                     messagesRandom[
@@ -571,8 +649,9 @@ class _HomePageState extends State<HomePage> {
                                           // log('list ยังไม่กด');
                                           box.write('list', true);
                                           box.write('grid', false);
-                                          displayFormat = true;
-                                          setState(() {});
+                                          setState(() {
+                                            displayFormat = true;
+                                          });
                                         },
                                         child: SvgPicture.string(
                                           '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm16-8V6H8.023v2H18.8zM8 11h12v2H8zm0 5h12v2H8z"></path></svg>',
@@ -589,8 +668,9 @@ class _HomePageState extends State<HomePage> {
                                           box.write('list', true);
                                           box.write('grid', false);
                                           if (!displayFormat) {
-                                            displayFormat = false;
-                                            setState(() {});
+                                            setState(() {
+                                              displayFormat = false;
+                                            });
                                           }
                                         },
                                         child: SvgPicture.string(
@@ -609,8 +689,9 @@ class _HomePageState extends State<HomePage> {
                                           // log('grid ไม่กด');
                                           box.write('grid', true);
                                           box.write('list', false);
-                                          displayFormat = false;
-                                          setState(() {});
+                                          setState(() {
+                                            displayFormat = false;
+                                          });
                                         },
                                         child: SvgPicture.string(
                                           '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10 3H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM9 9H5V5h4v4zm5 2h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm1-6h4v4h-4V5zM3 20a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6zm2-5h4v4H5v-4zm8 5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6zm2-5h4v4h-4v-4z"></path></svg>',
@@ -627,8 +708,9 @@ class _HomePageState extends State<HomePage> {
                                           box.write('grid', true);
                                           box.write('list', false);
                                           if (!displayFormat) {
-                                            displayFormat = false;
-                                            setState(() {});
+                                            setState(() {
+                                              displayFormat = false;
+                                            });
                                           }
                                         },
                                         child: SvgPicture.string(
@@ -658,12 +740,13 @@ class _HomePageState extends State<HomePage> {
                                 InkWell(
                                   key: listKey,
                                   onTap: () {
-                                    boards = boardsLists;
-                                    moveSliderToKey(listKey);
-                                    listsFontWeight = FontWeight.w600;
-                                    groupFontWeight = FontWeight.w500;
-                                    priorityFontWeight = FontWeight.w500;
-                                    setState(() {});
+                                    setState(() {
+                                      boards = boardsLists;
+                                      moveSliderToKey(listKey);
+                                      listsFontWeight = FontWeight.w600;
+                                      groupFontWeight = FontWeight.w500;
+                                      priorityFontWeight = FontWeight.w500;
+                                    });
                                   },
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
@@ -686,12 +769,13 @@ class _HomePageState extends State<HomePage> {
                                 InkWell(
                                   key: groupKey,
                                   onTap: () {
-                                    boards = boardsGroup;
-                                    moveSliderToKey(groupKey);
-                                    listsFontWeight = FontWeight.w500;
-                                    groupFontWeight = FontWeight.w600;
-                                    priorityFontWeight = FontWeight.w500;
-                                    setState(() {});
+                                    setState(() {
+                                      boards = boardsGroup;
+                                      moveSliderToKey(groupKey);
+                                      listsFontWeight = FontWeight.w500;
+                                      groupFontWeight = FontWeight.w600;
+                                      priorityFontWeight = FontWeight.w500;
+                                    });
                                   },
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
@@ -1765,7 +1849,7 @@ class _HomePageState extends State<HomePage> {
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
               child: SizedBox(
-                height: height * 0.25,
+                height: height * 0.3,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -1857,9 +1941,10 @@ class _HomePageState extends State<HomePage> {
                         ElevatedButton(
                           onPressed: () async {
                             if (boardCtl.text.isEmpty) {
-                              textError = 'Please enter your board name';
                               if (!mounted) return;
-                              setState(() {});
+                              setState(() {
+                                textError = 'Please enter your board name';
+                              });
                               return;
                             }
                             loadingDialog();
@@ -1882,15 +1967,17 @@ class _HomePageState extends State<HomePage> {
                                 Get.back();
                                 Get.back();
                                 loadDataAsync();
-                                boardCtl.clear();
-                                textError = '';
                                 if (!mounted) return;
-                                setState(() {});
+                                setState(() {
+                                  boardCtl.clear();
+                                  textError = '';
+                                });
                               } else {
                                 Get.back();
-                                textError = 'Error!';
                                 if (!mounted) return;
-                                setState(() {});
+                                setState(() {
+                                  textError = 'Error!';
+                                });
                               }
                             } else if (groupFontWeight == FontWeight.w600) {
                               var responseCreateBoradGroup = await http.post(
@@ -1911,15 +1998,17 @@ class _HomePageState extends State<HomePage> {
                                 Get.back();
                                 Get.back();
                                 loadDataAsync();
-                                boardCtl.clear();
-                                textError = '';
                                 if (!mounted) return;
-                                setState(() {});
+                                setState(() {
+                                  boardCtl.clear();
+                                  textError = '';
+                                });
                               } else {
                                 Get.back();
-                                textError = 'Error!';
                                 if (!mounted) return;
-                                setState(() {});
+                                setState(() {
+                                  textError = 'Error!';
+                                });
                               }
                             }
                           },
@@ -1969,13 +2058,17 @@ class _HomePageState extends State<HomePage> {
 
   // ฟังก์ชันเพื่อเลื่อน slider
   void moveSliderToKey(GlobalKey key) {
+    if (key.currentContext == null) return;
+
     final RenderBox renderBox =
         key.currentContext!.findRenderObject() as RenderBox;
     final Offset position = renderBox.localToGlobal(Offset.zero);
-    slider = position.dx +
-        (renderBox.size.width / 2) -
-        (MediaQuery.of(context).size.width * 0.1);
-    setState(() {});
+    if (!mounted) return;
+    setState(() {
+      slider = position.dx +
+          (renderBox.size.width / 2) -
+          (MediaQuery.of(context).size.width * 0.1);
+    });
   }
 
   void showPopupMenu(BuildContext context) {

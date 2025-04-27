@@ -102,13 +102,14 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                   if (step == 1) {
                                     Get.back();
                                   } else if (step == 2) {
-                                    step = 1;
-                                    otpCtl.clear();
-                                    showNotification('');
-                                    start = 900;
-                                    countTheTime = "15:00";
-                                    countToRequest = 1;
-                                    setState(() {});
+                                    setState(() {
+                                      step = 1;
+                                      otpCtl.clear();
+                                      showNotification('');
+                                      start = 900;
+                                      countTheTime = "15:00";
+                                      countToRequest = 1;
+                                    });
                                   }
                                 },
                                 child: Padding(
@@ -372,8 +373,9 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  isCheckedPassword = !isCheckedPassword;
-                                  setState(() {});
+                                  setState(() {
+                                    isCheckedPassword = !isCheckedPassword;
+                                  });
                                 },
                                 icon: Icon(
                                   isCheckedPassword
@@ -469,9 +471,10 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  isCheckedConfirmPassword =
-                                      !isCheckedConfirmPassword;
-                                  setState(() {});
+                                  setState(() {
+                                    isCheckedConfirmPassword =
+                                        !isCheckedConfirmPassword;
+                                  });
                                 },
                                 icon: Icon(
                                   isCheckedConfirmPassword
@@ -519,7 +522,6 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                             ],
                           ),
-                        SizedBox(height: height * 0.01),
                         if (textNotification.isNotEmpty)
                           Text(
                             textNotification,
@@ -586,16 +588,16 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                           .collection('EmailBlocked')
                                           .doc(emailUser)
                                           .set(data);
-                                      stopBlockOTP = true;
-                                      canResend = false;
-                                      expiresAtEmail =
-                                          formatTimestampTo12HourTimeWithSeconds(
-                                              data['expiresAt'] as Timestamp);
-                                      showNotification(
-                                          'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
-                                      if (mounted) {
-                                        setState(() {});
-                                      }
+                                      if (!mounted) return;
+                                      setState(() {
+                                        stopBlockOTP = true;
+                                        canResend = false;
+                                        expiresAtEmail =
+                                            formatTimestampTo12HourTimeWithSeconds(
+                                                data['expiresAt'] as Timestamp);
+                                        showNotification(
+                                            'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+                                      });
                                       return;
                                     }
 
@@ -623,23 +625,23 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                           sendOtpPostResponstFromJson(
                                               responseOtp.body);
 
-                                      ref = sendOTPResponse.ref;
                                       if (timer != null && timer!.isActive) {
                                         timer!.cancel();
                                       }
-                                      hasStartedCountdown = true;
-                                      canResend = false; // ล็อกการกดชั่วคราว
-                                      otpCtl.clear();
 
-                                      setState(() {});
+                                      setState(() {
+                                        ref = sendOTPResponse.ref;
+                                        hasStartedCountdown = true;
+                                        canResend = false; // ล็อกการกดชั่วคราว
+                                        otpCtl.clear();
+                                      });
                                       startCountdown(setState, ref);
                                       // รอ 30 วิค่อยให้กดได้อีก
                                       Future.delayed(Duration(seconds: 30), () {
-                                        if (mounted) {
-                                          setState(() {
-                                            canResend = true;
-                                          });
-                                        }
+                                        if (!mounted) return;
+                                        setState(() {
+                                          canResend = true;
+                                        });
                                       });
                                     } else {
                                       Get.back();
@@ -767,8 +769,9 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   }
 
   void showNotification(String message) {
-    textNotification = message;
-    setState(() {});
+    setState(() {
+      textNotification = message;
+    });
   }
 
   void resetPassword() async {
@@ -858,9 +861,10 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
             startOtpExpiryTimer(emailUser, setState);
           });
 
-          step = 2;
           if (!mounted) return;
-          setState(() {});
+          setState(() {
+            step = 2;
+          });
         }
       } else {
         showNotification('Email not found');
@@ -901,9 +905,10 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
               .doc(ref)
               .delete();
 
-          step = 3;
           if (!mounted) return;
-          setState(() {});
+          setState(() {
+            step = 3;
+          });
         } else {
           showNotification('Invalid OTP. Please try again.');
         }
@@ -944,18 +949,19 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
       );
 
       if (response.statusCode == 200) {
-        step = 1;
-        emailCtl.clear();
-        otpCtl.clear();
-        passwordCtl.clear();
-        confirmPasswordCtl.clear();
-        showNotification('');
-        start = 900;
-        countTheTime = "15:00";
-        countToRequest = 1;
-        canResend = true;
-        stopBlockOTP = false;
-        setState(() {});
+        setState(() {
+          step = 1;
+          emailCtl.clear();
+          otpCtl.clear();
+          passwordCtl.clear();
+          confirmPasswordCtl.clear();
+          showNotification('');
+          start = 900;
+          countTheTime = "15:00";
+          countToRequest = 1;
+          canResend = true;
+          stopBlockOTP = false;
+        });
 
         Future.delayed(
           Duration.zero,
@@ -1101,17 +1107,16 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
             .collection('OTPRecords_resetpassword')
             .doc(ref)
             .delete();
-        canResend = true;
-        if (mounted) {
-          setState(() {});
-        }
+        if (!mounted) return;
+        setState(() {
+          canResend = true;
+        });
       } else {
         start--;
-        if (mounted) {
-          setState(() {
-            countTheTime = formatTime(start);
-          });
-        }
+        if (!mounted) return;
+        setState(() {
+          countTheTime = formatTime(start);
+        });
       }
     });
   }
@@ -1136,12 +1141,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     DateTime now = DateTime.now();
 
     if (now.isAfter(expireTime)) {
-      stopBlockOTP = false;
-      canResend = true;
-      showNotification('');
-      if (mounted) {
-        setState(() {});
-      }
+      if (!mounted) return;
+      setState(() {
+        stopBlockOTP = false;
+        canResend = true;
+        showNotification('');
+      });
     }
   }
 }

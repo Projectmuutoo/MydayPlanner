@@ -537,23 +537,7 @@ class _MenureportPageState extends State<MenureportPage> {
     });
   }
 
-  sendSubmit(String? subject, TextEditingController detailsCtl) {
-    if (subject == "Suggestions") {
-      selectedIndex = 1;
-    } else if (subject == "Incorrect Information") {
-      selectedIndex = 2;
-    } else if (subject == "Problems or Issues") {
-      selectedIndex = 3;
-    } else if (subject == "Accessibility Issues") {
-      selectedIndex = 4;
-    } else if (subject == "Notification Issues") {
-      selectedIndex = 5;
-    } else if (subject == "Security Issues") {
-      selectedIndex = 6;
-    }
-    log("selectedIndex: $selectedIndex");
-    log("detailsCtl.text: ${detailsCtl.text}");
-    log("subject: $subject");
+  sendSubmit() {
     log("message");
   }
 }

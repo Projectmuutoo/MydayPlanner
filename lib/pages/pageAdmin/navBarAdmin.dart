@@ -95,8 +95,9 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
           ],
           currentIndex: context.read<Appdata>().navBarPage.selectedPage,
           onTap: (index) {
-            context.read<Appdata>().navBarPage.selectedPage = index;
-            setState(() {});
+            setState(() {
+              context.read<Appdata>().navBarPage.selectedPage = index;
+            });
           },
           selectedLabelStyle: TextStyle(
             fontSize: Get.textTheme.titleSmall!.fontSize,
@@ -109,7 +110,10 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
           unselectedItemColor: Color.fromRGBO(151, 149, 149, 1),
           type: BottomNavigationBarType.fixed,
         ),
-        body: pageOptions[context.read<Appdata>().navBarPage.selectedPage],
+        body: IndexedStack(
+          index: context.watch<Appdata>().navBarPage.selectedPage,
+          children: pageOptions,
+        ),
       ),
     );
   }

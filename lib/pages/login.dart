@@ -233,6 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
+                            if (isCheckedEmail) SizedBox(height: height * 0.01),
                             if (isCheckedEmail)
                               Row(
                                 children: [
@@ -279,8 +280,9 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   suffixIcon: IconButton(
                                     onPressed: () {
-                                      isCheckedPassword = !isCheckedPassword;
-                                      setState(() {});
+                                      setState(() {
+                                        isCheckedPassword = !isCheckedPassword;
+                                      });
                                     },
                                     icon: Icon(
                                       isCheckedPassword
@@ -462,8 +464,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void showNotification(String message) {
-    textNotification = message;
-    setState(() {});
+    setState(() {
+      textNotification = message;
+    });
   }
 
   Future<void> delay(Function action, {int milliseconds = 1000}) async {
@@ -476,26 +479,36 @@ class _LoginPageState extends State<LoginPage> {
       var config = await Configuration.getConfig();
       var url = config['apiEndpoint'];
 
-      // แสดง Loading Dialog
-      loadingDialog();
+      loadingDialog(); // แสดง Loading Dialog
 
-      GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      GoogleSignInAccount? googleUser;
+      try {
+        googleUser = await googleSignIn.signIn();
+      } finally {
+        Get.back(); // ปิด Loading Dialog ไม่ว่า signIn จะสำเร็จหรือไม่
+      }
+
       // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
       if (googleUser == null) {
-        Get.back();
-        if (!mounted) return;
-        setState(() {});
         return;
       }
 
-      //เรียกเมธอด authentication จากออบเจกต์ googleUser เพื่อขอรับข้อมูลการตรวจสอบสิทธิ์ (tokens)
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      loadingDialog(); // แสดง Loading Dialog สำหรับขั้นตอนถัดไป
+
+      try {
+        // เรียกเมธอด authentication จากออบเจกต์ googleUser เพื่อขอรับข้อมูลการตรวจสอบสิทธิ์ (tokens)
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      } finally {
+        Get.back(); // ปิด Loading Dialog หลัง auth เสร็จ
+      }
+
+      loadingDialog(); // แสดง Loading Dialog สำหรับเรียก API /user/getemail
 
       var responseGetUser = await http.post(
         Uri.parse("$url/user/getemail"),
@@ -506,7 +519,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       );
-      Get.back();
 
       GoogleLoginUserPostRequest jsonLoginGoogleUser =
           GoogleLoginUserPostRequest(
@@ -514,25 +526,25 @@ class _LoginPageState extends State<LoginPage> {
         name: googleUser.displayName.toString(),
         profile: googleUser.photoUrl.toString(),
       );
-
+      Get.back();
       if (responseGetUser.statusCode == 200) {
         showNotification('');
 
         GetUserByEmailPostResponst getUserByEmailPostResponst =
             getUserByEmailPostResponstFromJson(responseGetUser.body);
 
-        //ถ้า admin ปิดการใช้งาน จะทำการยกเลิก GoogleSignInAccount ทันที
-//----------------------------------------------------------------
+        // ถ้า admin ปิดการใช้งาน จะทำการยกเลิก GoogleSignInAccount ทันที
         if (getUserByEmailPostResponst.isActive == '0') {
           showNotification('Your account has been disabled');
           googleUser = null;
           return;
         }
-        //กรณีไม่ได้ยืนยัน otp
+
+        // กรณีไม่ได้ยืนยัน otp
         if (getUserByEmailPostResponst.isVerify != '1') {
           showNotification('Your account must verify your email first');
           delay(() {
-            //ส่งไปยืนยันเมล
+            // ส่งไปยืนยันเมล
             Get.defaultDialog(
               title: "",
               titlePadding: EdgeInsets.zero,
@@ -594,8 +606,11 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     googleUser = null;
+                    await googleSignIn.signOut();
+                    // Sign out from Firebase if needed
+                    await FirebaseAuth.instance.signOut();
                     Get.back();
                   },
                   style: ElevatedButton.styleFrom(
@@ -618,10 +633,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ],
-            );
+            ).whenComplete(() async {
+              await googleSignIn.signOut();
+              // Sign out from Firebase if needed
+              await FirebaseAuth.instance.signOut();
+            });
           }, milliseconds: 500);
           return;
         }
+
         var result = await FirebaseFirestore.instance
             .collection('usersLogin')
             .doc(googleUser.email)
@@ -634,79 +654,78 @@ class _LoginPageState extends State<LoginPage> {
             return;
           }
         }
-//----------------------------------------------------------------
-        //กรณีมี email และทำการเข้าระบบไปเลย
-        // แสดง Loading Dialog
-        loadingDialog();
-        var responseLoginGoogle = await http.post(
-          Uri.parse("$url/auth/googlesignin"),
-          headers: {"Content-Type": "application/json; charset=utf-8"},
-          body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
-        );
-        Get.back();
 
-        if (responseLoginGoogle.statusCode == 200) {
-          showNotification('');
+        // กรณีมี email และทำการเข้าระบบไปเลย
+        loadingDialog(); // แสดง Loading Dialog
 
-          GoogleLoginUserPostResponse responseGoogleLogin =
-              googleLoginUserPostResponseFromJson(responseLoginGoogle.body);
-          if (responseGoogleLogin.status == 'success') {
-            //เก็บ email, password user ไว้ใน storage ไว้ใช้ด้วย
-            box.write('email', googleUser.email);
-            if (getUserByEmailPostResponst.hashedPassword == '-') {
-              box.write('password', "-");
-            }
-            // แสดง Loading Dialog
-            loadingDialog();
-            var responseGetUser = await http.post(
-              Uri.parse("$url/user/getemail"),
-              headers: {"Content-Type": "application/json; charset=utf-8"},
-              body: getUserByEmailPostRequestToJson(
-                GetUserByEmailPostRequest(
-                  email: googleUser.email,
+        try {
+          var responseLoginGoogle = await http.post(
+            Uri.parse("$url/auth/googlesignin"),
+            headers: {"Content-Type": "application/json; charset=utf-8"},
+            body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
+          );
+
+          if (responseLoginGoogle.statusCode == 200) {
+            showNotification('');
+
+            GoogleLoginUserPostResponse responseGoogleLogin =
+                googleLoginUserPostResponseFromJson(responseLoginGoogle.body);
+
+            if (responseGoogleLogin.status == 'success') {
+              box.write('email', googleUser.email);
+              if (getUserByEmailPostResponst.hashedPassword == '-') {
+                box.write('password', "-");
+              }
+
+              // โหลดข้อมูล user ซ้ำอีกครั้ง
+              var responseGetUser = await http.post(
+                Uri.parse("$url/user/getemail"),
+                headers: {"Content-Type": "application/json; charset=utf-8"},
+                body: getUserByEmailPostRequestToJson(
+                  GetUserByEmailPostRequest(
+                    email: googleUser.email,
+                  ),
                 ),
-              ),
-            );
-            Get.back();
+              );
 
-            if (responseGetUser.statusCode == 200) {
-              GetUserByEmailPostResponst getUserByEmailPostResponst =
-                  getUserByEmailPostResponstFromJson(responseGetUser.body);
-              //เข้า home ไปเรียบร้อบละ
-              if (getUserByEmailPostResponst.role == "admin") {
-                Get.offAll(() => const NavbaradminPage());
-              } else {
-                Get.offAll(() => const NavbarPage());
+              if (responseGetUser.statusCode == 200) {
+                GetUserByEmailPostResponst getUserByEmailPostResponst =
+                    getUserByEmailPostResponstFromJson(responseGetUser.body);
+
+                if (getUserByEmailPostResponst.role == "admin") {
+                  Get.offAll(() => const NavbaradminPage());
+                } else {
+                  Get.offAll(() => const NavbarPage());
+                }
               }
             }
           }
+        } finally {
+          Get.back(); // ปิด Loading Dialog
         }
       } else {
         showNotification('');
-        //กรณีไม่มี email และทำการสมัครให้
-        // แสดง Loading Dialog
-        loadingDialog();
+
+        // กรณีไม่มี email และทำการสมัครให้
+        loadingDialog(); // แสดง Loading Dialog
         var responseLoginGoogle = await http.post(
           Uri.parse("$url/auth/googlesignin"),
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
         );
-        Get.back();
 
+        Get.back();
         if (responseLoginGoogle.statusCode == 200) {
           showNotification('');
 
           var results = jsonDecode(responseLoginGoogle.body);
 
           if (results['status'] == 'not_found') {
-            //สำเร็จและส่งยืนยัน otp ต่อ
-            //ส่ง OTP ไปที่ email
             showModalConfirmEmail(results['email'], true);
           }
         } else {
           showNotification('error!');
           googleUser = null;
-          return;
         }
       }
     } catch (e) {
@@ -738,14 +757,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void login() async {
-    //ถ้า email ว่าง
+    // ถ้า email ว่าง
     if (emailCtl.text.isEmpty) {
       passwordCtl.text = '';
       isCheckedEmail = false;
       showNotification('Email address is required');
       return;
     }
-    //ถ้า email format บ่ถูก
+
+    // ถ้า email format บ่ถูก
     if (!isValidEmail(emailCtl.text)) {
       passwordCtl.text = '';
       isCheckedEmail = false;
@@ -753,222 +773,248 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
-    // แสดง Loading Dialog
-    loadingDialog();
-    var responseGetuser = await http.post(
-      Uri.parse("$url/user/getemail"),
-      headers: {"Content-Type": "application/json; charset=utf-8"},
-      body: getUserByEmailPostRequestToJson(
-        GetUserByEmailPostRequest(
-          email: emailCtl.text,
+    try {
+      var config = await Configuration.getConfig();
+      var url = config['apiEndpoint'];
+
+      // แสดง Loading Dialog
+      loadingDialog();
+
+      var responseGetuser = await http.post(
+        Uri.parse("$url/user/getemail"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: getUserByEmailPostRequestToJson(
+          GetUserByEmailPostRequest(
+            email: emailCtl.text,
+          ),
         ),
-      ),
-    );
+      );
 
-    if (responseGetuser.statusCode == 200) {
-      Get.back();
-      showNotification('');
+      if (responseGetuser.statusCode == 200) {
+        Get.back(); // ปิด loading dialog
+        showNotification('');
 
-      GetUserByEmailPostResponst responseGetUserByEmail =
-          getUserByEmailPostResponstFromJson(responseGetuser.body);
+        GetUserByEmailPostResponst responseGetUserByEmail =
+            getUserByEmailPostResponstFromJson(responseGetuser.body);
 
-      // เช็คว่าไม่พบอีเมลในระบบถ้ามีรหัสเป็น '-'
-      if (responseGetUserByEmail.hashedPassword == '-') {
-        passwordCtl.text = '';
-        isCheckedEmail = false;
-        showNotification('Email not found');
-        return;
-      }
+        // เช็คว่าไม่พบอีเมลในระบบถ้ามีรหัสเป็น '-'
+        if (responseGetUserByEmail.hashedPassword == '-') {
+          passwordCtl.text = '';
+          isCheckedEmail = false;
+          showNotification('Email not found');
+          return;
+        }
 
-      //ถ้า admin ปิดการใช้งาน
-      if (responseGetUserByEmail.isActive == '0') {
-        passwordCtl.text = '';
-        isCheckedEmail = false;
-        showNotification('Your account has been disabled');
-        return;
-      }
-      //ถ้า ปิดบัญชี
-      if (responseGetUserByEmail.isActive == '2') {
-        passwordCtl.text = '';
-        isCheckedEmail = false;
-        showNotification('You have already deleted this account');
-        return;
-      }
-      var result = await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(emailCtl.text)
-          .get();
-      var data = result.data();
-      if (data != null) {
-        if (data['active'] != '1') {
+        // ถ้า admin ปิดการใช้งาน
+        if (responseGetUserByEmail.isActive == '0') {
           passwordCtl.text = '';
           isCheckedEmail = false;
           showNotification('Your account has been disabled');
           return;
         }
-      }
 
-      //เปิดให้ใส่รหัสผ่าน
-      isCheckedEmail = true;
-      showNotification('');
-
-      if (passwordCtl.text == '-') {
-        showNotification('Invalid password');
-        return;
-      }
-
-      if (passwordCtl.text.isEmpty) {
-        signInAttempts++;
-        if (signInAttempts > 1) {
-          showNotification('Password fields cannot be empty');
+        // ถ้า ปิดบัญชี
+        if (responseGetUserByEmail.isActive == '2') {
+          passwordCtl.text = '';
+          isCheckedEmail = false;
+          showNotification('You have already deleted this account');
+          return;
         }
-        return;
-      }
 
-      if (passwordFocusNode.hasFocus) {
-        passwordFocusNode.unfocus();
-      }
+        // ดึงข้อมูลจาก Firestore
+        var result = await FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(emailCtl.text)
+            .get();
 
-      //อันนี้คือเข้ารหัส password BCrypt
-      if (BCrypt.checkpw(
-          passwordCtl.text, responseGetUserByEmail.hashedPassword)) {
-        // แสดง Loading Dialog
-        loadingDialog();
-        var responseLogin = await http.post(
-          Uri.parse("$url/auth/signin"),
-          headers: {"Content-Type": "application/json; charset=utf-8"},
-          body: signInUserPostRequestToJson(
-            SignInUserPostRequest(
-              email: emailCtl.text,
-              hashedPassword: passwordCtl.text,
-            ),
-          ),
-        );
+        var data = result.data();
+        if (data != null) {
+          if (data['active'] != '1') {
+            passwordCtl.text = '';
+            isCheckedEmail = false;
+            showNotification('Your account has been disabled');
+            return;
+          }
+        }
 
-        if (responseLogin.statusCode == 200) {
-          Get.back();
-          showNotification('');
+        // เปิดให้ใส่รหัสผ่าน
+        isCheckedEmail = true;
+        showNotification('');
 
-          SignInUserPostResponst getUserByEmailResponse =
-              signInUserPostResponstFromJson(responseLogin.body);
-          if (getUserByEmailResponse.email == responseGetUserByEmail.email) {
-            //เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
-            box.write('email', emailCtl.text);
-            box.write('password', passwordCtl.text);
-            //แยกทางใครทางมัน
-            if (getUserByEmailResponse.role == "admin") {
-              Get.offAll(() => const NavbaradminPage());
+        if (passwordCtl.text == '-') {
+          showNotification('Invalid password');
+          return;
+        }
+
+        if (passwordCtl.text.isEmpty) {
+          signInAttempts++;
+          if (signInAttempts > 1) {
+            showNotification('Password fields cannot be empty');
+          }
+          return;
+        }
+
+        if (passwordFocusNode.hasFocus) {
+          passwordFocusNode.unfocus();
+        }
+
+        // อันนี้คือเข้ารหัส password BCrypt
+        if (BCrypt.checkpw(
+            passwordCtl.text, responseGetUserByEmail.hashedPassword)) {
+          try {
+            // แสดง Loading Dialog
+            loadingDialog();
+
+            var responseLogin = await http.post(
+              Uri.parse("$url/auth/signin"),
+              headers: {"Content-Type": "application/json; charset=utf-8"},
+              body: signInUserPostRequestToJson(
+                SignInUserPostRequest(
+                  email: emailCtl.text,
+                  hashedPassword: passwordCtl.text,
+                ),
+              ),
+            );
+
+            if (responseLogin.statusCode == 200) {
+              Get.back(); // ปิด loading dialog
+              showNotification('');
+
+              SignInUserPostResponst getUserByEmailResponse =
+                  signInUserPostResponstFromJson(responseLogin.body);
+
+              if (getUserByEmailResponse.email ==
+                  responseGetUserByEmail.email) {
+                // เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
+                box.write('email', emailCtl.text);
+                box.write('password', passwordCtl.text);
+
+                // แยกทางใครทางมัน
+                if (getUserByEmailResponse.role == "admin") {
+                  Get.offAll(() => const NavbaradminPage());
+                } else {
+                  Get.offAll(() => const NavbarPage());
+                }
+              }
             } else {
-              Get.offAll(() => const NavbarPage());
+              Get.back(); // ปิด loading dialog
+
+              // กรณีไม่ได้ยืนยัน otp
+              if (responseGetUserByEmail.isVerify != '1') {
+                showNotification('Your account must verify your email first');
+                delay(() {
+                  // ส่งไปยืนยันเมล
+                  Get.defaultDialog(
+                    title: "",
+                    titlePadding: EdgeInsets.zero,
+                    backgroundColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.04,
+                      vertical: MediaQuery.of(context).size.height * 0.02,
+                    ),
+                    content: Column(
+                      children: [
+                        Image.asset(
+                          "assets/images/aleart/question.png",
+                          height: MediaQuery.of(context).size.height * 0.1,
+                          fit: BoxFit.contain,
+                        ),
+                        SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.01),
+                        Text(
+                          'Confirm now?',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.headlineSmall!.fontSize,
+                            fontWeight: FontWeight.w500,
+                            color: Color.fromRGBO(0, 122, 255, 1),
+                          ),
+                        ),
+                        SizedBox(
+                            height: MediaQuery.of(context).size.width * 0.02),
+                        Text(
+                          'Your account must verify your email first',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            color: Colors.black,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                          showModalConfirmEmail(
+                              responseGetUserByEmail.email, false);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: Size(
+                            MediaQuery.of(context).size.width,
+                            MediaQuery.of(context).size.height * 0.05,
+                          ),
+                          backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 1,
+                        ),
+                        child: Text(
+                          'Confirm',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          fixedSize: Size(
+                            MediaQuery.of(context).size.width,
+                            MediaQuery.of(context).size.height * 0.05,
+                          ),
+                          backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 1,
+                        ),
+                        child: Text(
+                          'Back',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            color: Color.fromRGBO(0, 122, 255, 1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }, milliseconds: 500);
+              } else {
+                showNotification('Unable to sign in');
+              }
             }
+          } catch (e) {
+            Get.back(); // ปิด loading dialog
+            showNotification('An error occurred during sign in');
           }
         } else {
-          //กรณีไม่ได้ยืนยัน otp
-          if (responseGetUserByEmail.isVerify != '1') {
-            Get.back();
-            showNotification('Your account must verify your email first');
-            delay(() {
-              //ส่งไปยืนยันเมล
-              Get.defaultDialog(
-                title: "",
-                titlePadding: EdgeInsets.zero,
-                backgroundColor: Colors.white,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.04,
-                  vertical: MediaQuery.of(context).size.height * 0.02,
-                ),
-                content: Column(
-                  children: [
-                    Image.asset(
-                      "assets/images/aleart/question.png",
-                      height: MediaQuery.of(context).size.height * 0.1,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                    Text(
-                      'Confirm now?',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.headlineSmall!.fontSize,
-                        fontWeight: FontWeight.w500,
-                        color: Color.fromRGBO(0, 122, 255, 1),
-                      ),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.width * 0.02),
-                    Text(
-                      'Your account must verify your email first',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-                actions: [
-                  ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                      showModalConfirmEmail(
-                        responseGetUserByEmail.email,
-                        false,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(
-                        MediaQuery.of(context).size.width,
-                        MediaQuery.of(context).size.height * 0.05,
-                      ),
-                      backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 1,
-                    ),
-                    child: Text(
-                      'Confirm',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(
-                        MediaQuery.of(context).size.width,
-                        MediaQuery.of(context).size.height * 0.05,
-                      ),
-                      backgroundColor: Color.fromRGBO(231, 243, 255, 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 1,
-                    ),
-                    child: Text(
-                      'Back',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
-                        color: Color.fromRGBO(0, 122, 255, 1),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }, milliseconds: 500);
-          }
+          showNotification('Invalid password');
         }
       } else {
-        showNotification('Invalid password');
+        Get.back(); // ปิด loading dialog
+        passwordCtl.text = '';
+        isCheckedEmail = false;
+        showNotification('Unable to contact');
       }
-    } else {
+    } catch (e) {
+      Get.back(); // ปิด loading dialog
       passwordCtl.text = '';
       isCheckedEmail = false;
-      showNotification('Unable to contact');
+      showNotification('An unexpected error occurred');
     }
   }
 
@@ -1215,9 +1261,9 @@ class _LoginPageState extends State<LoginPage> {
                                             withGoogle == true,
                                           ); // ตรวจสอบ OTP
                                         } else {
-                                          warning = 'F21F1F';
-                                          if (!mounted) return;
-                                          setState(() {});
+                                          setState(() {
+                                            warning = 'F21F1F';
+                                          });
                                         }
                                       }
                                     },
@@ -1273,16 +1319,16 @@ class _LoginPageState extends State<LoginPage> {
                                               .collection('EmailBlocked')
                                               .doc(email)
                                               .set(data);
-                                          blockOTP = true;
-                                          stopBlockOTP = true;
-                                          canResend = false;
-                                          expiresAtEmail =
-                                              formatTimestampTo12HourTimeWithSeconds(
-                                                  data['expiresAt']
-                                                      as Timestamp);
-                                          if (mounted) {
-                                            setState(() {});
-                                          }
+                                          if (!mounted) return;
+                                          setState(() {
+                                            blockOTP = true;
+                                            stopBlockOTP = true;
+                                            canResend = false;
+                                            expiresAtEmail =
+                                                formatTimestampTo12HourTimeWithSeconds(
+                                                    data['expiresAt']
+                                                        as Timestamp);
+                                          });
                                           return;
                                         }
 
@@ -1310,31 +1356,30 @@ class _LoginPageState extends State<LoginPage> {
                                               sendOtpPostResponstFromJson(
                                                   responseOtp.body);
 
-                                          ref = sendOTPResponse.ref;
                                           if (timer != null &&
                                               timer!.isActive) {
                                             timer!.cancel();
                                           }
 
-                                          hasStartedCountdown = true;
-                                          canResend =
-                                              false; // ล็อกการกดชั่วคราว
-                                          warning = '';
-                                          for (var controller
-                                              in otpControllers) {
-                                            controller.clear();
-                                          }
-
-                                          setState(() {});
+                                          setState(() {
+                                            ref = sendOTPResponse.ref;
+                                            hasStartedCountdown = true;
+                                            canResend =
+                                                false; // ล็อกการกดชั่วคราว
+                                            warning = '';
+                                            for (var controller
+                                                in otpControllers) {
+                                              controller.clear();
+                                            }
+                                          });
                                           startCountdown(setState, ref);
                                           // รอ 30 วิค่อยให้กดได้อีก
                                           Future.delayed(Duration(seconds: 30),
                                               () {
-                                            if (mounted) {
-                                              setState(() {
-                                                canResend = true;
-                                              });
-                                            }
+                                            if (!mounted) return;
+                                            setState(() {
+                                              canResend = true;
+                                            });
                                           });
                                         } else {
                                           Get.back();
@@ -1521,17 +1566,16 @@ class _LoginPageState extends State<LoginPage> {
             .collection('OTPRecords_verify')
             .doc(ref)
             .delete();
-        canResend = true;
-        if (mounted) {
-          setState(() {});
-        }
+        if (!mounted) return;
+        setState(() {
+          canResend = true;
+        });
       } else {
         start--;
-        if (mounted) {
-          setState(() {
-            countTheTime = formatTime(start);
-          });
-        }
+        if (!mounted) return;
+        setState(() {
+          countTheTime = formatTime(start);
+        });
       }
     });
   }
@@ -1556,7 +1600,9 @@ class _LoginPageState extends State<LoginPage> {
 
             emailConfirmOtpCtl = emailCtl;
             if (withGoogle) {
-              emailConfirmOtpCtl.text = email;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                emailConfirmOtpCtl.text = email;
+              });
             }
 
             return GestureDetector(
@@ -1583,8 +1629,11 @@ class _LoginPageState extends State<LoginPage> {
                               Row(
                                 children: [
                                   InkWell(
-                                    onTap: () {
+                                    onTap: () async {
                                       blockOTP = false;
+                                      await googleSignIn.signOut();
+                                      // Sign out from Firebase if needed
+                                      await FirebaseAuth.instance.signOut();
                                       Get.back();
                                     },
                                     child: Padding(
@@ -1752,9 +1801,10 @@ class _LoginPageState extends State<LoginPage> {
                                     if (responseOtp.statusCode == 200) {
                                       Get.back();
                                       Get.back();
-                                      showNotification('');
-                                      blockOTP = false;
-                                      setState(() {});
+                                      setState(() {
+                                        showNotification('');
+                                        blockOTP = false;
+                                      });
                                       SendOtpPostResponst sendOTPResponse =
                                           sendOtpPostResponstFromJson(
                                               responseOtp.body);
@@ -1767,7 +1817,6 @@ class _LoginPageState extends State<LoginPage> {
                                       );
                                     } else {
                                       Get.back();
-                                      blockOTP = true;
                                       var result = await FirebaseFirestore
                                           .instance
                                           .collection('EmailBlocked')
@@ -1775,12 +1824,14 @@ class _LoginPageState extends State<LoginPage> {
                                           .get();
                                       var data = result.data();
                                       if (data != null) {
-                                        expiresAtEmail =
-                                            formatTimestampTo12HourTimeWithSeconds(
-                                                data['expiresAt'] as Timestamp);
-                                      }
-                                      if (mounted) {
-                                        setState(() {});
+                                        if (!mounted) return;
+                                        setState(() {
+                                          blockOTP = true;
+                                          expiresAtEmail =
+                                              formatTimestampTo12HourTimeWithSeconds(
+                                                  data['expiresAt']
+                                                      as Timestamp);
+                                        });
                                       }
                                     }
                                   }
@@ -1817,7 +1868,11 @@ class _LoginPageState extends State<LoginPage> {
           },
         );
       },
-    );
+    ).whenComplete(() async {
+      await googleSignIn.signOut();
+      // Sign out from Firebase if needed
+      await FirebaseAuth.instance.signOut();
+    });
   }
 
   String formatTimestampTo12HourTimeWithSeconds(Timestamp timestamp) {
@@ -1840,12 +1895,12 @@ class _LoginPageState extends State<LoginPage> {
     DateTime now = DateTime.now();
 
     if (now.isAfter(expireTime)) {
-      stopBlockOTP = false;
-      blockOTP = false;
-      canResend = true;
-      if (mounted) {
-        setState(() {});
-      }
+      if (!mounted) return;
+      setState(() {
+        stopBlockOTP = false;
+        blockOTP = false;
+        canResend = true;
+      });
     }
   }
 }

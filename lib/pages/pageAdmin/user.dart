@@ -104,14 +104,16 @@ class _UserPageState extends State<UserPage> {
         displayEditAdmin = true;
       }
 
-      isLoadings = false;
       if (!mounted) return;
-      setState(() {});
+      setState(() {
+        isLoadings = false;
+      });
 
-      Timer(Duration(seconds: 2), () {
-        showShimmer = false;
+      Timer(Duration(milliseconds: 200), () {
         if (!mounted) return;
-        setState(() {});
+        setState(() {
+          showShimmer = false;
+        });
       });
     }
   }
@@ -127,12 +129,11 @@ class _UserPageState extends State<UserPage> {
       future: loadData,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          Future.delayed(Duration(seconds: 1), () {
-            if (mounted) {
+          Future.delayed(Duration.zero, () {
+            if (!mounted) return;
+            setState(() {
               itemCount = filteredUsers.isEmpty ? 1 : filteredUsers.length;
-              if (!mounted) return;
-              setState(() {});
-            }
+            });
           });
         }
 
@@ -265,12 +266,12 @@ class _UserPageState extends State<UserPage> {
                                                                         .circular(
                                                                             8),
                                                                 onTap: () {
-                                                                  isDropdownOpenUserMap[
-                                                                          user.email] =
-                                                                      !isDropdownOpenUserMap[
-                                                                          user.email]!;
-                                                                  setState(
-                                                                      () {});
+                                                                  setState(() {
+                                                                    isDropdownOpenUserMap[
+                                                                            user.email] =
+                                                                        !isDropdownOpenUserMap[
+                                                                            user.email]!;
+                                                                  });
                                                                 },
                                                                 child: Column(
                                                                   mainAxisAlignment:
@@ -300,35 +301,83 @@ class _UserPageState extends State<UserPage> {
                                                                                         decoration: const BoxDecoration(
                                                                                           shape: BoxShape.circle,
                                                                                         ),
-                                                                                        child: Stack(
-                                                                                          children: [
-                                                                                            Container(
-                                                                                              height: height * 0.1,
-                                                                                              decoration: const BoxDecoration(
-                                                                                                color: Color.fromRGBO(151, 149, 149, 1),
-                                                                                                shape: BoxShape.circle,
+                                                                                        child: user.isActive == '1'
+                                                                                            ? Stack(
+                                                                                                children: [
+                                                                                                  Container(
+                                                                                                    height: height * 0.1,
+                                                                                                    decoration: const BoxDecoration(
+                                                                                                      color: Color.fromRGBO(151, 149, 149, 1),
+                                                                                                      shape: BoxShape.circle,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                  Positioned(
+                                                                                                    left: 0,
+                                                                                                    right: 0,
+                                                                                                    bottom: 0,
+                                                                                                    child: SvgPicture.string(
+                                                                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                                                      height: height * 0.03,
+                                                                                                      fit: BoxFit.contain,
+                                                                                                      color: Color.fromRGBO(242, 242, 246, 1),
+                                                                                                    ),
+                                                                                                  )
+                                                                                                ],
+                                                                                              )
+                                                                                            : Stack(
+                                                                                                children: [
+                                                                                                  Container(
+                                                                                                    height: height * 0.1,
+                                                                                                    decoration: const BoxDecoration(
+                                                                                                      color: Color.fromRGBO(151, 149, 149, 1),
+                                                                                                      shape: BoxShape.circle,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                  Positioned(
+                                                                                                    left: 0,
+                                                                                                    right: 0,
+                                                                                                    bottom: 0,
+                                                                                                    child: SvgPicture.string(
+                                                                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                                                      height: height * 0.03,
+                                                                                                      fit: BoxFit.contain,
+                                                                                                      color: Color.fromRGBO(242, 242, 246, 1),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                  SvgPicture.string(
+                                                                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>',
+                                                                                                    width: height * 0.05,
+                                                                                                    height: height * 0.05,
+                                                                                                    fit: BoxFit.cover,
+                                                                                                    color: Colors.red,
+                                                                                                  ),
+                                                                                                ],
                                                                                               ),
-                                                                                            ),
-                                                                                            Positioned(
-                                                                                              left: 0,
-                                                                                              right: 0,
-                                                                                              bottom: 0,
-                                                                                              child: SvgPicture.string(
-                                                                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                                                                height: height * 0.03,
-                                                                                                fit: BoxFit.contain,
-                                                                                                color: Color.fromRGBO(242, 242, 246, 1),
-                                                                                              ),
-                                                                                            )
-                                                                                          ],
-                                                                                        ),
                                                                                       )
-                                                                                    : Image.network(
-                                                                                        user.profile,
-                                                                                        width: height * 0.05,
-                                                                                        height: height * 0.05,
-                                                                                        fit: BoxFit.cover,
-                                                                                      ),
+                                                                                    : user.isActive == '1'
+                                                                                        ? Image.network(
+                                                                                            user.profile,
+                                                                                            width: height * 0.05,
+                                                                                            height: height * 0.05,
+                                                                                            fit: BoxFit.cover,
+                                                                                          )
+                                                                                        : Stack(
+                                                                                            children: [
+                                                                                              Image.network(
+                                                                                                user.profile,
+                                                                                                width: height * 0.05,
+                                                                                                height: height * 0.05,
+                                                                                                fit: BoxFit.cover,
+                                                                                              ),
+                                                                                              SvgPicture.string(
+                                                                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>',
+                                                                                                width: height * 0.05,
+                                                                                                height: height * 0.05,
+                                                                                                fit: BoxFit.cover,
+                                                                                                color: Colors.red,
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
                                                                               ),
                                                                               Column(
                                                                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,14 +415,6 @@ class _UserPageState extends State<UserPage> {
                                                                                                 ),
                                                                                               ),
                                                                                       ),
-                                                                                      user.isActive == '1'
-                                                                                          ? SizedBox()
-                                                                                          : SvgPicture.string(
-                                                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zM4 12c0-1.846.634-3.542 1.688-4.897l11.209 11.209A7.946 7.946 0 0 1 12 20c-4.411 0-8-3.589-8-8zm14.312 4.897L7.103 5.688A7.948 7.948 0 0 1 12 4c4.411 0 8 3.589 8 8a7.954 7.954 0 0 1-1.688 4.897z"></path></svg>',
-                                                                                              height: height * 0.03,
-                                                                                              fit: BoxFit.contain,
-                                                                                              color: Colors.red,
-                                                                                            ),
                                                                                     ],
                                                                                   ),
                                                                                   Row(
@@ -762,8 +803,9 @@ class _UserPageState extends State<UserPage> {
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        isDropdownOpen = !isDropdownOpen;
-                                        setState(() {});
+                                        setState(() {
+                                          isDropdownOpen = !isDropdownOpen;
+                                        });
                                       },
                                       borderRadius: BorderRadius.circular(8),
                                       child: Padding(
@@ -859,12 +901,13 @@ class _UserPageState extends State<UserPage> {
                                             color: Colors.transparent,
                                             child: InkWell(
                                               onTap: () {
-                                                selectedRole = 'All';
-                                                isDropdownOpen =
-                                                    !isDropdownOpen;
-                                                filterUsersByRole('All');
-                                                isDropdownOpenUserMap = {};
-                                                setState(() {});
+                                                setState(() {
+                                                  selectedRole = 'All';
+                                                  isDropdownOpen =
+                                                      !isDropdownOpen;
+                                                  filterUsersByRole('All');
+                                                  isDropdownOpenUserMap = {};
+                                                });
                                               },
                                               borderRadius:
                                                   BorderRadius.circular(8),
@@ -941,12 +984,13 @@ class _UserPageState extends State<UserPage> {
                                             color: Colors.transparent,
                                             child: InkWell(
                                               onTap: () {
-                                                selectedRole = 'Admin';
-                                                isDropdownOpen =
-                                                    !isDropdownOpen;
-                                                filterUsersByRole('Admin');
-                                                isDropdownOpenUserMap = {};
-                                                setState(() {});
+                                                setState(() {
+                                                  selectedRole = 'Admin';
+                                                  isDropdownOpen =
+                                                      !isDropdownOpen;
+                                                  filterUsersByRole('Admin');
+                                                  isDropdownOpenUserMap = {};
+                                                });
                                               },
                                               borderRadius:
                                                   BorderRadius.circular(8),
@@ -1023,12 +1067,13 @@ class _UserPageState extends State<UserPage> {
                                             color: Colors.transparent,
                                             child: InkWell(
                                               onTap: () {
-                                                selectedRole = 'User';
-                                                isDropdownOpen =
-                                                    !isDropdownOpen;
-                                                filterUsersByRole('User');
-                                                isDropdownOpenUserMap = {};
-                                                setState(() {});
+                                                setState(() {
+                                                  selectedRole = 'User';
+                                                  isDropdownOpen =
+                                                      !isDropdownOpen;
+                                                  filterUsersByRole('User');
+                                                  isDropdownOpenUserMap = {};
+                                                });
                                               },
                                               borderRadius:
                                                   BorderRadius.circular(8),
@@ -1181,9 +1226,10 @@ class _UserPageState extends State<UserPage> {
               Get.back();
               Get.back();
               loadDataAsync();
-              selectedRole = 'All';
               if (!mounted) return;
-              setState(() {});
+              setState(() {
+                selectedRole = 'All';
+              });
 
               Get.defaultDialog(
                 title: "",
@@ -1470,8 +1516,9 @@ class _UserPageState extends State<UserPage> {
                             ),
                             suffixIcon: IconButton(
                               onPressed: () {
-                                isCheckedPassword = !isCheckedPassword;
-                                setState(() {});
+                                setState(() {
+                                  isCheckedPassword = !isCheckedPassword;
+                                });
                               },
                               icon: Icon(
                                 isCheckedPassword
@@ -1500,9 +1547,10 @@ class _UserPageState extends State<UserPage> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          height: height * 0.02,
-                        ),
+                        if (textNotification.isNotEmpty)
+                          SizedBox(
+                            height: height * 0.02,
+                          ),
                         if (textNotification.isNotEmpty)
                           Text(
                             textNotification,
@@ -1520,31 +1568,36 @@ class _UserPageState extends State<UserPage> {
                         ElevatedButton(
                           onPressed: () {
                             if (emailCtl.text.isEmpty) {
-                              showNotification('Email address is required');
-                              setState(() {});
+                              setState(() {
+                                showNotification('Email address is required');
+                              });
                               return;
                             }
 
                             if (!isValidEmail(emailCtl.text)) {
-                              showNotification('Invalid email address');
-                              setState(() {});
+                              setState(() {
+                                showNotification('Invalid email address');
+                              });
                               return;
                             }
 
                             // Password validation
                             if (passwordCtl.text.isEmpty) {
-                              showNotification('Please enter your password');
-                              setState(() {});
+                              setState(() {
+                                showNotification('Please enter your password');
+                              });
                               return;
                             } else if (!isValidPassword(passwordCtl.text)) {
-                              showNotification(
-                                  'Password must contain at least 8 digits\nor lowercase letters');
-                              setState(() {});
+                              setState(() {
+                                showNotification(
+                                    'Password must contain at least 8 digits\nor lowercase letters');
+                              });
                               return;
                             }
 
-                            showNotification('');
-                            setState(() {});
+                            setState(() {
+                              showNotification('');
+                            });
 
                             checkAndContinue();
                           },
@@ -1667,8 +1720,9 @@ class _UserPageState extends State<UserPage> {
   }
 
   void showNotification(String message) {
-    textNotification = message;
-    setState(() {});
+    setState(() {
+      textNotification = message;
+    });
   }
 
   bool isValidEmail(String email) {
@@ -1738,8 +1792,8 @@ class _UserPageState extends State<UserPage> {
           onPressed: () async {
             // แสดง Loading Dialog
             loadingDialog();
-            var responseLogot = await http.put(
-              Uri.parse("$url/admin/api/edit_active"),
+            var responseLogot = await http.post(
+              Uri.parse("$url/admin/edituser"),
               headers: {"Content-Type": "application/json; charset=utf-8"},
               body: editActiveUserPutRequestToJson(
                 EditActiveUserPutRequest(
@@ -1747,13 +1801,15 @@ class _UserPageState extends State<UserPage> {
                 ),
               ),
             );
+
             if (responseLogot.statusCode == 200) {
               Get.back();
               Get.back();
               loadDataAsync();
-              selectedRole = 'All';
               if (!mounted) return;
-              setState(() {});
+              setState(() {
+                selectedRole = 'All';
+              });
 
               Get.defaultDialog(
                 title: "",
@@ -1890,22 +1946,23 @@ class _UserPageState extends State<UserPage> {
   }
 
   void filterUsersByRole(String role) {
-    if (role == 'All') {
-      filteredUsers = allUsers
-          .where((user) => user.userId != 1)
-          .toList()
-          .where((user) => user.isActive != '2')
-          .toList();
-    } else {
-      filteredUsers = allUsers
-          .where((user) => user.role.toLowerCase() == role.toLowerCase())
-          .toList()
-          .where((user) => user.userId != 1)
-          .toList()
-          .where((user) => user.isActive != '2')
-          .toList();
-    }
-    setState(() {});
+    setState(() {
+      if (role == 'All') {
+        filteredUsers = allUsers
+            .where((user) => user.userId != 1)
+            .toList()
+            .where((user) => user.isActive != '2')
+            .toList();
+      } else {
+        filteredUsers = allUsers
+            .where((user) => user.role.toLowerCase() == role.toLowerCase())
+            .toList()
+            .where((user) => user.userId != 1)
+            .toList()
+            .where((user) => user.isActive != '2')
+            .toList();
+      }
+    });
   }
 
   void loadingDialog() {
@@ -2395,9 +2452,9 @@ class _UserPageState extends State<UserPage> {
                                             }
                                           }); // ตรวจสอบ OTP
                                         } else {
-                                          warning = 'F21F1F';
-                                          if (!mounted) return;
-                                          setState(() {});
+                                          setState(() {
+                                            warning = 'F21F1F';
+                                          });
                                         }
                                       }
                                     },
@@ -2453,16 +2510,16 @@ class _UserPageState extends State<UserPage> {
                                               .collection('EmailBlocked')
                                               .doc(email)
                                               .set(data);
-                                          blockOTP = true;
-                                          stopBlockOTP = true;
-                                          canResend = false;
-                                          expiresAtEmail =
-                                              formatTimestampTo12HourTimeWithSeconds(
-                                                  data['expiresAt']
-                                                      as Timestamp);
-                                          if (mounted) {
-                                            setState(() {});
-                                          }
+                                          if (!mounted) return;
+                                          setState(() {
+                                            blockOTP = true;
+                                            stopBlockOTP = true;
+                                            canResend = false;
+                                            expiresAtEmail =
+                                                formatTimestampTo12HourTimeWithSeconds(
+                                                    data['expiresAt']
+                                                        as Timestamp);
+                                          });
                                           return;
                                         }
 
@@ -2490,31 +2547,30 @@ class _UserPageState extends State<UserPage> {
                                               sendOtpPostResponstFromJson(
                                                   responseOtp.body);
 
-                                          ref = sendOTPResponse.ref;
                                           if (timer != null &&
                                               timer!.isActive) {
                                             timer!.cancel();
                                           }
 
-                                          hasStartedCountdown = true;
-                                          canResend =
-                                              false; // ล็อกการกดชั่วคราว
-                                          warning = '';
-                                          for (var controller
-                                              in otpControllers) {
-                                            controller.clear();
-                                          }
-
-                                          setState(() {});
+                                          setState(() {
+                                            ref = sendOTPResponse.ref;
+                                            hasStartedCountdown = true;
+                                            canResend =
+                                                false; // ล็อกการกดชั่วคราว
+                                            warning = '';
+                                            for (var controller
+                                                in otpControllers) {
+                                              controller.clear();
+                                            }
+                                          });
                                           startCountdown(setState, ref);
                                           // รอ 30 วิค่อยให้กดได้อีก
                                           Future.delayed(Duration(seconds: 30),
                                               () {
-                                            if (mounted) {
-                                              setState(() {
-                                                canResend = true;
-                                              });
-                                            }
+                                            if (!mounted) return;
+                                            setState(() {
+                                              canResend = true;
+                                            });
                                           });
                                         } else {
                                           Get.back();
@@ -2525,14 +2581,17 @@ class _UserPageState extends State<UserPage> {
                                               .get();
                                           var data = result.data();
                                           if (data != null) {
-                                            stopBlockOTP = true;
-                                            canResend = false;
-                                            expiresAtEmail =
-                                                formatTimestampTo12HourTimeWithSeconds(
-                                                    data['expiresAt']
-                                                        as Timestamp);
-                                            showNotification(
-                                                'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+                                            if (!mounted) return;
+                                            setState(() {
+                                              stopBlockOTP = true;
+                                              canResend = false;
+                                              expiresAtEmail =
+                                                  formatTimestampTo12HourTimeWithSeconds(
+                                                      data['expiresAt']
+                                                          as Timestamp);
+                                              showNotification(
+                                                  'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+                                            });
                                             return;
                                           }
                                         }
@@ -2697,17 +2756,17 @@ class _UserPageState extends State<UserPage> {
             .collection('OTPRecords_verify')
             .doc(ref)
             .delete();
-        canResend = true;
-        if (mounted) {
-          setState(() {});
-        }
+        if (!mounted) return;
+
+        setState(() {
+          canResend = true;
+        });
       } else {
         start--;
-        if (mounted) {
-          setState(() {
-            countTheTime = formatTime(start);
-          });
-        }
+        if (!mounted) return;
+        setState(() {
+          countTheTime = formatTime(start);
+        });
       }
     });
   }
@@ -2732,12 +2791,12 @@ class _UserPageState extends State<UserPage> {
     DateTime now = DateTime.now();
 
     if (now.isAfter(expireTime)) {
-      stopBlockOTP = false;
-      blockOTP = false;
-      canResend = true;
-      if (mounted) {
-        setState(() {});
-      }
+      if (!mounted) return;
+      setState(() {
+        stopBlockOTP = false;
+        blockOTP = false;
+        canResend = true;
+      });
     }
   }
 
