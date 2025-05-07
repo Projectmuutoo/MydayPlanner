@@ -12,21 +12,12 @@ String signInUserPostRequestToJson(SignInUserPostRequest data) =>
 
 class SignInUserPostRequest {
   String email;
-  String hashedPassword;
+  String password;
 
-  SignInUserPostRequest({
-    required this.email,
-    required this.hashedPassword,
-  });
+  SignInUserPostRequest({required this.email, required this.password});
 
   factory SignInUserPostRequest.fromJson(Map<String, dynamic> json) =>
-      SignInUserPostRequest(
-        email: json["email"],
-        hashedPassword: json["hashed_password"],
-      );
+      SignInUserPostRequest(email: json["email"], password: json["password"]);
 
-  Map<String, dynamic> toJson() => {
-        "email": email,
-        "hashed_password": hashedPassword,
-      };
+  Map<String, dynamic> toJson() => {"email": email, "password": password};
 }

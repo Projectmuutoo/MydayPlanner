@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: ^3.5.4
+  sdk: ^3.7.2
 
 dependencies:
   flutter:
@@ -34,6 +34,8 @@ dependencies:
   flutter_dotenv: ^5.0.2
   flutter_launcher_icons: ^0.14.3
   marquee: ^2.2.3
+  fl_chart: ^0.71.0
+  flutter_secure_storage: ^9.2.4
 
 dev_dependencies:
   flutter_test:
@@ -66,5 +68,5 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/images/LogoApp.png"
-  adaptive_icon_background: "#ffffff" # (เฉพาะ Android) สีพื้นหลัง Adaptive Icon
-  adaptive_icon_foreground: "assets/images/LogoApp.png" # (เฉพาะ Android)
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/LogoApp.png"

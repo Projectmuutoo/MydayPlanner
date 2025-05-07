@@ -65,7 +65,7 @@ class _MenureportPageState extends State<MenureportPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
+                    InkWell(
                       onTap: () {
                         Get.back();
                         openSubject = false;
@@ -531,13 +531,29 @@ class _MenureportPageState extends State<MenureportPage> {
 
   void _onTextChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(Duration(milliseconds: 500), () {
       if (!mounted) return;
       setState(() {});
     });
   }
 
-  sendSubmit() {
+  sendSubmit(String? subject, TextEditingController detailsCtl) {
+    if (subject == "Suggestions") {
+      selectedIndex = 1;
+    } else if (subject == "Incorrect Information") {
+      selectedIndex = 2;
+    } else if (subject == "Problems or Issues") {
+      selectedIndex = 3;
+    } else if (subject == "Accessibility Issues") {
+      selectedIndex = 4;
+    } else if (subject == "Notification Issues") {
+      selectedIndex = 5;
+    } else if (subject == "Security Issues") {
+      selectedIndex = 6;
+    }
+    log("selectedIndex: $selectedIndex");
+    log("detailsCtl.text: ${detailsCtl.text}");
+    log("subject: $subject");
     log("message");
   }
 }

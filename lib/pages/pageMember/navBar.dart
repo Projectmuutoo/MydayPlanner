@@ -1,3 +1,9 @@
+import 'dart:async';
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/pages/pageMember/allTasks.dart';
 import 'package:mydayplanner/pages/pageMember/calendar.dart';
 import 'package:mydayplanner/pages/pageMember/home.dart';
@@ -7,6 +13,7 @@ import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 
 class NavbarPage extends StatefulWidget {
@@ -18,10 +25,17 @@ class NavbarPage extends StatefulWidget {
 
 class _NavbarPageState extends State<NavbarPage> {
   late final List<Widget> pageOptions;
+  final storage = FlutterSecureStorage();
+  DateTime? createdAtDate;
+  Timer? _timer;
+  StreamSubscription? _subscription;
+  int? expiresIn;
 
   @override
   void initState() {
     super.initState();
+
+    checkExpiresRefreshToken();
 
     NavBarSelectedPage keeps = NavBarSelectedPage();
     keeps.selectedPage = 0;
@@ -33,6 +47,107 @@ class _NavbarPageState extends State<NavbarPage> {
       CalendarPage(),
       NotificationPage(),
     ];
+  }
+
+  checkExpiresRefreshToken() {
+    _subscription = FirebaseFirestore.instance
+        .collection('refreshTokens')
+        .doc(GetStorage().read('userProfile')['userid'].toString())
+        .snapshots()
+        .listen((snapshot) {
+          int createdAt = snapshot['CreatedAt'];
+          expiresIn = snapshot['ExpiresIn'];
+          createdAtDate = DateTime.fromMillisecondsSinceEpoch(createdAt * 1000);
+        });
+
+    _timer = Timer.periodic(Duration(seconds: 1), (_) {
+      if (createdAtDate == null) return;
+
+      DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
+      DateTime now = DateTime.now();
+
+      if (now.isAfter(expiryDate)) {
+        // 1. หยุด Stream
+        _subscription?.cancel();
+        // 2. หยุด Timer
+        _timer?.cancel();
+
+        Get.defaultDialog(
+          title: '',
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          barrierDismissible: false,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: WillPopScope(
+            onWillPop: () async => false,
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/warning.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Waring!!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                Text(
+                  'หมดอายุการใช้งานแล้ว',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                Get.back();
+                await storage.deleteAll();
+                GetStorage().erase();
+                Get.offAll(() => SplashPage());
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -50,14 +165,14 @@ class _NavbarPageState extends State<NavbarPage> {
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(151, 149, 149, 1),
+              color: Color(0xFF979595),
             ),
             activeIcon: SvgPicture.string(
               '<svg viewBox="-1.6 -1.6 19.20 19.20" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M1 6V15H6V11C6 9.89543 6.89543 9 8 9C9.10457 9 10 9.89543 10 11V15H15V6L8 0L1 6Z" fill="#000000"></path> </g></svg>',
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(0, 122, 255, 1),
+              color: Color(0xFF007AFF),
             ),
             label: 'Home',
           ),
@@ -67,14 +182,14 @@ class _NavbarPageState extends State<NavbarPage> {
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(151, 149, 149, 1),
+              color: Color(0xFF979595),
             ),
             activeIcon: SvgPicture.string(
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m18.988 2.012 3 3L19.701 7.3l-3-3zM8 16h3l7.287-7.287-3-3L8 13z"></path><path d="M19 19H8.158c-.026 0-.053.01-.079.01-.033 0-.066-.009-.1-.01H5V5h6.847l2-2H5c-1.103 0-2 .896-2 2v14c0 1.104.897 2 2 2h14a2 2 0 0 0 2-2v-8.668l-2 2V19z"></path></svg>',
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(0, 122, 255, 1),
+              color: Color(0xFF007AFF),
             ),
             label: 'To day',
           ),
@@ -84,14 +199,14 @@ class _NavbarPageState extends State<NavbarPage> {
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(151, 149, 149, 1),
+              color: Color(0xFF979595),
             ),
             activeIcon: SvgPicture.string(
               '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="m438-240 226-226-58-58-169 169-84-84-57 57 142 142ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z"/></svg>',
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(0, 122, 255, 1),
+              color: Color(0xFF007AFF),
             ),
             label: 'All Tasks',
           ),
@@ -101,14 +216,14 @@ class _NavbarPageState extends State<NavbarPage> {
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(151, 149, 149, 1),
+              color: Color(0xFF979595),
             ),
             activeIcon: SvgPicture.string(
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 20V6c0-1.103-.897-2-2-2h-2V2h-2v2H9V2H7v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2zM9 18H7v-2h2v2zm0-4H7v-2h2v2zm4 4h-2v-2h2v2zm0-4h-2v-2h2v2zm4 4h-2v-2h2v2zm0-4h-2v-2h2v2zm2-5H5V7h14v2z"></path></svg>',
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(0, 122, 255, 1),
+              color: Color(0xFF007AFF),
             ),
             label: 'Calendar',
           ),
@@ -118,14 +233,14 @@ class _NavbarPageState extends State<NavbarPage> {
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(151, 149, 149, 1),
+              color: Color(0xFF979595),
             ),
             activeIcon: SvgPicture.string(
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="6" r="3"></circle><path d="M13 6c0-.712.153-1.387.422-2H6c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-7.422A4.962 4.962 0 0 1 18 11a5 5 0 0 1-5-5z"></path></svg>',
               width: width * 0.07,
               height: width * 0.07,
               fit: BoxFit.cover,
-              color: Color.fromRGBO(0, 122, 255, 1),
+              color: Color(0xFF007AFF),
             ),
             label: 'Notification',
           ),
@@ -143,8 +258,8 @@ class _NavbarPageState extends State<NavbarPage> {
           fontSize: Get.textTheme.titleSmall!.fontSize,
         ),
         backgroundColor: Colors.white,
-        selectedItemColor: Color.fromRGBO(0, 122, 255, 1),
-        unselectedItemColor: Color.fromRGBO(151, 149, 149, 1),
+        selectedItemColor: Color(0xFF007AFF),
+        unselectedItemColor: Color(0xFF979595),
         type: BottomNavigationBarType.fixed,
       ),
       body: IndexedStack(

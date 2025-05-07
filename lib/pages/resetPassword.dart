@@ -54,6 +54,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   Timer? timer;
   int start = 900; // 15 นาที = 900 วินาที
   String countTheTime = "15:00"; // เวลาเริ่มต้น
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,19 +246,19 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
                               disabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(width: 0.5),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                             ),
                           ),
@@ -313,13 +319,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
@@ -392,13 +398,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
@@ -491,13 +497,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   width: 0.5,
                                 ),
                               ),
@@ -601,9 +607,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                       return;
                                     }
 
-                                    var config =
-                                        await Configuration.getConfig();
-                                    var url = config['apiEndpoint'];
+                                    url = await loadAPIEndpoint();
                                     loadingDialog();
                                     var responseOtp = await http.post(
                                       Uri.parse(
@@ -784,8 +788,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     }
 
     try {
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
+      url = await loadAPIEndpoint();
 
       loadingDialog();
 
@@ -990,7 +993,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                       style: TextStyle(
                         fontSize: Get.textTheme.headlineSmall!.fontSize,
                         fontWeight: FontWeight.w500,
-                        color: Color.fromRGBO(0, 122, 255, 1),
+                        color: Color(0xFF007AFF),
                       ),
                     ),
                     Text(
@@ -1014,7 +1017,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                       MediaQuery.of(context).size.width,
                       MediaQuery.of(context).size.height * 0.05,
                     ),
-                    backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                    backgroundColor: Color(0xFF007AFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1037,7 +1040,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                       MediaQuery.of(context).size.width,
                       MediaQuery.of(context).size.height * 0.05,
                     ),
-                    backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                    backgroundColor: Color(0xFFE7F3FF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1047,7 +1050,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                     'Back',
                     style: TextStyle(
                       fontSize: Get.textTheme.titleLarge!.fontSize,
-                      color: Color.fromRGBO(0, 122, 255, 1),
+                      color: Color(0xFF007AFF),
                     ),
                   ),
                 ),

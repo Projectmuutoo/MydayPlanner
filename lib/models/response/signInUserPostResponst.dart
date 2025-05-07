@@ -11,26 +11,36 @@ String signInUserPostResponstToJson(SignInUserPostResponst data) =>
     json.encode(data.toJson());
 
 class SignInUserPostResponst {
-  String email;
   String message;
-  String role;
+  Token token;
 
-  SignInUserPostResponst({
-    required this.email,
-    required this.message,
-    required this.role,
-  });
+  SignInUserPostResponst({required this.message, required this.token});
 
   factory SignInUserPostResponst.fromJson(Map<String, dynamic> json) =>
       SignInUserPostResponst(
-        email: json["email"],
         message: json["message"],
-        role: json["role"],
+        token: Token.fromJson(json["token"]),
       );
 
   Map<String, dynamic> toJson() => {
-        "email": email,
-        "message": message,
-        "role": role,
-      };
+    "message": message,
+    "token": token.toJson(),
+  };
+}
+
+class Token {
+  String accessToken;
+  String refreshToken;
+
+  Token({required this.accessToken, required this.refreshToken});
+
+  factory Token.fromJson(Map<String, dynamic> json) => Token(
+    accessToken: json["accessToken"],
+    refreshToken: json["refreshToken"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "accessToken": accessToken,
+    "refreshToken": refreshToken,
+  };
 }

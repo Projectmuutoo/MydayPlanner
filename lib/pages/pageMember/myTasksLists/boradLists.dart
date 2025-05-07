@@ -17,6 +17,12 @@ class BoradlistsPage extends StatefulWidget {
 class _BoradlistsPageState extends State<BoradlistsPage> {
   late Future<void> loadData;
   var box = GetStorage();
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
@@ -25,8 +31,7 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
   }
 
   Future<void> loadDataAsync() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+    url = await loadAPIEndpoint();
     log(box.read('email'));
     log(context.read<Appdata>().idBoard.idBoard);
   }
@@ -41,11 +46,13 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: width * 0.05,
+          padding: EdgeInsets.only(
+            right: width * 0.05,
+            left: width * 0.05,
+            top: height * 0.01,
           ),
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: AlwaysScrollableScrollPhysics(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

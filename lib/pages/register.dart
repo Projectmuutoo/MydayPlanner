@@ -87,6 +87,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Timer? timer;
   int start = 900; // 15 นาที = 900 วินาที
   String countTheTime = "15:00"; // เวลาเริ่มต้น
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
@@ -202,8 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (hasError) return;
 
-        var config = await Configuration.getConfig();
-        var url = config['apiEndpoint'];
+        url = await loadAPIEndpoint();
 
         var responseGetuser = await http.post(
           Uri.parse("$url/user/getemail"),
@@ -261,7 +266,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   children: [
                                     SvgPicture.string(
                                       '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                      color: const Color.fromRGBO(0, 0, 0, 0.6),
+                                      color: Color(0x99000000),
                                     ),
                                     Text(
                                       'back',
@@ -269,8 +274,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         fontSize:
                                             Get.textTheme.titleLarge!.fontSize,
                                         fontWeight: FontWeight.normal,
-                                        color:
-                                            const Color.fromRGBO(0, 0, 0, 0.6),
+                                        color: Color(0x99000000),
                                       ),
                                     ),
                                   ],
@@ -368,7 +372,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onPressed: null,
                               icon: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             constraints: BoxConstraints(
@@ -451,7 +455,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onPressed: null,
                               icon: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             suffixIcon: alearIconEmail.isNotEmpty
@@ -542,7 +546,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onPressed: null,
                               icon: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             suffixIcon: IconButton(
@@ -555,7 +559,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 isCheckedPassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             constraints: BoxConstraints(
@@ -638,7 +642,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               onPressed: null,
                               icon: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             suffixIcon: IconButton(
@@ -652,7 +656,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 isCheckedConfirmPassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: const Color(0xff7B7B7B),
+                                color: Color(0xff7B7B7B),
                               ),
                             ),
                             constraints: BoxConstraints(
@@ -827,7 +831,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               width,
                               height * 0.04,
                             ),
-                            backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                            backgroundColor: Color(0xFF007AFF),
                             elevation: 1,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -849,7 +853,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: TextStyle(
                             fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
-                            color: const Color.fromRGBO(0, 0, 0, 0.6),
+                            color: Color(0x99000000),
                           ),
                         ),
                         InkWell(
@@ -905,8 +909,7 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
+      url = await loadAPIEndpoint();
 
       var response = await http.post(
         Uri.parse("$url/user/getemail"),
@@ -948,7 +951,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void goToLogin() {
-    Get.to(() => const LoginPage());
+    Get.to(() => LoginPage());
   }
 
   bool isValidEmail(String email) {
@@ -1056,8 +1059,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (hasError) return;
 
     // ✅ ถ้าผ่านทุกช่อง – ค่อยเรียก API
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+    url = await loadAPIEndpoint();
 
     loadingDialog();
     var responseGetuser = await http.post(
@@ -1130,7 +1132,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: TextStyle(
                       fontSize: Get.textTheme.headlineSmall!.fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Color.fromRGBO(0, 122, 255, 1),
+                      color: Color(0xFF007AFF),
                     ),
                   ),
                   Text(
@@ -1148,14 +1150,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ElevatedButton(
                 onPressed: () {
                   Get.back();
-                  Get.to(() => const LoginPage());
+                  Get.to(() => LoginPage());
                 },
                 style: ElevatedButton.styleFrom(
                   fixedSize: Size(
                     MediaQuery.of(context).size.width,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                  backgroundColor: Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1193,7 +1195,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     MediaQuery.of(context).size.width,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                  backgroundColor: Color(0xFFE7F3FF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1203,7 +1205,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   'Back',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleLarge!.fontSize,
-                    color: Color.fromRGBO(0, 122, 255, 1),
+                    color: Color(0xFF007AFF),
                   ),
                 ),
               ),
@@ -1231,7 +1233,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: TextStyle(
                     fontSize: Get.textTheme.headlineSmall!.fontSize,
                     fontWeight: FontWeight.w500,
-                    color: Color.fromRGBO(0, 122, 255, 1),
+                    color: Color(0xFF007AFF),
                   ),
                 ),
                 Text(
@@ -1255,7 +1257,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     MediaQuery.of(context).size.width,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                  backgroundColor: Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1278,7 +1280,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     MediaQuery.of(context).size.width,
                     MediaQuery.of(context).size.height * 0.05,
                   ),
-                  backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                  backgroundColor: Color(0xFFE7F3FF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1288,7 +1290,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   'Back',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleLarge!.fontSize,
-                    color: Color.fromRGBO(0, 122, 255, 1),
+                    color: Color(0xFF007AFF),
                   ),
                 ),
               ),
@@ -1344,8 +1346,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       // ใช้ API endpoint ของคุณเพื่อยืนยัน reCAPTCHA token
       // หมายเหตุ: แนะนำให้ยืนยัน reCAPTCHA บน server ของคุณไม่ใช่จาก client โดยตรง
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
+      url = await loadAPIEndpoint();
       final response = await http.post(
         Uri.parse('$url/auth/captcha'),
         headers: {'Content-Type': 'application/json'},
@@ -1453,7 +1454,7 @@ class _RegisterPageState extends State<RegisterPage> {
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.rectangle,
@@ -1462,7 +1463,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 BoxShadow(
                   color: Colors.black26,
                   blurRadius: 10.0,
-                  offset: const Offset(0.0, 10.0),
+                  offset: Offset(0.0, 10.0),
                 ),
               ],
             ),
@@ -1476,15 +1477,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 SizedBox(
                   height: 320,
                   width: 320,
                   child: WebViewWidget(controller: _controller),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextButton(
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -1523,300 +1524,295 @@ class _RegisterPageState extends State<RegisterPage> {
 
             return WillPopScope(
               onWillPop: () async => false,
-              child: Scaffold(
-                body: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: width * 0.04,
-                    vertical: height * 0.06,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: width * 0.05,
+                    left: width * 0.05,
+                    top: height * 0.05,
+                    bottom: MediaQuery.of(context).viewInsets.bottom +
+                        height * 0.02,
                   ),
-                  child: SizedBox(
-                    height: height,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Verification Code',
-                              style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.headlineMedium!.fontSize,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              'We have send the OTP code verification to',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              email,
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: height * 0.02,
-                        ),
-                        Form(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(
-                              6,
-                              (index) {
-                                return SizedBox(
-                                  height: height * 0.08,
-                                  width: width * 0.14,
-                                  child: TextFormField(
-                                    focusNode: focusNodes[index],
-                                    controller: otpControllers[index],
-                                    cursorColor: Colors.grey,
-                                    onChanged: (value) {
-                                      if (value.length == 1) {
-                                        if (index < 5) {
-                                          focusNodes[index + 1]
-                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
-                                        } else {
-                                          FocusScope.of(context)
-                                              .unfocus(); // ปิดคีย์บอร์ด
-                                          verifyEnteredOTP(
-                                            otpControllers,
-                                            email,
-                                            ref,
-                                            setState,
-                                          ); // ตรวจสอบ OTP
-                                        }
-                                      } else if (value.isEmpty && index > 0) {
-                                        focusNodes[index - 1]
-                                            .requestFocus(); // กลับไปช่องก่อนหน้า
-                                      }
-                                    },
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium,
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    inputFormatters: [
-                                      LengthLimitingTextInputFormatter(1),
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    decoration: InputDecoration(
-                                      focusColor: Colors.black,
-                                      filled: true,
-                                      fillColor: Colors.white, // สีพื้นหลัง
-                                      contentPadding:
-                                          EdgeInsets.all(8), // ระยะห่างภายใน
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            12), // มุมโค้ง
-                                        borderSide: BorderSide(
-                                          color: Colors.grey, // สีกรอบปกติ
-                                          width: 2, // ความหนาของกรอบ
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey
-                                              .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
-                                          width: 2,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: warning.isNotEmpty
-                                              ? Color(int.parse('0xff$warning'))
-                                              : Colors.grey,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      hintText: "-", // ข้อความตัวอย่าง
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        if (warning.isNotEmpty)
-                          SizedBox(
-                            height: height * 0.02,
-                          ),
-                        if (warning.isNotEmpty)
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
                           Text(
-                            'OTP code is invalid',
+                            'Verification Code',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.headlineMedium!.fontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'We have send the OTP code verification to',
                             style: TextStyle(
                               fontSize: Get.textTheme.titleMedium!.fontSize,
                               fontWeight: FontWeight.normal,
-                              color: Colors.red,
                             ),
                           ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            email,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: height * 0.02,
+                      ),
+                      Form(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(
+                            6,
+                            (index) {
+                              return SizedBox(
+                                height: height * 0.08,
+                                width: width * 0.14,
+                                child: TextFormField(
+                                  focusNode: focusNodes[index],
+                                  controller: otpControllers[index],
+                                  cursorColor: Colors.grey,
+                                  onChanged: (value) {
+                                    if (value.length == 1) {
+                                      if (index < 5) {
+                                        focusNodes[index + 1]
+                                            .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                      } else {
+                                        FocusScope.of(context)
+                                            .unfocus(); // ปิดคีย์บอร์ด
+                                        verifyEnteredOTP(
+                                          otpControllers,
+                                          email,
+                                          ref,
+                                          setState,
+                                        ); // ตรวจสอบ OTP
+                                      }
+                                    } else if (value.isEmpty && index > 0) {
+                                      focusNodes[index - 1]
+                                          .requestFocus(); // กลับไปช่องก่อนหน้า
+                                    }
+                                  },
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  inputFormatters: [
+                                    LengthLimitingTextInputFormatter(1),
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  decoration: InputDecoration(
+                                    focusColor: Colors.black,
+                                    filled: true,
+                                    fillColor: Colors.white, // สีพื้นหลัง
+                                    contentPadding:
+                                        EdgeInsets.all(8), // ระยะห่างภายใน
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12), // มุมโค้ง
+                                      borderSide: BorderSide(
+                                        color: Colors.grey, // สีกรอบปกติ
+                                        width: 2, // ความหนาของกรอบ
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey
+                                            .shade300, // สีกรอบเมื่อไม่ได้โฟกัส
+                                        width: 2,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: warning.isNotEmpty
+                                            ? Color(int.parse('0xff$warning'))
+                                            : Colors.grey,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    hintText: "-", // ข้อความตัวอย่าง
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      if (warning.isNotEmpty)
                         SizedBox(
                           height: height * 0.02,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'OTP copied',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
+                      if (warning.isNotEmpty)
+                        Text(
+                          'OTP code is invalid',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.red,
+                          ),
+                        ),
+                      SizedBox(
+                        height: height * 0.02,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'OTP copied',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontWeight: FontWeight.normal,
                             ),
-                            SizedBox(
-                              width: width * 0.01,
-                            ),
-                            InkWell(
-                              onTap: () async {
-                                // ดึงข้อความจาก Clipboard
-                                ClipboardData? data =
-                                    await Clipboard.getData('text/plain');
-                                if (data != null && data.text != null) {
-                                  String copiedText = data.text!;
-                                  if (copiedText.length == 6) {
-                                    // ใส่ข้อความลงใน TextControllers
-                                    for (int i = 0;
-                                        i < copiedText.length;
-                                        i++) {
-                                      otpControllers[i].text = copiedText[i];
-                                      // โฟกัสไปยังช่องสุดท้าย
-                                      if (i == 5) {
-                                        focusNodes[i].requestFocus();
-                                      }
+                          ),
+                          SizedBox(
+                            width: width * 0.01,
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              // ดึงข้อความจาก Clipboard
+                              ClipboardData? data =
+                                  await Clipboard.getData('text/plain');
+                              if (data != null && data.text != null) {
+                                String copiedText = data.text!;
+                                if (copiedText.length == 6) {
+                                  // ใส่ข้อความลงใน TextControllers
+                                  for (int i = 0; i < copiedText.length; i++) {
+                                    otpControllers[i].text = copiedText[i];
+                                    // โฟกัสไปยังช่องสุดท้าย
+                                    if (i == 5) {
+                                      focusNodes[i].requestFocus();
                                     }
-                                    verifyEnteredOTP(
-                                      otpControllers,
-                                      email,
-                                      ref,
-                                      setState,
-                                    ); // ตรวจสอบ OTP
-                                  } else {
-                                    setState(() {
-                                      warning = 'F21F1F';
-                                    });
                                   }
+                                  verifyEnteredOTP(
+                                    otpControllers,
+                                    email,
+                                    ref,
+                                    setState,
+                                  ); // ตรวจสอบ OTP
+                                } else {
+                                  setState(() {
+                                    warning = 'F21F1F';
+                                  });
                                 }
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01),
-                                child: Text(
-                                  'Paste',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.blue,
-                                    decoration: TextDecoration.underline,
-                                  ),
+                              }
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.01),
+                              child: Text(
+                                'Paste',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        Text(
-                          'ref: $ref',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleSmall!.fontSize,
-                            fontWeight: FontWeight.normal,
                           ),
+                        ],
+                      ),
+                      Text(
+                        'ref: $ref',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleSmall!.fontSize,
+                          fontWeight: FontWeight.normal,
                         ),
-                        SizedBox(height: height * 0.01),
-                        Text(
-                          countTheTime,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleSmall!.fontSize,
-                            fontWeight: FontWeight.normal,
-                          ),
+                      ),
+                      SizedBox(height: height * 0.01),
+                      Text(
+                        countTheTime,
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleSmall!.fontSize,
+                          fontWeight: FontWeight.normal,
                         ),
-                        SizedBox(height: height * 0.01),
-                        InkWell(
-                          onTap: canResend
-                              ? () async {
-                                  await FirebaseFirestore.instance
-                                      .collection('OTPRecords')
-                                      .doc(ref)
-                                      .delete();
-                                  var config = await Configuration.getConfig();
-                                  var url = config['apiEndpoint'];
-                                  loadingDialog();
-                                  var responseOtp = await http.post(
-                                    Uri.parse("$url/auth/requestverifyOTP"),
-                                    headers: {
-                                      "Content-Type":
-                                          "application/json; charset=utf-8"
-                                    },
-                                    body: sendOtpPostRequestToJson(
-                                      SendOtpPostRequest(
-                                        email: email,
-                                      ),
+                      ),
+                      SizedBox(height: height * 0.01),
+                      InkWell(
+                        onTap: canResend
+                            ? () async {
+                                await FirebaseFirestore.instance
+                                    .collection('OTPRecords')
+                                    .doc(ref)
+                                    .delete();
+                                url = await loadAPIEndpoint();
+                                loadingDialog();
+                                var responseOtp = await http.post(
+                                  Uri.parse("$url/auth/requestverifyOTP"),
+                                  headers: {
+                                    "Content-Type":
+                                        "application/json; charset=utf-8"
+                                  },
+                                  body: sendOtpPostRequestToJson(
+                                    SendOtpPostRequest(
+                                      email: email,
                                     ),
-                                  );
-                                  if (responseOtp.statusCode == 200) {
-                                    Get.back();
-                                    SendOtpPostResponst sendOTPResponse =
-                                        sendOtpPostResponstFromJson(
-                                            responseOtp.body);
+                                  ),
+                                );
+                                if (responseOtp.statusCode == 200) {
+                                  Get.back();
+                                  SendOtpPostResponst sendOTPResponse =
+                                      sendOtpPostResponstFromJson(
+                                          responseOtp.body);
 
-                                    if (timer != null && timer!.isActive) {
-                                      timer!.cancel();
-                                    }
-
-                                    setState(() {
-                                      ref = sendOTPResponse.ref;
-                                      hasStartedCountdown = true;
-                                      canResend = false; // ล็อกการกดชั่วคราว
-                                      warning = '';
-                                      for (var controller in otpControllers) {
-                                        controller.clear();
-                                      }
-                                    });
-                                    startCountdown(setState, ref);
-                                    // รอ 30 วิค่อยให้กดได้อีก
-                                    Future.delayed(Duration(seconds: 30), () {
-                                      if (!mounted) return;
-                                      setState(() {
-                                        canResend = true;
-                                      });
-                                    });
+                                  if (timer != null && timer!.isActive) {
+                                    timer!.cancel();
                                   }
+
+                                  setState(() {
+                                    ref = sendOTPResponse.ref;
+                                    hasStartedCountdown = true;
+                                    canResend = false; // ล็อกการกดชั่วคราว
+                                    warning = '';
+                                    for (var controller in otpControllers) {
+                                      controller.clear();
+                                    }
+                                  });
+                                  startCountdown(setState, ref);
+                                  // รอ 30 วิค่อยให้กดได้อีก
+                                  Future.delayed(Duration(seconds: 30), () {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      canResend = true;
+                                    });
+                                  });
                                 }
-                              : null,
-                          child: Padding(
-                            padding:
-                                EdgeInsets.symmetric(horizontal: width * 0.01),
-                            child: Text(
-                              'Resend Code',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleSmall!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: canResend ? Colors.blue : Colors.grey,
-                                decoration: canResend
-                                    ? TextDecoration.underline
-                                    : TextDecoration.none,
-                              ),
+                              }
+                            : null,
+                        child: Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: width * 0.01),
+                          child: Text(
+                            'Resend Code',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
+                              fontWeight: FontWeight.normal,
+                              color: canResend ? Colors.blue : Colors.grey,
+                              decoration: canResend
+                                  ? TextDecoration.underline
+                                  : TextDecoration.none,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1838,8 +1834,7 @@ class _RegisterPageState extends State<RegisterPage> {
     String ref,
     StateSetter setState1,
   ) async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+    url = await loadAPIEndpoint();
     String enteredOTP = otpControllers
         .map((controller) => controller.text)
         .join(); // รวมค่าที่ป้อน
@@ -1899,9 +1894,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
           //เข้าไปเรียบร้อบละ
           if (responseGetUserByEmail.role == "admin") {
-            Get.offAll(() => const NavbaradminPage());
+            Get.offAll(() => NavbaradminPage());
           } else {
-            Get.offAll(() => const NavbarPage());
+            Get.offAll(() => NavbarPage());
           }
         }
       } else {
@@ -1932,197 +1927,91 @@ class _RegisterPageState extends State<RegisterPage> {
                   emailConfirmOtpFocusNode.unfocus();
                 }
               },
-              child: Scaffold(
-                body: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: width * 0.04,
-                      right: width * 0.04,
-                      top: height * 0.05,
-                    ),
-                    child: SizedBox(
-                      height: height,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: width * 0.05,
+                    left: width * 0.05,
+                    top: height * 0.01,
+                    bottom: MediaQuery.of(context).viewInsets.bottom +
+                        height * 0.02,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         children: [
-                          Column(
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  InkWell(
-                                    onTap: backToLoginPage,
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.01,
+                              InkWell(
+                                onTap: backToLoginPage,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.01,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.string(
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
+                                        color: Colors.grey,
                                       ),
-                                      child: Row(
-                                        children: [
-                                          SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                            color: Colors.grey,
-                                          ),
-                                          Text(
-                                            'back',
-                                            style: TextStyle(
-                                              fontSize: Get.textTheme
-                                                  .titleLarge!.fontSize,
-                                              fontWeight: FontWeight.normal,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        'back',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme.titleLarge!.fontSize,
+                                          fontWeight: FontWeight.normal,
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Image.asset(
-                                    "assets/images/LogoApp.png",
-                                    height: height * 0.07,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Verify your email',
-                                    style: TextStyle(
-                                      fontSize: Get
-                                          .textTheme.headlineMedium!.fontSize,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'We will send the otp code to the email you entered',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      left: width * 0.03,
-                                    ),
-                                    child: Text(
-                                      'Email',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              TextField(
-                                controller: emailConfirmOtpCtl,
-                                focusNode: emailConfirmOtpFocusNode,
-                                keyboardType: TextInputType.emailAddress,
-                                cursorColor: Colors.black,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: isTyping
-                                      ? ''
-                                      : 'Enter your email address…',
-                                  hintStyle: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey,
-                                  ),
-                                  prefixIcon: IconButton(
-                                    onPressed: null,
-                                    icon: SvgPicture.string(
-                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  constraints: BoxConstraints(
-                                    maxHeight: height * 0.05,
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.02,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          Column(
+                          Row(
                             children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  var config = await Configuration.getConfig();
-                                  var url = config['apiEndpoint'];
-                                  // แสดง Loading Dialog
-                                  loadingDialog();
-                                  var responseOtp = await http.post(
-                                    Uri.parse("$url/auth/requestverifyOTP"),
-                                    headers: {
-                                      "Content-Type":
-                                          "application/json; charset=utf-8"
-                                    },
-                                    body: sendOtpPostRequestToJson(
-                                      SendOtpPostRequest(
-                                        email: email,
-                                      ),
-                                    ),
-                                  );
-                                  if (responseOtp.statusCode == 200) {
-                                    Get.back();
-                                    Get.back();
-
-                                    SendOtpPostResponst sendOTPResponse =
-                                        sendOtpPostResponstFromJson(
-                                            responseOtp.body);
-
-                                    //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-                                    verifyOTP(
-                                      email,
-                                      sendOTPResponse.ref,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  fixedSize: Size(
-                                    width,
-                                    height * 0.04,
-                                  ),
-                                  backgroundColor: Colors.black,
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                              Image.asset(
+                                "assets/images/LogoApp.png",
+                                height: height * 0.07,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Text(
+                                'Verify your email',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.headlineMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'We will send the otp code to the email you entered',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  left: width * 0.03,
                                 ),
                                 child: Text(
-                                  'Request code',
+                                  'Email',
                                   style: TextStyle(
                                     fontSize:
                                         Get.textTheme.titleMedium!.fontSize,
@@ -2132,9 +2021,107 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ],
                           ),
+                          TextField(
+                            controller: emailConfirmOtpCtl,
+                            focusNode: emailConfirmOtpFocusNode,
+                            keyboardType: TextInputType.emailAddress,
+                            cursorColor: Colors.black,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                            ),
+                            decoration: InputDecoration(
+                              hintText:
+                                  isTyping ? '' : 'Enter your email address…',
+                              hintStyle: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: IconButton(
+                                onPressed: null,
+                                icon: SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              constraints: BoxConstraints(
+                                maxHeight: height * 0.05,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  width: 0.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              url = await loadAPIEndpoint();
+                              // แสดง Loading Dialog
+                              loadingDialog();
+                              var responseOtp = await http.post(
+                                Uri.parse("$url/auth/requestverifyOTP"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8"
+                                },
+                                body: sendOtpPostRequestToJson(
+                                  SendOtpPostRequest(
+                                    email: email,
+                                  ),
+                                ),
+                              );
+                              if (responseOtp.statusCode == 200) {
+                                Get.back();
+                                Get.back();
+
+                                SendOtpPostResponst sendOTPResponse =
+                                    sendOtpPostResponstFromJson(
+                                        responseOtp.body);
+
+                                //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+                                verifyOTP(
+                                  email,
+                                  sendOTPResponse.ref,
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(
+                                width,
+                                height * 0.04,
+                              ),
+                              backgroundColor: Colors.black,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Request code',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),

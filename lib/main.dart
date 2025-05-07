@@ -28,12 +28,8 @@ void main() async {
   initializeDateFormatting().then((_) {
     runApp(
       MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (context) => Appdata(),
-          )
-        ],
-        child: const MainApp(),
+        providers: [ChangeNotifierProvider(create: (context) => Appdata())],
+        child: MainApp(),
       ),
     );
   });
@@ -46,10 +42,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [
-        Locale('en', 'US'), // English
-        Locale('th', 'TH'), // Thai
-      ],
+      supportedLocales: [Locale('en', 'US'), Locale('th', 'TH')],
       title: 'MyDayPlanner',
       theme: ThemeData(
         useMaterial3: false,

@@ -4,6 +4,7 @@ import 'dart:developer';
 
 import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
@@ -11,6 +12,8 @@ import 'package:mydayplanner/models/request/googleLoginUserPostRequest.dart';
 import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
 import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/request/signInUserPostRequest.dart';
+import 'package:mydayplanner/models/response/DataProfileGetResponst.dart';
+import 'package:mydayplanner/models/response/boardAllGetResponst.dart';
 import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
 import 'package:mydayplanner/models/response/googleLoginUserPostResponse.dart';
 import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
@@ -27,6 +30,8 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:mydayplanner/shared/appData.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,34 +41,33 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-// ---------------------- 🎯 Controllers (TextEditing) ----------------------
+  // ---------------------- 🎯 Controllers (TextEditing) ----------------------
   TextEditingController emailCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
   TextEditingController emailConfirmOtpCtl = TextEditingController();
 
-// ---------------------- 🎯 Controllers (FocusNode) ----------------------
+  // ---------------------- 🎯 Controllers (FocusNode) ----------------------
   FocusNode emailFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
   FocusNode emailConfirmOtpFocusNode = FocusNode();
 
-// ---------------------- ✅ State Flags ----------------------
+  // ---------------------- ✅ State Flags ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
-  bool isCheckedEmail = false;
   bool canResend = true;
   bool hasStartedCountdown = false;
   bool blockOTP = false;
   bool stopBlockOTP = false;
 
-// ---------------------- 🔐 Auth ----------------------
+  // ---------------------- 🔐 Auth ----------------------
   final GoogleSignIn googleSignIn = GoogleSignIn();
   int signInAttempts = 0;
   int countToRequest = 1;
 
-// ---------------------- 🧱 Local Storage ----------------------
+  // ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
-
-// ---------------------- 🔤 Strings ----------------------
+  final storage = FlutterSecureStorage();
+  // ---------------------- 🔤 Strings ----------------------
   String textNotification = '';
   String warning = '';
   String? expiresAtEmail;
@@ -71,6 +75,13 @@ class _LoginPageState extends State<LoginPage> {
   Timer? timer;
   int start = 900; // 15 นาที = 900 วินาที
   String countTheTime = "15:00"; // เวลาเริ่มต้น
+  late String url;
+  late String url2;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
@@ -90,151 +101,154 @@ class _LoginPageState extends State<LoginPage> {
 
     return PopScope(
       canPop: false,
-      child: Builder(builder: (context) {
-        return GestureDetector(
-          onTap: () {
-            if (emailFocusNode.hasFocus) {
-              emailFocusNode.unfocus();
-            }
-            if (passwordFocusNode.hasFocus) {
-              passwordFocusNode.unfocus();
-            }
-          },
-          child: Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: width * 0.05,
-                      left: width * 0.05,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          children: [
-                            Row(
-                              children: [
-                                Image.asset(
-                                  "assets/images/LogoApp.png",
-                                  height: height * 0.07,
-                                  fit: BoxFit.contain,
-                                ),
-                              ],
-                            ),
-                            Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: height * 0.02,
+      child: Builder(
+        builder: (context) {
+          return GestureDetector(
+            onTap: () {
+              if (emailFocusNode.hasFocus) {
+                emailFocusNode.unfocus();
+              }
+              if (passwordFocusNode.hasFocus) {
+                passwordFocusNode.unfocus();
+              }
+            },
+            child: Scaffold(
+              body: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: width * 0.05,
+                        left: width * 0.05,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Image.asset(
+                                    "assets/images/LogoApp.png",
+                                    height: height * 0.07,
+                                    fit: BoxFit.contain,
                                   ),
-                                  child: Row(
+                                ],
+                              ),
+                              Stack(
+                                alignment: Alignment.bottomCenter,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: height * 0.02,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Welcome!',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .displaySmall!
+                                                    .fontSize,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Row(
                                     children: [
                                       Text(
-                                        'Welcome!',
+                                        'Please Sign in to continue.',
                                         style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.displaySmall!.fontSize,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .fontSize,
+                                          fontWeight: FontWeight.normal,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Please Sign in to continue.',
+                                ],
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              SizedBox(height: height * 0.02),
+                              Image.asset(
+                                "assets/images/ImageShow.png",
+                                height: height * 0.2,
+                                fit: BoxFit.contain,
+                              ),
+                              SizedBox(height: height * 0.02),
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: width * 0.03,
+                                    ),
+                                    child: Text(
+                                      'Email',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get.textTheme.titleMedium!.fontSize,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            SizedBox(
-                              height: height * 0.02,
-                            ),
-                            Image.asset(
-                              "assets/images/ImageShow.png",
-                              height: height * 0.2,
-                              fit: BoxFit.contain,
-                            ),
-                            SizedBox(
-                              height: height * 0.02,
-                            ),
-                            Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    left: width * 0.03,
                                   ),
-                                  child: Text(
-                                    'Email',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextField(
-                              controller: emailCtl,
-                              focusNode: emailFocusNode,
-                              keyboardType: TextInputType.emailAddress,
-                              cursorColor: Colors.black,
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                ],
                               ),
-                              decoration: InputDecoration(
-                                hintText:
-                                    isTyping ? '' : 'Enter your email address…',
-                                hintStyle: TextStyle(
+                              TextField(
+                                controller: emailCtl,
+                                focusNode: emailFocusNode,
+                                keyboardType: TextInputType.emailAddress,
+                                cursorColor: Colors.black,
+                                style: TextStyle(
                                   fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.grey,
                                 ),
-                                prefixIcon: IconButton(
-                                  onPressed: null,
-                                  icon: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                decoration: InputDecoration(
+                                  hintText:
+                                      isTyping
+                                          ? ''
+                                          : 'Enter your email address…',
+                                  hintStyle: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize,
+                                    fontWeight: FontWeight.normal,
                                     color: Colors.grey,
                                   ),
-                                ),
-                                constraints: BoxConstraints(
-                                  maxHeight: height * 0.05,
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.02,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    width: 0.5,
+                                  prefixIcon: IconButton(
+                                    onPressed: null,
+                                    icon: SvgPicture.string(
+                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    width: 0.5,
+                                  constraints: BoxConstraints(
+                                    maxHeight: height * 0.05,
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.02,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(width: 0.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(width: 0.5),
                                   ),
                                 ),
                               ),
-                            ),
-                            if (isCheckedEmail) SizedBox(height: height * 0.01),
-                            if (isCheckedEmail)
+
+                              SizedBox(height: height * 0.01),
+
                               Row(
                                 children: [
                                   Padding(
@@ -252,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ],
                               ),
-                            if (isCheckedEmail)
+
                               TextField(
                                 controller: passwordCtl,
                                 focusNode: passwordFocusNode,
@@ -299,19 +313,15 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
+                                    borderSide: BorderSide(width: 0.5),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
+                                    borderSide: BorderSide(width: 0.5),
                                   ),
                                 ),
                               ),
-                            if (isCheckedEmail)
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
@@ -324,8 +334,11 @@ class _LoginPageState extends State<LoginPage> {
                                       child: Text(
                                         'Forgot password?',
                                         style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleMedium!.fontSize,
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleMedium!
+                                                  .fontSize,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.black,
                                         ),
@@ -334,128 +347,115 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ],
                               ),
-                            SizedBox(
-                              height: height * 0.01,
-                            ),
-                            ElevatedButton(
-                              onPressed: login,
-                              style: ElevatedButton.styleFrom(
-                                fixedSize: Size(
-                                  width,
-                                  height * 0.04,
-                                ),
-                                backgroundColor: Color(0xFF007AFF),
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                !isCheckedEmail ? 'Continue' : 'Sign in',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            if (textNotification.isNotEmpty)
-                              SizedBox(
-                                height: height * 0.01,
-                              ),
-                            if (textNotification.isNotEmpty)
-                              Text(
-                                textNotification,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            SizedBox(
-                              height: height * 0.02,
-                            ),
-                            Text(
-                              '- or -',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                            SizedBox(
-                              height: height * 0.01,
-                            ),
-                            ElevatedButton(
-                              onPressed: signInWithGoogle,
-                              style: ElevatedButton.styleFrom(
-                                fixedSize: Size(
-                                  width,
-                                  height * 0.05,
-                                ),
-                                backgroundColor: Colors.white,
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    'assets/images/LogoGoogle.png',
-                                    height: height * 0.08,
-                                    fit: BoxFit.contain,
+                              SizedBox(height: height * 0.01),
+                              ElevatedButton(
+                                onPressed: login,
+                                style: ElevatedButton.styleFrom(
+                                  fixedSize: Size(width, height * 0.04),
+                                  backgroundColor: Color(0xFF007AFF),
+                                  elevation: 1,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  Text(
-                                    'Continue with Google',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              height: height * 0.01,
-                            ),
-                            Text(
-                              'Don’t have an account?',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            InkWell(
-                              onTap: goToRegisterPage,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.02,
                                 ),
                                 child: Text(
-                                  'Create yours now.',
+                                  'Sign in',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleLarge!.fontSize,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              if (textNotification.isNotEmpty)
+                                SizedBox(height: height * 0.01),
+                              if (textNotification.isNotEmpty)
+                                Text(
+                                  textNotification,
                                   style: TextStyle(
                                     fontSize:
                                         Get.textTheme.titleMedium!.fontSize,
                                     fontWeight: FontWeight.normal,
-                                    color: Colors.black,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              SizedBox(height: height * 0.01),
+                              Text(
+                                '- or -',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                              SizedBox(height: height * 0.01),
+                              ElevatedButton(
+                                onPressed: signInWithGoogle,
+                                style: ElevatedButton.styleFrom(
+                                  fixedSize: Size(width, height * 0.05),
+                                  backgroundColor: Colors.white,
+                                  elevation: 1,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'assets/images/LogoGoogle.png',
+                                      height: height * 0.08,
+                                      fit: BoxFit.contain,
+                                    ),
+                                    Text(
+                                      'Continue with Google',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleLarge!.fontSize,
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: height * 0.01),
+                              Text(
+                                'Don’t have an account?',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: goToRegisterPage,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.02,
+                                  ),
+                                  child: Text(
+                                    'Create yours now.',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 
@@ -476,24 +476,17 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signInWithGoogle() async {
     try {
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
+      url = await loadAPIEndpoint();
 
       loadingDialog(); // แสดง Loading Dialog
 
-      GoogleSignInAccount? googleUser;
-      try {
-        googleUser = await googleSignIn.signIn();
-      } finally {
-        Get.back(); // ปิด Loading Dialog ไม่ว่า signIn จะสำเร็จหรือไม่
-      }
+      GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
       if (googleUser == null) {
+        Get.back();
         return;
       }
-
-      loadingDialog(); // แสดง Loading Dialog สำหรับขั้นตอนถัดไป
 
       try {
         // เรียกเมธอด authentication จากออบเจกต์ googleUser เพื่อขอรับข้อมูลการตรวจสอบสิทธิ์ (tokens)
@@ -504,28 +497,29 @@ class _LoginPageState extends State<LoginPage> {
           idToken: googleAuth.idToken,
         );
         await FirebaseAuth.instance.signInWithCredential(credential);
+        log(
+          'accessToken: ${googleAuth.accessToken}\n idToken: ${googleAuth.idToken}',
+        );
       } finally {
         Get.back(); // ปิด Loading Dialog หลัง auth เสร็จ
       }
-
+      return;
       loadingDialog(); // แสดง Loading Dialog สำหรับเรียก API /user/getemail
 
       var responseGetUser = await http.post(
         Uri.parse("$url/user/getemail"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: getUserByEmailPostRequestToJson(
-          GetUserByEmailPostRequest(
-            email: googleUser.email,
-          ),
+          GetUserByEmailPostRequest(email: googleUser.email),
         ),
       );
 
       GoogleLoginUserPostRequest jsonLoginGoogleUser =
           GoogleLoginUserPostRequest(
-        email: googleUser.email,
-        name: googleUser.displayName.toString(),
-        profile: googleUser.photoUrl.toString(),
-      );
+            email: googleUser.email,
+            name: googleUser.displayName.toString(),
+            profile: googleUser.photoUrl.toString(),
+          );
       Get.back();
       if (responseGetUser.statusCode == 200) {
         showNotification('');
@@ -566,7 +560,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       fontSize: Get.textTheme.headlineSmall!.fontSize,
                       fontWeight: FontWeight.w500,
-                      color: Color.fromRGBO(0, 122, 255, 1),
+                      color: Color(0xFF007AFF),
                     ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.width * 0.02),
@@ -591,7 +585,7 @@ class _LoginPageState extends State<LoginPage> {
                       MediaQuery.of(context).size.width,
                       MediaQuery.of(context).size.height * 0.05,
                     ),
-                    backgroundColor: Color.fromRGBO(0, 122, 255, 1),
+                    backgroundColor: Color(0xFF007AFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -618,7 +612,7 @@ class _LoginPageState extends State<LoginPage> {
                       MediaQuery.of(context).size.width,
                       MediaQuery.of(context).size.height * 0.05,
                     ),
-                    backgroundColor: Color.fromRGBO(231, 243, 255, 1),
+                    backgroundColor: Color(0xFFE7F3FF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -628,7 +622,7 @@ class _LoginPageState extends State<LoginPage> {
                     'Back',
                     style: TextStyle(
                       fontSize: Get.textTheme.titleLarge!.fontSize,
-                      color: Color.fromRGBO(0, 122, 255, 1),
+                      color: Color(0xFF007AFF),
                     ),
                   ),
                 ),
@@ -642,10 +636,11 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
 
-        var result = await FirebaseFirestore.instance
-            .collection('usersLogin')
-            .doc(googleUser.email)
-            .get();
+        var result =
+            await FirebaseFirestore.instance
+                .collection('usersLogin')
+                .doc(googleUser.email)
+                .get();
         var data = result.data();
         if (data != null) {
           if (data['active'] != '1') {
@@ -682,9 +677,7 @@ class _LoginPageState extends State<LoginPage> {
                 Uri.parse("$url/user/getemail"),
                 headers: {"Content-Type": "application/json; charset=utf-8"},
                 body: getUserByEmailPostRequestToJson(
-                  GetUserByEmailPostRequest(
-                    email: googleUser.email,
-                  ),
+                  GetUserByEmailPostRequest(email: googleUser.email),
                 ),
               );
 
@@ -693,9 +686,9 @@ class _LoginPageState extends State<LoginPage> {
                     getUserByEmailPostResponstFromJson(responseGetUser.body);
 
                 if (getUserByEmailPostResponst.role == "admin") {
-                  Get.offAll(() => const NavbaradminPage());
+                  Get.offAll(() => NavbaradminPage());
                 } else {
-                  Get.offAll(() => const NavbarPage());
+                  Get.offAll(() => NavbarPage());
                 }
               }
             }
@@ -736,7 +729,8 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isValidEmail(String email) {
     final RegExp emailRegExp = RegExp(
-        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$");
+      r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$",
+    );
     return emailRegExp.hasMatch(email);
   }
 
@@ -744,277 +738,130 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        content: Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            content: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
           ),
-        ),
-      ),
     );
   }
 
   void login() async {
-    // ถ้า email ว่าง
+    // Check if widget is still mounted before proceeding
+    if (!mounted) return;
+
+    // Validate email
     if (emailCtl.text.isEmpty) {
-      passwordCtl.text = '';
-      isCheckedEmail = false;
       showNotification('Email address is required');
       return;
-    }
-
-    // ถ้า email format บ่ถูก
-    if (!isValidEmail(emailCtl.text)) {
-      passwordCtl.text = '';
-      isCheckedEmail = false;
+    } else if (!isValidEmail(emailCtl.text)) {
       showNotification('Invalid email address');
       return;
     }
 
+    if (passwordCtl.text.isEmpty) {
+      showNotification('Please enter your password');
+      return;
+    }
+
     try {
-      var config = await Configuration.getConfig();
-      var url = config['apiEndpoint'];
+      // Load API endpoints
+      var url = await loadAPIEndpoint();
 
-      // แสดง Loading Dialog
+      // Sign in request
+      if (!mounted) return;
+
       loadingDialog();
-
       var responseGetuser = await http.post(
-        Uri.parse("$url/user/getemail"),
+        Uri.parse("$url/auth/signin"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: getUserByEmailPostRequestToJson(
-          GetUserByEmailPostRequest(
+        body: signInUserPostRequestToJson(
+          SignInUserPostRequest(
             email: emailCtl.text,
+            password: passwordCtl.text,
           ),
         ),
       );
+      if (!mounted) return;
+      Get.back();
 
       if (responseGetuser.statusCode == 200) {
-        Get.back(); // ปิด loading dialog
         showNotification('');
 
-        GetUserByEmailPostResponst responseGetUserByEmail =
-            getUserByEmailPostResponstFromJson(responseGetuser.body);
+        final SignInUserPostResponst getUserByEmailResponse =
+            signInUserPostResponstFromJson(responseGetuser.body);
 
-        // เช็คว่าไม่พบอีเมลในระบบถ้ามีรหัสเป็น '-'
-        if (responseGetUserByEmail.hashedPassword == '-') {
-          passwordCtl.text = '';
-          isCheckedEmail = false;
-          showNotification('Email not found');
-          return;
-        }
+        await storage.write(
+          key: 'refreshToken',
+          value: getUserByEmailResponse.token.refreshToken,
+        );
+        box.write('accessToken', getUserByEmailResponse.token.accessToken);
 
-        // ถ้า admin ปิดการใช้งาน
-        if (responseGetUserByEmail.isActive == '0') {
-          passwordCtl.text = '';
-          isCheckedEmail = false;
-          showNotification('Your account has been disabled');
-          return;
-        }
+        // Get user profile
+        if (!mounted) return;
 
-        // ถ้า ปิดบัญชี
-        if (responseGetUserByEmail.isActive == '2') {
-          passwordCtl.text = '';
-          isCheckedEmail = false;
-          showNotification('You have already deleted this account');
-          return;
-        }
+        loadingDialog();
+        final responseGetuser2 = await http.get(
+          Uri.parse("$url/user/Profile"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+        if (!mounted) return;
+        Get.back();
 
-        // ดึงข้อมูลจาก Firestore
-        var result = await FirebaseFirestore.instance
-            .collection('usersLogin')
-            .doc(emailCtl.text)
-            .get();
+        if (responseGetuser2.statusCode == 200) {
+          final DataProfileGetResponst response =
+              dataProfileGetResponstFromJson(responseGetuser2.body);
 
-        var data = result.data();
-        if (data != null) {
-          if (data['active'] != '1') {
-            passwordCtl.text = '';
-            isCheckedEmail = false;
-            showNotification('Your account has been disabled');
-            return;
-          }
-        }
+          // Save user data
+          box.write('userProfile', {
+            'userid': response.user.userId,
+            'name': response.user.name,
+            'email': response.user.email,
+            'profile': response.user.profile,
+            'role': response.user.role,
+          });
 
-        // เปิดให้ใส่รหัสผ่าน
-        isCheckedEmail = true;
-        showNotification('');
+          if (!mounted) return;
 
-        if (passwordCtl.text == '-') {
-          showNotification('Invalid password');
-          return;
-        }
-
-        if (passwordCtl.text.isEmpty) {
-          signInAttempts++;
-          if (signInAttempts > 1) {
-            showNotification('Password fields cannot be empty');
-          }
-          return;
-        }
-
-        if (passwordFocusNode.hasFocus) {
-          passwordFocusNode.unfocus();
-        }
-
-        // อันนี้คือเข้ารหัส password BCrypt
-        if (BCrypt.checkpw(
-            passwordCtl.text, responseGetUserByEmail.hashedPassword)) {
-          try {
-            // แสดง Loading Dialog
+          if (response.user.role == "admin") {
+            Get.offAll(() => NavbaradminPage());
+          } else {
+            // Get all boards for regular users
             loadingDialog();
-
-            var responseLogin = await http.post(
-              Uri.parse("$url/auth/signin"),
-              headers: {"Content-Type": "application/json; charset=utf-8"},
-              body: signInUserPostRequestToJson(
-                SignInUserPostRequest(
-                  email: emailCtl.text,
-                  hashedPassword: passwordCtl.text,
-                ),
-              ),
+            final responseGetAllboard = await http.get(
+              Uri.parse("$url/board/allboards"),
+              headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "Bearer ${box.read('accessToken')}",
+              },
             );
+            if (!mounted) return;
+            Get.back();
 
-            if (responseLogin.statusCode == 200) {
-              Get.back(); // ปิด loading dialog
-              showNotification('');
+            if (responseGetAllboard.statusCode == 200) {
+              BoardAllGetResponst boards = boardAllGetResponstFromJson(
+                responseGetAllboard.body,
+              );
 
-              SignInUserPostResponst getUserByEmailResponse =
-                  signInUserPostResponstFromJson(responseLogin.body);
-
-              if (getUserByEmailResponse.email ==
-                  responseGetUserByEmail.email) {
-                // เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
-                box.write('email', emailCtl.text);
-                box.write('password', passwordCtl.text);
-
-                // แยกทางใครทางมัน
-                if (getUserByEmailResponse.role == "admin") {
-                  Get.offAll(() => const NavbaradminPage());
-                } else {
-                  Get.offAll(() => const NavbarPage());
-                }
-              }
-            } else {
-              Get.back(); // ปิด loading dialog
-
-              // กรณีไม่ได้ยืนยัน otp
-              if (responseGetUserByEmail.isVerify != '1') {
-                showNotification('Your account must verify your email first');
-                delay(() {
-                  // ส่งไปยืนยันเมล
-                  Get.defaultDialog(
-                    title: "",
-                    titlePadding: EdgeInsets.zero,
-                    backgroundColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width * 0.04,
-                      vertical: MediaQuery.of(context).size.height * 0.02,
-                    ),
-                    content: Column(
-                      children: [
-                        Image.asset(
-                          "assets/images/aleart/question.png",
-                          height: MediaQuery.of(context).size.height * 0.1,
-                          fit: BoxFit.contain,
-                        ),
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.01),
-                        Text(
-                          'Confirm now?',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.headlineSmall!.fontSize,
-                            fontWeight: FontWeight.w500,
-                            color: Color.fromRGBO(0, 122, 255, 1),
-                          ),
-                        ),
-                        SizedBox(
-                            height: MediaQuery.of(context).size.width * 0.02),
-                        Text(
-                          'Your account must verify your email first',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                          showModalConfirmEmail(
-                              responseGetUserByEmail.email, false);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          backgroundColor: Color.fromRGBO(0, 122, 255, 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 1,
-                        ),
-                        child: Text(
-                          'Confirm',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          backgroundColor: Color.fromRGBO(231, 243, 255, 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 1,
-                        ),
-                        child: Text(
-                          'Back',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
-                            color: Color.fromRGBO(0, 122, 255, 1),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }, milliseconds: 500);
-              } else {
-                showNotification('Unable to sign in');
-              }
+              box.write('boardUser', boards.toJson());
+              Get.offAll(() => NavbarPage());
             }
-          } catch (e) {
-            Get.back(); // ปิด loading dialog
-            showNotification('An error occurred during sign in');
           }
-        } else {
-          showNotification('Invalid password');
         }
       } else {
-        Get.back(); // ปิด loading dialog
-        passwordCtl.text = '';
-        isCheckedEmail = false;
-        showNotification('Unable to contact');
+        if (!mounted) return;
+        var results = jsonDecode(responseGetuser.body);
+        showNotification(results['error']);
       }
     } catch (e) {
-      Get.back(); // ปิด loading dialog
-      passwordCtl.text = '';
-      isCheckedEmail = false;
-      showNotification('An unexpected error occurred');
+      if (!mounted) return;
+      showNotification('Something went wrong. Please try again.');
     }
   }
 
@@ -1022,7 +869,9 @@ class _LoginPageState extends State<LoginPage> {
     // สร้าง FocusNodes สำหรับทุกช่อง
     final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
     final otpControllers = List<TextEditingController>.generate(
-        6, (index) => TextEditingController());
+      6,
+      (index) => TextEditingController(),
+    );
 
     showModalBottomSheet(
       context: context,
@@ -1046,398 +895,373 @@ class _LoginPageState extends State<LoginPage> {
             });
 
             return WillPopScope(
-              onWillPop: () async {
-                return false;
-              },
-              child: Scaffold(
-                body: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: width * 0.04,
-                      left: width * 0.04,
-                      top: height * 0.06,
-                    ),
-                    child: SizedBox(
-                      height: height,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              onWillPop: () async => false,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: width * 0.05,
+                    left: width * 0.05,
+                    top: height * 0.05,
+                    bottom:
+                        MediaQuery.of(context).viewInsets.bottom +
+                        height * 0.02,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         children: [
-                          Column(
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Verification Code',
-                                    style: TextStyle(
-                                      fontSize: Get
-                                          .textTheme.headlineMedium!.fontSize,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'We have send the OTP code verification to',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    email,
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(
-                                height: height * 0.02,
-                              ),
-                              Form(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: List.generate(
-                                    6,
-                                    (index) {
-                                      return SizedBox(
-                                        height: height * 0.08,
-                                        width: width * 0.14,
-                                        child: TextFormField(
-                                          focusNode: focusNodes[index],
-                                          controller: otpControllers[index],
-                                          cursorColor: Colors.grey,
-                                          onChanged: (value) {
-                                            if (value.length == 1) {
-                                              if (index < 5) {
-                                                focusNodes[index + 1]
-                                                    .requestFocus(); // โฟกัสไปยังช่องถัดไป
-                                              } else {
-                                                FocusScope.of(context)
-                                                    .unfocus(); // ปิดคีย์บอร์ด
-                                                verifyEnteredOTP(
-                                                  otpControllers,
-                                                  email,
-                                                  ref,
-                                                  setState,
-                                                  withGoogle == true,
-                                                );
-                                              }
-                                            } else if (value.isEmpty &&
-                                                index > 0) {
-                                              focusNodes[index - 1]
-                                                  .requestFocus(); // กลับไปช่องก่อนหน้า
-                                            }
-                                          },
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium,
-                                          keyboardType: TextInputType.number,
-                                          textAlign: TextAlign.center,
-                                          inputFormatters: [
-                                            LengthLimitingTextInputFormatter(1),
-                                            FilteringTextInputFormatter
-                                                .digitsOnly,
-                                          ],
-                                          decoration: InputDecoration(
-                                            focusColor: Colors.black,
-                                            filled: true,
-                                            fillColor: Colors.white,
-                                            contentPadding: EdgeInsets.all(8),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: Colors.grey,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: Colors.grey.shade300,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: warning.isNotEmpty
-                                                    ? Color(int.parse(
-                                                        '0xff$warning'))
-                                                    : Colors.grey,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            hintText: "-",
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                              Text(
+                                'Verification Code',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.headlineMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              if (blockOTP || warning.isNotEmpty)
-                                SizedBox(
-                                  height: height * 0.02,
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'We have send the OTP code verification to',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
                                 ),
-                              if (warning.isNotEmpty)
-                                Text(
-                                  'OTP code is invalid',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              if (blockOTP)
-                                Text(
-                                  'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.red,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              SizedBox(
-                                height: height * 0.02,
                               ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'OTP copied',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: width * 0.01,
-                                  ),
-                                  InkWell(
-                                    onTap: () async {
-                                      // ดึงข้อความจาก Clipboard
-                                      ClipboardData? data =
-                                          await Clipboard.getData('text/plain');
-                                      if (data != null && data.text != null) {
-                                        String copiedText = data.text!;
-                                        if (copiedText.length == 6) {
-                                          // ใส่ข้อความลงใน TextControllers
-                                          for (int i = 0;
-                                              i < copiedText.length;
-                                              i++) {
-                                            otpControllers[i].text =
-                                                copiedText[i];
-                                            // โฟกัสไปยังช่องสุดท้าย
-                                            if (i == 5) {
-                                              focusNodes[i].requestFocus();
-                                            }
-                                          }
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                email,
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: height * 0.02),
+                          Form(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(6, (index) {
+                                return SizedBox(
+                                  height: height * 0.08,
+                                  width: width * 0.14,
+                                  child: TextFormField(
+                                    focusNode: focusNodes[index],
+                                    controller: otpControllers[index],
+                                    cursorColor: Colors.grey,
+                                    onChanged: (value) {
+                                      if (value.length == 1) {
+                                        if (index < 5) {
+                                          focusNodes[index + 1]
+                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
+                                        } else {
+                                          FocusScope.of(
+                                            context,
+                                          ).unfocus(); // ปิดคีย์บอร์ด
                                           verifyEnteredOTP(
                                             otpControllers,
                                             email,
                                             ref,
                                             setState,
                                             withGoogle == true,
-                                          ); // ตรวจสอบ OTP
-                                        } else {
-                                          setState(() {
-                                            warning = 'F21F1F';
-                                          });
+                                          );
                                         }
+                                      } else if (value.isEmpty && index > 0) {
+                                        focusNodes[index - 1]
+                                            .requestFocus(); // กลับไปช่องก่อนหน้า
                                       }
                                     },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.01),
-                                      child: Text(
-                                        'Paste',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleMedium!.fontSize,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.blue,
-                                          decoration: TextDecoration.underline,
+                                    style:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.headlineMedium,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(1),
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: InputDecoration(
+                                      focusColor: Colors.black,
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      contentPadding: EdgeInsets.all(8),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey,
+                                          width: 2,
                                         ),
                                       ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade300,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color:
+                                              warning.isNotEmpty
+                                                  ? Color(
+                                                    int.parse('0xff$warning'),
+                                                  )
+                                                  : Colors.grey,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      hintText: "-",
+                                      hintStyle: TextStyle(color: Colors.grey),
                                     ),
                                   ),
-                                ],
+                                );
+                              }),
+                            ),
+                          ),
+                          if (blockOTP || warning.isNotEmpty)
+                            SizedBox(height: height * 0.02),
+                          if (warning.isNotEmpty)
+                            Text(
+                              'OTP code is invalid',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.red,
                               ),
+                            ),
+                          if (blockOTP)
+                            Text(
+                              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.red,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          SizedBox(height: height * 0.02),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
                               Text(
-                                'ref: $ref',
+                                'OTP copied',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
-                              SizedBox(height: height * 0.01),
-                              Text(
-                                countTheTime,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                              SizedBox(height: height * 0.01),
+                              SizedBox(width: width * 0.01),
                               InkWell(
-                                onTap: canResend
-                                    ? () async {
-                                        countToRequest++;
-
-                                        if (countToRequest > 3) {
-                                          Map<String, dynamic> data = {
-                                            'email': email,
-                                            'createdAt': Timestamp.fromDate(
-                                                DateTime.now()),
-                                            'expiresAt': Timestamp.fromDate(
-                                              DateTime.now()
-                                                  .add(Duration(minutes: 10)),
-                                            ),
-                                          };
-                                          await FirebaseFirestore.instance
-                                              .collection('EmailBlocked')
-                                              .doc(email)
-                                              .set(data);
-                                          if (!mounted) return;
-                                          setState(() {
-                                            blockOTP = true;
-                                            stopBlockOTP = true;
-                                            canResend = false;
-                                            expiresAtEmail =
-                                                formatTimestampTo12HourTimeWithSeconds(
-                                                    data['expiresAt']
-                                                        as Timestamp);
-                                          });
-                                          return;
-                                        }
-
-                                        var config =
-                                            await Configuration.getConfig();
-                                        var url = config['apiEndpoint'];
-                                        loadingDialog();
-                                        var responseOtp = await http.post(
-                                          Uri.parse(
-                                              "$url/auth/requestverifyOTP"),
-                                          headers: {
-                                            "Content-Type":
-                                                "application/json; charset=utf-8"
-                                          },
-                                          body: sendOtpPostRequestToJson(
-                                            SendOtpPostRequest(
-                                              email: email,
-                                            ),
-                                          ),
-                                        );
-
-                                        if (responseOtp.statusCode == 200) {
-                                          Get.back();
-                                          SendOtpPostResponst sendOTPResponse =
-                                              sendOtpPostResponstFromJson(
-                                                  responseOtp.body);
-
-                                          if (timer != null &&
-                                              timer!.isActive) {
-                                            timer!.cancel();
-                                          }
-
-                                          setState(() {
-                                            ref = sendOTPResponse.ref;
-                                            hasStartedCountdown = true;
-                                            canResend =
-                                                false; // ล็อกการกดชั่วคราว
-                                            warning = '';
-                                            for (var controller
-                                                in otpControllers) {
-                                              controller.clear();
-                                            }
-                                          });
-                                          startCountdown(setState, ref);
-                                          // รอ 30 วิค่อยให้กดได้อีก
-                                          Future.delayed(Duration(seconds: 30),
-                                              () {
-                                            if (!mounted) return;
-                                            setState(() {
-                                              canResend = true;
-                                            });
-                                          });
-                                        } else {
-                                          Get.back();
+                                onTap: () async {
+                                  // ดึงข้อความจาก Clipboard
+                                  ClipboardData? data = await Clipboard.getData(
+                                    'text/plain',
+                                  );
+                                  if (data != null && data.text != null) {
+                                    String copiedText = data.text!;
+                                    if (copiedText.length == 6) {
+                                      // ใส่ข้อความลงใน TextControllers
+                                      for (
+                                        int i = 0;
+                                        i < copiedText.length;
+                                        i++
+                                      ) {
+                                        otpControllers[i].text = copiedText[i];
+                                        // โฟกัสไปยังช่องสุดท้าย
+                                        if (i == 5) {
+                                          focusNodes[i].requestFocus();
                                         }
                                       }
-                                    : null,
+                                      verifyEnteredOTP(
+                                        otpControllers,
+                                        email,
+                                        ref,
+                                        setState,
+                                        withGoogle == true,
+                                      ); // ตรวจสอบ OTP
+                                    } else {
+                                      setState(() {
+                                        warning = 'F21F1F';
+                                      });
+                                    }
+                                  }
+                                },
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(
-                                      horizontal: width * 0.01),
+                                    horizontal: width * 0.01,
+                                  ),
                                   child: Text(
-                                    'Resend Code',
+                                    'Paste',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleSmall!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                      color:
-                                          canResend ? Colors.blue : Colors.grey,
-                                      decoration: canResend
-                                          ? TextDecoration.underline
-                                          : TextDecoration.none,
+                                          Get.textTheme.titleMedium!.fontSize,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blue,
+                                      decoration: TextDecoration.underline,
                                     ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          if (stopBlockOTP)
-                            Column(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Get.offAll(() => LoginPage());
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    fixedSize: Size(
-                                      width,
-                                      height * 0.04,
-                                    ),
-                                    backgroundColor: Colors.black,
-                                    elevation: 1,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Sign in',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            'ref: $ref',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
+                              fontWeight: FontWeight.normal,
                             ),
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Text(
+                            countTheTime,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          SizedBox(height: height * 0.01),
+                          InkWell(
+                            onTap:
+                                canResend
+                                    ? () async {
+                                      countToRequest++;
+
+                                      if (countToRequest > 3) {
+                                        Map<String, dynamic> data = {
+                                          'email': email,
+                                          'createdAt': Timestamp.fromDate(
+                                            DateTime.now(),
+                                          ),
+                                          'expiresAt': Timestamp.fromDate(
+                                            DateTime.now().add(
+                                              Duration(minutes: 10),
+                                            ),
+                                          ),
+                                        };
+                                        await FirebaseFirestore.instance
+                                            .collection('EmailBlocked')
+                                            .doc(email)
+                                            .set(data);
+                                        if (!mounted) return;
+                                        setState(() {
+                                          blockOTP = true;
+                                          stopBlockOTP = true;
+                                          canResend = false;
+                                          expiresAtEmail =
+                                              formatTimestampTo12HourTimeWithSeconds(
+                                                data['expiresAt'] as Timestamp,
+                                              );
+                                        });
+                                        return;
+                                      }
+
+                                      url = await loadAPIEndpoint();
+                                      loadingDialog();
+                                      var responseOtp = await http.post(
+                                        Uri.parse("$url/auth/requestverifyOTP"),
+                                        headers: {
+                                          "Content-Type":
+                                              "application/json; charset=utf-8",
+                                        },
+                                        body: sendOtpPostRequestToJson(
+                                          SendOtpPostRequest(email: email),
+                                        ),
+                                      );
+
+                                      if (responseOtp.statusCode == 200) {
+                                        Get.back();
+                                        SendOtpPostResponst sendOTPResponse =
+                                            sendOtpPostResponstFromJson(
+                                              responseOtp.body,
+                                            );
+
+                                        if (timer != null && timer!.isActive) {
+                                          timer!.cancel();
+                                        }
+
+                                        setState(() {
+                                          ref = sendOTPResponse.ref;
+                                          hasStartedCountdown = true;
+                                          canResend =
+                                              false; // ล็อกการกดชั่วคราว
+                                          warning = '';
+                                          for (var controller
+                                              in otpControllers) {
+                                            controller.clear();
+                                          }
+                                        });
+                                        startCountdown(setState, ref);
+                                        // รอ 30 วิค่อยให้กดได้อีก
+                                        Future.delayed(
+                                          Duration(seconds: 30),
+                                          () {
+                                            if (!mounted) return;
+                                            setState(() {
+                                              canResend = true;
+                                            });
+                                          },
+                                        );
+                                      } else {
+                                        Get.back();
+                                      }
+                                    }
+                                    : null,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.01,
+                              ),
+                              child: Text(
+                                'Resend Code',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                  color: canResend ? Colors.blue : Colors.grey,
+                                  decoration:
+                                      canResend
+                                          ? TextDecoration.underline
+                                          : TextDecoration.none,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
+                      if (stopBlockOTP)
+                        Column(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Get.offAll(() => LoginPage());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                fixedSize: Size(width, height * 0.04),
+                                backgroundColor: Colors.black,
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                'Sign in',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -1460,11 +1284,11 @@ class _LoginPageState extends State<LoginPage> {
     StateSetter setState1,
     bool withGoogle,
   ) async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
-    String enteredOTP = otpControllers
-        .map((controller) => controller.text)
-        .join(); // รวมค่าที่ป้อน
+    url = await loadAPIEndpoint();
+    String enteredOTP =
+        otpControllers
+            .map((controller) => controller.text)
+            .join(); // รวมค่าที่ป้อน
     if (enteredOTP.length == 6) {
       // แสดง Loading Dialog
       loadingDialog();
@@ -1495,9 +1319,7 @@ class _LoginPageState extends State<LoginPage> {
           Uri.parse("$url/user/getemail"),
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: getUserByEmailPostRequestToJson(
-            GetUserByEmailPostRequest(
-              email: email,
-            ),
+            GetUserByEmailPostRequest(email: email),
           ),
         );
 
@@ -1527,9 +1349,9 @@ class _LoginPageState extends State<LoginPage> {
           }
           //เข้าไปเรียบร้อบละ
           if (responseGetUserByEmail.role == "admin") {
-            Get.offAll(() => const NavbaradminPage());
+            Get.offAll(() => NavbaradminPage());
           } else {
-            Get.offAll(() => const NavbarPage());
+            Get.offAll(() => NavbarPage());
           }
         }
       } else {
@@ -1545,7 +1367,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void goToRegisterPage() {
-    Get.to(() => const RegisterPage());
+    Get.to(() => RegisterPage());
   }
 
   void startCountdown(StateSetter setState, String ref) {
@@ -1611,256 +1433,240 @@ class _LoginPageState extends State<LoginPage> {
                   emailConfirmOtpFocusNode.unfocus();
                 }
               },
-              child: Scaffold(
-                body: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: width * 0.04,
-                      right: width * 0.04,
-                      top: height * 0.05,
-                    ),
-                    child: SizedBox(
-                      height: height,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: width * 0.05,
+                    left: width * 0.05,
+                    top: height * 0.05,
+                    bottom:
+                        MediaQuery.of(context).viewInsets.bottom +
+                        height * 0.02,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         children: [
-                          Column(
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  InkWell(
-                                    onTap: () async {
-                                      blockOTP = false;
-                                      await googleSignIn.signOut();
-                                      // Sign out from Firebase if needed
-                                      await FirebaseAuth.instance.signOut();
-                                      Get.back();
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.01,
+                              InkWell(
+                                onTap: () async {
+                                  blockOTP = false;
+                                  await googleSignIn.signOut();
+                                  // Sign out from Firebase if needed
+                                  await FirebaseAuth.instance.signOut();
+                                  Get.back();
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.01,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SvgPicture.string(
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
+                                        color: Colors.grey,
                                       ),
-                                      child: Row(
-                                        children: [
-                                          SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                            color: Colors.grey,
-                                          ),
-                                          Text(
-                                            'back',
-                                            style: TextStyle(
-                                              fontSize: Get.textTheme
-                                                  .titleLarge!.fontSize,
-                                              fontWeight: FontWeight.normal,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        'back',
+                                        style: TextStyle(
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .fontSize,
+                                          fontWeight: FontWeight.normal,
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                              Row(
-                                children: [
-                                  Image.asset(
-                                    "assets/images/LogoApp.png",
-                                    height: height * 0.07,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ],
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Image.asset(
+                                "assets/images/LogoApp.png",
+                                height: height * 0.07,
+                                fit: BoxFit.contain,
                               ),
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Verify your email',
-                                    style: TextStyle(
-                                      fontSize: Get
-                                          .textTheme.headlineMedium!.fontSize,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                            ],
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Text(
+                                'Verify your email',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.headlineMedium!.fontSize,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'We will send the otp code to the email you entered',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      left: width * 0.03,
-                                    ),
-                                    child: Text(
-                                      'Email',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              TextField(
-                                controller: emailConfirmOtpCtl,
-                                focusNode: emailConfirmOtpFocusNode,
-                                keyboardType: TextInputType.emailAddress,
-                                cursorColor: Colors.black,
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'We will send the otp code to the email you entered',
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleMedium!.fontSize,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: isTyping
-                                      ? ''
-                                      : 'Enter your email address…',
-                                  hintStyle: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.grey,
-                                  ),
-                                  prefixIcon: IconButton(
-                                    onPressed: null,
-                                    icon: SvgPicture.string(
-                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  constraints: BoxConstraints(
-                                    maxHeight: height * 0.05,
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.02,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      width: 0.5,
-                                    ),
-                                  ),
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
-                              SizedBox(height: height * 0.02),
-                              if (blockOTP)
-                                Text(
-                                  'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                            ],
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(left: width * 0.03),
+                                child: Text(
+                                  'Email',
                                   style: TextStyle(
                                     fontSize:
                                         Get.textTheme.titleMedium!.fontSize,
                                     fontWeight: FontWeight.normal,
-                                    color: Colors.red,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
+                              ),
                             ],
                           ),
-                          Column(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (blockOTP) {
+                          TextField(
+                            controller: emailConfirmOtpCtl,
+                            focusNode: emailConfirmOtpFocusNode,
+                            keyboardType: TextInputType.emailAddress,
+                            cursorColor: Colors.black,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                            ),
+                            decoration: InputDecoration(
+                              hintText:
+                                  isTyping ? '' : 'Enter your email address…',
+                              hintStyle: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: IconButton(
+                                onPressed: null,
+                                icon: SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              constraints: BoxConstraints(
+                                maxHeight: height * 0.05,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: height * 0.02),
+                          if (blockOTP)
+                            Text(
+                              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.red,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (blockOTP) {
+                                blockOTP = false;
+                                Get.back();
+                              } else {
+                                url = await loadAPIEndpoint();
+                                // แสดง Loading Dialog
+                                loadingDialog();
+                                var responseOtp = await http.post(
+                                  Uri.parse("$url/auth/requestverifyOTP"),
+                                  headers: {
+                                    "Content-Type":
+                                        "application/json; charset=utf-8",
+                                  },
+                                  body: sendOtpPostRequestToJson(
+                                    SendOtpPostRequest(email: email),
+                                  ),
+                                );
+
+                                if (responseOtp.statusCode == 200) {
+                                  Get.back();
+                                  Get.back();
+                                  setState(() {
+                                    showNotification('');
                                     blockOTP = false;
-                                    Get.back();
-                                  } else {
-                                    var config =
-                                        await Configuration.getConfig();
-                                    var url = config['apiEndpoint'];
-                                    // แสดง Loading Dialog
-                                    loadingDialog();
-                                    var responseOtp = await http.post(
-                                      Uri.parse("$url/auth/requestverifyOTP"),
-                                      headers: {
-                                        "Content-Type":
-                                            "application/json; charset=utf-8"
-                                      },
-                                      body: sendOtpPostRequestToJson(
-                                        SendOtpPostRequest(
-                                          email: email,
-                                        ),
-                                      ),
-                                    );
-
-                                    if (responseOtp.statusCode == 200) {
-                                      Get.back();
-                                      Get.back();
-                                      setState(() {
-                                        showNotification('');
-                                        blockOTP = false;
-                                      });
-                                      SendOtpPostResponst sendOTPResponse =
-                                          sendOtpPostResponstFromJson(
-                                              responseOtp.body);
-
-                                      //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-                                      verifyOTP(
-                                        email,
-                                        sendOTPResponse.ref,
-                                        withGoogle == true,
+                                  });
+                                  SendOtpPostResponst sendOTPResponse =
+                                      sendOtpPostResponstFromJson(
+                                        responseOtp.body,
                                       );
-                                    } else {
-                                      Get.back();
-                                      var result = await FirebaseFirestore
-                                          .instance
+
+                                  //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
+                                  verifyOTP(
+                                    email,
+                                    sendOTPResponse.ref,
+                                    withGoogle == true,
+                                  );
+                                } else {
+                                  Get.back();
+                                  var result =
+                                      await FirebaseFirestore.instance
                                           .collection('EmailBlocked')
                                           .doc(email)
                                           .get();
-                                      var data = result.data();
-                                      if (data != null) {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          blockOTP = true;
-                                          expiresAtEmail =
-                                              formatTimestampTo12HourTimeWithSeconds(
-                                                  data['expiresAt']
-                                                      as Timestamp);
-                                        });
-                                      }
-                                    }
+                                  var data = result.data();
+                                  if (data != null) {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      blockOTP = true;
+                                      expiresAtEmail =
+                                          formatTimestampTo12HourTimeWithSeconds(
+                                            data['expiresAt'] as Timestamp,
+                                          );
+                                    });
                                   }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  fixedSize: Size(
-                                    width,
-                                    height * 0.04,
-                                  ),
-                                  backgroundColor: Colors.black,
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  blockOTP ? 'Back' : 'Request code',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
+                                }
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(width, height * 0.04),
+                              backgroundColor: Colors.black,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
+                            ),
+                            child: Text(
+                              blockOTP ? 'Back' : 'Request code',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -1882,10 +1688,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void startOtpExpiryTimer(String email, StateSetter setState) async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('EmailBlocked')
-        .doc(email)
-        .get();
+    DocumentSnapshot snapshot =
+        await FirebaseFirestore.instance
+            .collection('EmailBlocked')
+            .doc(email)
+            .get();
 
     var data = snapshot.data() as Map<String, dynamic>?;
     if (data == null || data['expiresAt'] == null) return;

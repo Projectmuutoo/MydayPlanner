@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "773568755866-fd2ga98ed3u4d1aqof7uvuf0kt6kl0cg.apps.googleusercontent.com",
+          "client_id": "773568755866-0d633ocjir560lgnnaqsh1vrhui1tgq7.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.mydayplanner",
-            "certificate_hash": "907213a77c5f281d2cf9a7ad67928d23a779dc18"
+            "certificate_hash": "c24e31331e33f2cf0ac6f58c9c614ab45d45b1a6"
           }
         },
         {

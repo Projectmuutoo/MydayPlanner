@@ -19,7 +19,7 @@ class _DelaychangePageState extends State<DelaychangePage> {
     super.initState();
     var active = context.read<Appdata>().keepUser.keepActiveUser;
     var role = context.read<Appdata>().keepUser.keepRoleUser;
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 1), () {
       if (active == '' && role == '') {
         Get.to(() => LoginPage());
       }
@@ -42,7 +42,7 @@ class _DelaychangePageState extends State<DelaychangePage> {
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Color.fromRGBO(242, 242, 246, 1),
+          color: Color(0xFFF2F2F6),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mydayplanner/delayChange.dart';
 import 'package:mydayplanner/shared/appData.dart';
@@ -23,12 +25,14 @@ class _SplashPageState extends State<SplashPage> {
     keep.keepActiveUser = '';
     context.read<Appdata>().keepUser = keep;
     final box = GetStorage();
-    final email = box.read('email');
+    final userProfile = box.read('userProfile');
+    final email = userProfile?['email'];
     if (email != null && email.isNotEmpty) {
-      var results = FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(email)
-          .snapshots();
+      var results =
+          FirebaseFirestore.instance
+              .collection('usersLogin')
+              .doc(email)
+              .snapshots();
       results.listen((snapshot) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!snapshot.exists) {
@@ -68,16 +72,10 @@ class _SplashPageState extends State<SplashPage> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: Color(0xFFF2F2F6),
-        ),
+        decoration: BoxDecoration(color: Color(0xFFF2F2F6)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            const CircularProgressIndicator(
-              color: Colors.white,
-            )
-          ],
+          children: [CircularProgressIndicator(color: Colors.white)],
         ),
       ),
     );
