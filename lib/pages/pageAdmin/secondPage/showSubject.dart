@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/response/allReportAllGetResponst.dart';
 import 'package:mydayplanner/shared/appData.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:http/http.dart' as http;
 
 class ShowsubjectPage extends StatefulWidget {
   const ShowsubjectPage({super.key});
@@ -25,6 +27,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
   List<Map<String, dynamic>> reportData = [];
   Set<String> readReportNos = {};
   var box = GetStorage();
+  final storage = FlutterSecureStorage();
 
   late String adminEmail;
   // 🔮 Future
@@ -34,6 +37,13 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
   bool isLoadings = true;
   bool showShimmer = true;
   bool isSortLatestFirst = true;
+  bool? confirm;
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
@@ -41,7 +51,40 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     loadData = loadReportDataAndFetchReads();
   }
 
+  Future<http.Response> loadAllReport() async {
+    url = await loadAPIEndpoint();
+    var responseAllReport = await http.get(
+      Uri.parse("$url/report/allreport"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+    return responseAllReport;
+  }
+
+  Future<void> loadDataAsync() async {
+    var result = await loadAllReport();
+
+    if (result.statusCode == 403) {
+      await loadNewRefreshToken();
+      result = await loadAllReport();
+    }
+
+    if (result.statusCode == 200) {
+      AllReportAllGetResponst response = allReportAllGetResponstFromJson(
+        result.body,
+      );
+      reportData = response.reports.map((report) => report.toJson()).toList();
+    }
+  }
+
   Future<void> loadReportDataAndFetchReads() async {
+    setState(() {
+      isLoadings = true;
+      showShimmer = true;
+    });
+
     await loadDataAsync(); // โหลด reportData ก่อน
     sortReportData();
     var nos = await fetchReadReportNos(); // แล้วค่อยโหลด readReport
@@ -59,14 +102,6 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     });
   }
 
-  Future<void> loadDataAsync() async {
-    final String response =
-        await rootBundle.loadString('assets/text/report_data.json');
-    final data = json.decode(response) as List<dynamic>;
-
-    reportData = List<Map<String, dynamic>>.from(data);
-  }
-
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -79,17 +114,22 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
           Future.delayed(Duration.zero, () {
             if (!mounted) return;
             setState(() {
-              itemCount = reportData
-                      .where((item) =>
-                          item['subject'] ==
-                          context.read<Appdata>().subject.subjectReport)
-                      .isEmpty
-                  ? 1
-                  : reportData
-                      .where((item) =>
-                          item['subject'] ==
-                          context.read<Appdata>().subject.subjectReport)
-                      .length;
+              itemCount =
+                  reportData
+                          .where(
+                            (item) =>
+                                item['Category'] ==
+                                context.read<Appdata>().subject.subjectReport,
+                          )
+                          .isEmpty
+                      ? 1
+                      : reportData
+                          .where(
+                            (item) =>
+                                item['Category'] ==
+                                context.read<Appdata>().subject.subjectReport,
+                          )
+                          .length;
             });
           });
         }
@@ -105,7 +145,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                       children: [
                         InkWell(
                           onTap: () {
-                            Get.back();
+                            if (confirm == true) {
+                              Navigator.pop(context, 'refresh');
+                            } else {
+                              Get.back();
+                            }
                           },
                           child: Padding(
                             padding: EdgeInsets.symmetric(
@@ -156,151 +200,170 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                         interactive: true,
                         child: SingleChildScrollView(
                           child: Column(
-                            children: isLoadings || showShimmer
-                                ? List.generate(
-                                    itemCount,
-                                    (index) => Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: height * 0.01,
-                                      ),
-                                      child: Shimmer.fromColors(
-                                        baseColor: Color(0xFFF7F7F7),
-                                        highlightColor: Colors.grey[300]!,
-                                        child: Container(
-                                          width: width,
-                                          height: height * 0.065,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                            children:
+                                isLoadings || showShimmer
+                                    ? List.generate(
+                                      itemCount,
+                                      (index) => Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: height * 0.01,
+                                        ),
+                                        child: Shimmer.fromColors(
+                                          baseColor: Color(0xFFF7F7F7),
+                                          highlightColor: Colors.grey[300]!,
+                                          child: Container(
+                                            width: width,
+                                            height: height * 0.065,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : [
-                                    ...reportData
-                                        .where((item) =>
-                                            item['subject'] ==
-                                            context
-                                                .read<Appdata>()
-                                                .subject
-                                                .subjectReport)
-                                        .map(
-                                      (item) {
-                                        bool isRead = readReportNos
-                                            .contains('ID: ${item['no']}');
-                                        return Padding(
-                                          padding: EdgeInsets.only(
-                                            bottom: height * 0.01,
-                                          ),
-                                          child: Material(
-                                            color: isRead
-                                                ? Colors.grey[300]
-                                                : Color(0xFFF2F2F6),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            child: InkWell(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              onTap: () {
-                                                showModal(
-                                                  item['subject'],
-                                                  item['email'],
-                                                  item['name'],
-                                                  item['detail'],
-                                                  item['timestamp'],
+                                    )
+                                    : [
+                                      ...reportData
+                                          .where(
+                                            (item) =>
+                                                item['Category'] ==
+                                                context
+                                                    .read<Appdata>()
+                                                    .subject
+                                                    .subjectReport,
+                                          )
+                                          .map((item) {
+                                            bool isRead = readReportNos
+                                                .contains(
+                                                  'ID: ${item['ReportID']}',
                                                 );
-                                                markAsRead(item);
-                                              },
-                                              child: Container(
-                                                width: width,
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: width * 0.025,
-                                                  vertical: height * 0.005,
-                                                ),
-                                                decoration: BoxDecoration(
+                                            return Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: height * 0.01,
+                                              ),
+                                              child: Material(
+                                                color:
+                                                    isRead
+                                                        ? Colors.grey[300]
+                                                        : Color(0xFFF2F2F6),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: InkWell(
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                ),
-                                                child: Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                  onTap: () {
+                                                    showModal(
+                                                      item['ReportID'],
+                                                      item['Category'],
+                                                      item['Email'],
+                                                      item['Name'],
+                                                      item['Description'],
+                                                      item['CreateAt'],
+                                                    );
+                                                    markAsRead(item);
+                                                  },
+                                                  child: Container(
+                                                    width: width,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal:
+                                                              width * 0.025,
+                                                          vertical:
+                                                              height * 0.005,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                    child: Column(
                                                       children: [
                                                         Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
                                                           children: [
+                                                            Row(
+                                                              children: [
+                                                                Text(
+                                                                  item['Category'],
+                                                                  style: TextStyle(
+                                                                    fontSize:
+                                                                        Get
+                                                                            .textTheme
+                                                                            .titleLarge!
+                                                                            .fontSize,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                                ),
+                                                                SvgPicture.string(
+                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                                  color:
+                                                                      Colors
+                                                                          .black54,
+                                                                ),
+                                                              ],
+                                                            ),
                                                             Text(
-                                                              item['subject'],
+                                                              timeAgo(
+                                                                item['CreateAt'],
+                                                              ),
                                                               style: TextStyle(
-                                                                fontSize: Get
-                                                                    .textTheme
-                                                                    .titleLarge!
-                                                                    .fontSize,
+                                                                fontSize:
+                                                                    Get
+                                                                        .textTheme
+                                                                        .titleMedium!
+                                                                        .fontSize,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal,
+                                                                color:
+                                                                    Colors
+                                                                        .black54,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            SizedBox(
+                                                              width:
+                                                                  width * 0.1,
+                                                            ),
+                                                            Text(
+                                                              item['Email'],
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    Get
+                                                                        .textTheme
+                                                                        .titleSmall!
+                                                                        .fontSize,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w500,
                                                               ),
                                                             ),
-                                                            SvgPicture.string(
-                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                                              color: Colors
-                                                                  .black54,
-                                                            ),
                                                           ],
                                                         ),
-                                                        Text(
-                                                          timeAgo(item[
-                                                              'timestamp']),
-                                                          style: TextStyle(
-                                                            fontSize: Get
-                                                                .textTheme
-                                                                .titleMedium!
-                                                                .fontSize,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .normal,
-                                                            color:
-                                                                Colors.black54,
-                                                          ),
-                                                        ),
                                                       ],
                                                     ),
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        SizedBox(
-                                                            width: width * 0.1),
-                                                        Text(
-                                                          item['email'],
-                                                          style: TextStyle(
-                                                            fontSize: Get
-                                                                .textTheme
-                                                                .titleSmall!
-                                                                .fontSize,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                            );
+                                          }),
+                                    ],
                           ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -312,6 +375,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
   }
 
   void showModal(
+    int id,
     String subject,
     String email,
     String name,
@@ -370,7 +434,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             children: [
                               SizedBox(width: width * 0.03),
                               InkWell(
-                                onTap: () {},
+                                onTap: () => deleteReport(id, subject),
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: width * 0.02,
@@ -524,17 +588,207 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     );
   }
 
+  void deleteReport(int id, String category) async {
+    confirm = await Get.defaultDialog<bool>(
+      title: '',
+      titlePadding: EdgeInsets.zero,
+      backgroundColor: Colors.white,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.02,
+      ),
+      content: Column(
+        children: [
+          Image.asset(
+            "assets/images/aleart/question.png",
+            height: MediaQuery.of(context).size.height * 0.1,
+            fit: BoxFit.contain,
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Text(
+            'Confirm?',
+            style: TextStyle(
+              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF007AFF),
+            ),
+          ),
+          Text(
+            'You want to delete this report',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleMedium!.fontSize,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            Get.back(result: true);
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
+            ),
+            backgroundColor: Color(0xFF007AFF),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+          ),
+          child: Text(
+            'Confirm',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Get.back();
+          },
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(
+              MediaQuery.of(context).size.width,
+              MediaQuery.of(context).size.height * 0.05,
+            ),
+            backgroundColor: Color(0xFFE7F3FF),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+          ),
+          child: Text(
+            'Back',
+            style: TextStyle(
+              fontSize: Get.textTheme.titleLarge!.fontSize,
+              color: Color(0xFF007AFF),
+            ),
+          ),
+        ),
+      ],
+    );
+    if (confirm != true) return;
+
+    url = await loadAPIEndpoint();
+    loadingDialog();
+    var responseDeleteReport = await http.delete(
+      Uri.parse("$url/report/delete/$id"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+    Get.back();
+
+    if (responseDeleteReport.statusCode == 403) {
+      loadingDialog();
+      await loadNewRefreshToken();
+      responseDeleteReport = await http.delete(
+        Uri.parse("$url/report/delete/$id"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+      Get.back();
+    }
+
+    if (responseDeleteReport.statusCode == 200) {
+      loadingDialog();
+      await loadReportDataAndFetchReads();
+      await FirebaseFirestore.instance
+          .collection('readReport')
+          .doc(box.read('userProfile')['email'].toString())
+          .collection(category)
+          .doc('ID: $id')
+          .delete();
+      readReportNos.remove('ID: $id');
+      Get.back();
+      Get.back();
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/success.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Successfully!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+              Text(
+                'Delete report successfully',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Ok!',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleLarge!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
   Future<Set<String>> fetchReadReportNos() async {
     Set<String> readNos = {};
 
-    final subjects = reportData.map((e) => e['subject']).toSet();
+    final subjects = reportData.map((e) => e['Category']).toSet();
 
     for (var subject in subjects) {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('readReport')
-          .doc(box.read('email').toString())
-          .collection(subject)
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('readReport')
+              .doc(box.read('userProfile')['email'].toString())
+              .collection(subject)
+              .get();
 
       for (var doc in snapshot.docs) {
         readNos.add(doc.id);
@@ -547,24 +801,24 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
   Future<void> markAsRead(Map<String, dynamic> report) async {
     await FirebaseFirestore.instance
         .collection('readReport')
-        .doc(box.read('email').toString())
-        .collection(report['subject'])
-        .doc('ID: ${report['no']}')
+        .doc(box.read('userProfile')['email'].toString())
+        .collection(report['Category'])
+        .doc('ID: ${report['ReportID']}')
         .set({
-      'readAt': FieldValue.serverTimestamp(),
-      'name': report['name'],
-      'email': report['email'],
-      'subject': report['subject'],
-    });
+          'readAt': FieldValue.serverTimestamp(),
+          'name': report['Name'],
+          'email': report['Email'],
+          'subject': report['Category'],
+        });
 
     if (!mounted) return;
     setState(() {
-      readReportNos.add('ID: ${report['no']}');
+      readReportNos.add('ID: ${report['ReportID']}');
     });
   }
 
   int countSubject(String subject) {
-    return reportData.where((data) => data['subject'] == subject).length;
+    return reportData.where((data) => data['Category'] == subject).length;
   }
 
   String timeAgo(String timestamp) {
@@ -582,7 +836,8 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     } else if (difference.inMinutes < 60) {
       return '${difference.inMinutes}m ago';
     } else if (difference.inHours < 24) {
-      bool isSameDay = postTimeLocal.year == nowLocal.year &&
+      bool isSameDay =
+          postTimeLocal.year == nowLocal.year &&
           postTimeLocal.month == nowLocal.month &&
           postTimeLocal.day == nowLocal.day;
 
@@ -593,7 +848,8 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
       }
     } else if (difference.inDays < 7) {
       DateTime yesterday = nowLocal.subtract(Duration(days: 1));
-      bool isYesterday = postTimeLocal.year == yesterday.year &&
+      bool isYesterday =
+          postTimeLocal.year == yesterday.year &&
           postTimeLocal.month == yesterday.month &&
           postTimeLocal.day == yesterday.day;
 
@@ -609,8 +865,8 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
 
   void sortReportData() {
     reportData.sort((a, b) {
-      DateTime timeA = DateTime.parse(a['timestamp']);
-      DateTime timeB = DateTime.parse(b['timestamp']);
+      DateTime timeA = DateTime.parse(a['CreateAt']);
+      DateTime timeB = DateTime.parse(b['CreateAt']);
       return isSortLatestFirst
           ? timeB.compareTo(timeA) // ใหม่ก่อน
           : timeA.compareTo(timeB); // เก่าก่อน
@@ -621,8 +877,109 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     final DateTime utcTime = DateTime.parse(timestamp);
     final DateTime localTime = utcTime.toLocal();
 
-    final String formatted =
-        DateFormat('EEEE, d MMMM yyyy : HH:mm').format(localTime);
+    final String formatted = DateFormat(
+      'EEEE, d MMMM yyyy : HH:mm',
+    ).format(localTime);
     return formatted;
+  }
+
+  void loadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            content: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+    );
+  }
+
+  Future<void> loadNewRefreshToken() async {
+    url = await loadAPIEndpoint();
+    var value = await storage.read(key: 'refreshToken');
+    var loadtoketnew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+
+    if (loadtoketnew.statusCode == 200) {
+      var reponse = jsonDecode(loadtoketnew.body);
+      box.write('accessToken', reponse['accessToken']);
+    } else if (loadtoketnew.statusCode == 403) {
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/warning.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Waring!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+              Text(
+                'The system has expired. Please log in again.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await storage.deleteAll();
+              box.remove('userProfile');
+              Get.offAll(() => SplashPage());
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleLarge!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 }

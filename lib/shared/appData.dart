@@ -6,6 +6,41 @@ class Appdata with ChangeNotifier {
   KeepIdBoard idBoard = KeepIdBoard();
   KeepSubjectReportPageAdmin subject = KeepSubjectReportPageAdmin();
   ChangeMyProfileProvider changeMyProfileProvider = ChangeMyProfileProvider();
+  KeepEmailToUserPageVerifyOTP keepEmailToUserPageVerifyOTP =
+      KeepEmailToUserPageVerifyOTP();
+}
+
+//use page verify otp
+class KeepEmailToUserPageVerifyOTP extends ChangeNotifier {
+  String _email = '';
+  String _password = '';
+  String _ref = '';
+  String _case = '';
+
+  String get email => _email;
+  String get password => _password;
+  String get ref => _ref;
+  String get cases => _case;
+
+  void setEmail(String newEmail) {
+    _email = newEmail;
+    notifyListeners();
+  }
+
+  void setPassword(String newPassword) {
+    _password = newPassword;
+    notifyListeners();
+  }
+
+  void setRef(String newRef) {
+    _ref = newRef;
+    notifyListeners();
+  }
+
+  void setCase(String newCase) {
+    _case = newCase;
+    notifyListeners();
+  }
 }
 
 //user page report admin

@@ -11,46 +11,26 @@ String editProfileUserPutRequestToJson(EditProfileUserPutRequest data) =>
     json.encode(data.toJson());
 
 class EditProfileUserPutRequest {
-  String email;
-  ProfileData profileData;
+  String name;
+  String password;
+  String profile;
 
   EditProfileUserPutRequest({
-    required this.email,
-    required this.profileData,
+    required this.name,
+    required this.password,
+    required this.profile,
   });
 
   factory EditProfileUserPutRequest.fromJson(Map<String, dynamic> json) =>
       EditProfileUserPutRequest(
-        email: json["email"],
-        profileData: ProfileData.fromJson(json["profileData"]),
-      );
-
-  Map<String, dynamic> toJson() => {
-        "email": email,
-        "profileData": profileData.toJson(),
-      };
-}
-
-class ProfileData {
-  String name;
-  String hashedPassword;
-  String profile;
-
-  ProfileData({
-    required this.name,
-    required this.hashedPassword,
-    required this.profile,
-  });
-
-  factory ProfileData.fromJson(Map<String, dynamic> json) => ProfileData(
         name: json["name"],
-        hashedPassword: json["hashed_password"],
+        password: json["password"],
         profile: json["profile"],
       );
 
   Map<String, dynamic> toJson() => {
-        "name": name,
-        "hashed_password": hashedPassword,
-        "profile": profile,
-      };
+    "name": name,
+    "password": password,
+    "profile": profile,
+  };
 }

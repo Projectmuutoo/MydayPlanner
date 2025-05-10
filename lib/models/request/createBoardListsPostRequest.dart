@@ -29,8 +29,8 @@ class CreateBoardListsPostRequest {
       );
 
   Map<String, dynamic> toJson() => {
-        "board_name": boardName,
-        "created_by": createdBy,
-        "is_group": isGroup,
-      };
+    "board_name": boardName,
+    "created_by": createdBy,
+    "is_group": isGroup,
+  };
 }

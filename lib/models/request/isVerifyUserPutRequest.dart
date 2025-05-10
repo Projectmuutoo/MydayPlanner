@@ -32,9 +32,9 @@ class IsVerifyUserPutRequest {
       );
 
   Map<String, dynamic> toJson() => {
-        "email": email,
-        "ref": ref,
-        "otp": otp,
-        "record": record,
-      };
+    "email": email,
+    "ref": ref,
+    "otp": otp,
+    "record": record,
+  };
 }

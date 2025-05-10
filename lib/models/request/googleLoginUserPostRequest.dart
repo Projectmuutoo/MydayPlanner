@@ -29,8 +29,8 @@ class GoogleLoginUserPostRequest {
       );
 
   Map<String, dynamic> toJson() => {
-        "email": email,
-        "name": name,
-        "profile": profile,
-      };
+    "email": email,
+    "name": name,
+    "profile": profile,
+  };
 }

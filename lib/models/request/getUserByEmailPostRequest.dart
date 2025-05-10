@@ -13,16 +13,10 @@ String getUserByEmailPostRequestToJson(GetUserByEmailPostRequest data) =>
 class GetUserByEmailPostRequest {
   String email;
 
-  GetUserByEmailPostRequest({
-    required this.email,
-  });
+  GetUserByEmailPostRequest({required this.email});
 
   factory GetUserByEmailPostRequest.fromJson(Map<String, dynamic> json) =>
-      GetUserByEmailPostRequest(
-        email: json["email"],
-      );
+      GetUserByEmailPostRequest(email: json["email"]);
 
-  Map<String, dynamic> toJson() => {
-        "email": email,
-      };
+  Map<String, dynamic> toJson() => {"email": email};
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -100,7 +99,7 @@ class _NavbarPageState extends State<NavbarPage> {
                   ),
                 ),
                 Text(
-                  'หมดอายุการใช้งานแล้ว',
+                  'The system has expired. Please log in again.',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Colors.black,
@@ -115,7 +114,7 @@ class _NavbarPageState extends State<NavbarPage> {
               onPressed: () async {
                 Get.back();
                 await storage.deleteAll();
-                GetStorage().erase();
+                GetStorage().remove('userProfile');
                 Get.offAll(() => SplashPage());
               },
               style: ElevatedButton.styleFrom(

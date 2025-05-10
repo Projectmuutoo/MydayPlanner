@@ -1,15 +1,16 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
+import 'package:mydayplanner/models/request/reSendOtpPostRequest.dart';
 import 'package:mydayplanner/models/request/resetPasswordPutRequest.dart';
 import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
-import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
+import 'package:mydayplanner/models/response/reSendOtpPostResponst.dart';
 import 'package:mydayplanner/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +26,7 @@ class ResetpasswordPage extends StatefulWidget {
 }
 
 class _ResetpasswordPageState extends State<ResetpasswordPage> {
-// ---------------------- 🧮 State ----------------------
+  // ---------------------- 🧮 State ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
   bool isCheckedConfirmPassword = false;
@@ -35,7 +36,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   int step = 1;
   int countToRequest = 1;
 
-// ---------------------- 🎯 Controllers ----------------------
+  // ---------------------- 🎯 Controllers ----------------------
   TextEditingController emailCtl = TextEditingController();
   TextEditingController otpCtl = TextEditingController();
   TextEditingController passwordCtl = TextEditingController();
@@ -46,7 +47,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   FocusNode passwordFocusNode = FocusNode();
   FocusNode confirmPasswordFocusNode = FocusNode();
 
-// ---------------------- 🔤 Strings ----------------------
+  // ---------------------- 🔤 Strings ----------------------
   String textNotification = '';
   String ref = '';
   String? expiresAtEmail;
@@ -131,8 +132,11 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                       Text(
                                         'back',
                                         style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme.titleLarge!.fontSize,
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .fontSize,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.grey,
                                         ),
@@ -149,8 +153,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               step == 1
                                   ? 'Reset your password?'
                                   : step == 2
-                                      ? 'Enter verification code.'
-                                      : 'Create new password.',
+                                  ? 'Enter verification code.'
+                                  : 'Create new password.',
                               style: TextStyle(
                                 fontSize:
                                     Get.textTheme.headlineMedium!.fontSize,
@@ -167,8 +171,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                   step == 1
                                       ? 'Enter the email address\nyou use with your account to continue.'
                                       : step == 2
-                                          ? 'We’ve sent a code to'
-                                          : 'You new password must be different\nfrom previous used passwords.',
+                                      ? 'We’ve sent a code to'
+                                      : 'You new password must be different\nfrom previous used passwords.',
                                   style: TextStyle(
                                     fontSize:
                                         Get.textTheme.titleMedium!.fontSize,
@@ -192,16 +196,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                           ],
                         ),
-                        SizedBox(
-                          height: height * 0.02,
-                        ),
+                        SizedBox(height: height * 0.02),
                         if (step == 1 || step == 2)
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'Email',
                                   style: TextStyle(
@@ -246,15 +246,11 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                               disabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -263,16 +259,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             ),
                           ),
                         if (step == 1 || step == 2)
-                          SizedBox(
-                            height: height * 0.01,
-                          ),
+                          SizedBox(height: height * 0.01),
                         if (step == 2)
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'OTP Code',
                                   style: TextStyle(
@@ -319,29 +311,20 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                             ),
                           ),
-                        if (step == 2)
-                          SizedBox(
-                            height: height * 0.01,
-                          ),
+                        if (step == 2) SizedBox(height: height * 0.01),
                         if (step == 3)
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'Password',
                                   style: TextStyle(
@@ -398,15 +381,11 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                             ),
                           ),
@@ -414,9 +393,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'Must be at least 8 characters.',
                                   style: TextStyle(
@@ -429,16 +406,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                             ],
                           ),
-                        SizedBox(
-                          height: height * 0.01,
-                        ),
+                        SizedBox(height: height * 0.01),
                         if (step == 3)
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'Confirm password',
                                   style: TextStyle(
@@ -497,15 +470,11 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  width: 0.5,
-                                ),
+                                borderSide: BorderSide(width: 0.5),
                               ),
                             ),
                           ),
@@ -513,9 +482,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           Row(
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(
-                                  left: width * 0.03,
-                                ),
+                                padding: EdgeInsets.only(left: width * 0.03),
                                 child: Text(
                                   'Both passwords must match.',
                                   style: TextStyle(
@@ -559,127 +526,155 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         if (step == 2) SizedBox(height: height * 0.01),
                         if (step == 2)
                           InkWell(
-                            onTap: canResend
-                                ? () async {
-                                    var result = await FirebaseFirestore
-                                        .instance
-                                        .collection('EmailBlocked')
-                                        .doc(emailUser)
-                                        .get();
-                                    var data = result.data();
-                                    if (data != null) {
-                                      stopBlockOTP = true;
-                                      canResend = false;
-                                      expiresAtEmail =
-                                          formatTimestampTo12HourTimeWithSeconds(
-                                              data['expiresAt'] as Timestamp);
-                                      showNotification(
-                                          'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
-                                      return;
-                                    }
-
-                                    countToRequest++;
-
-                                    if (countToRequest > 3) {
-                                      Map<String, dynamic> data = {
-                                        'email': emailUser,
-                                        'createdAt':
-                                            Timestamp.fromDate(DateTime.now()),
-                                        'expiresAt': Timestamp.fromDate(
-                                          DateTime.now()
-                                              .add(Duration(minutes: 10)),
-                                        ),
-                                      };
-                                      await FirebaseFirestore.instance
-                                          .collection('EmailBlocked')
-                                          .doc(emailUser)
-                                          .set(data);
-                                      if (!mounted) return;
-                                      setState(() {
-                                        stopBlockOTP = true;
-                                        canResend = false;
-                                        expiresAtEmail =
-                                            formatTimestampTo12HourTimeWithSeconds(
-                                                data['expiresAt'] as Timestamp);
-                                        showNotification(
-                                            'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
-                                      });
-                                      return;
-                                    }
-
-                                    url = await loadAPIEndpoint();
-                                    loadingDialog();
-                                    var responseOtp = await http.post(
-                                      Uri.parse(
-                                          "$url/auth/requestresetpassOTP"),
-                                      headers: {
-                                        "Content-Type":
-                                            "application/json; charset=utf-8"
-                                      },
-                                      body: sendOtpPostRequestToJson(
-                                        SendOtpPostRequest(
-                                          email: emailUser,
-                                        ),
-                                      ),
-                                    );
-
-                                    if (responseOtp.statusCode == 200) {
-                                      Get.back();
-                                      SendOtpPostResponst sendOTPResponse =
-                                          sendOtpPostResponstFromJson(
-                                              responseOtp.body);
-
-                                      if (timer != null && timer!.isActive) {
-                                        timer!.cancel();
-                                      }
-
-                                      setState(() {
-                                        ref = sendOTPResponse.ref;
-                                        hasStartedCountdown = true;
-                                        canResend = false; // ล็อกการกดชั่วคราว
-                                        otpCtl.clear();
-                                      });
-                                      startCountdown(setState, ref);
-                                      // รอ 30 วิค่อยให้กดได้อีก
-                                      Future.delayed(Duration(seconds: 30), () {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          canResend = true;
-                                        });
-                                      });
-                                    } else {
-                                      Get.back();
-                                      var result = await FirebaseFirestore
-                                          .instance
-                                          .collection('EmailBlocked')
-                                          .doc(emailUser)
-                                          .get();
+                            onTap:
+                                canResend
+                                    ? () async {
+                                      var result =
+                                          await FirebaseFirestore.instance
+                                              .collection('EmailBlocked')
+                                              .doc(emailUser)
+                                              .collection(
+                                                'OTPRecords_resetpassword',
+                                              )
+                                              .doc(emailUser)
+                                              .get();
                                       var data = result.data();
                                       if (data != null) {
                                         stopBlockOTP = true;
                                         canResend = false;
                                         expiresAtEmail =
                                             formatTimestampTo12HourTimeWithSeconds(
-                                                data['expiresAt'] as Timestamp);
+                                              data['expiresAt'] as Timestamp,
+                                            );
                                         showNotification(
-                                            'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
+                                          'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                                        );
                                         return;
                                       }
+
+                                      countToRequest++;
+
+                                      if (countToRequest > 3) {
+                                        Map<String, dynamic> data = {
+                                          'email': emailUser,
+                                          'createdAt': Timestamp.fromDate(
+                                            DateTime.now(),
+                                          ),
+                                          'expiresAt': Timestamp.fromDate(
+                                            DateTime.now().add(
+                                              Duration(minutes: 10),
+                                            ),
+                                          ),
+                                        };
+                                        await FirebaseFirestore.instance
+                                            .collection('EmailBlocked')
+                                            .doc(emailUser)
+                                            .collection(
+                                              'OTPRecords_resetpassword',
+                                            )
+                                            .doc(emailUser)
+                                            .set(data);
+                                        if (!mounted) return;
+                                        setState(() {
+                                          stopBlockOTP = true;
+                                          canResend = false;
+                                          expiresAtEmail =
+                                              formatTimestampTo12HourTimeWithSeconds(
+                                                data['expiresAt'] as Timestamp,
+                                              );
+                                          showNotification(
+                                            'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                                          );
+                                        });
+                                        return;
+                                      }
+
+                                      url = await loadAPIEndpoint();
+                                      loadingDialog();
+                                      var responseOtp = await http.post(
+                                        Uri.parse("$url/auth/resendotp"),
+                                        headers: {
+                                          "Content-Type":
+                                              "application/json; charset=utf-8",
+                                        },
+                                        body: reSendOtpPostRequestToJson(
+                                          ReSendOtpPostRequest(
+                                            email: emailUser,
+                                            record: '2',
+                                          ),
+                                        ),
+                                      );
+
+                                      if (responseOtp.statusCode == 200) {
+                                        Get.back();
+                                        ReSendOtpPostResponst sendOTPResponse =
+                                            reSendOtpPostResponstFromJson(
+                                              responseOtp.body,
+                                            );
+
+                                        if (timer != null && timer!.isActive) {
+                                          timer!.cancel();
+                                        }
+
+                                        setState(() {
+                                          ref = sendOTPResponse.ref;
+                                          hasStartedCountdown = true;
+                                          canResend =
+                                              false; // ล็อกการกดชั่วคราว
+                                          otpCtl.clear();
+                                        });
+                                        startCountdown(setState, ref);
+                                        // รอ 30 วิค่อยให้กดได้อีก
+                                        Future.delayed(
+                                          Duration(seconds: 30),
+                                          () {
+                                            if (!mounted) return;
+                                            setState(() {
+                                              canResend = true;
+                                            });
+                                          },
+                                        );
+                                      } else {
+                                        Get.back();
+                                        var result =
+                                            await FirebaseFirestore.instance
+                                                .collection('EmailBlocked')
+                                                .doc(emailUser)
+                                                .collection(
+                                                  'OTPRecords_resetpassword',
+                                                )
+                                                .doc(emailUser)
+                                                .get();
+                                        var data = result.data();
+                                        if (data != null) {
+                                          stopBlockOTP = true;
+                                          canResend = false;
+                                          expiresAtEmail =
+                                              formatTimestampTo12HourTimeWithSeconds(
+                                                data['expiresAt'] as Timestamp,
+                                              );
+                                          showNotification(
+                                            'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+                                          );
+                                          return;
+                                        }
+                                      }
                                     }
-                                  }
-                                : null,
+                                    : null,
                             child: Padding(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.01),
+                                horizontal: width * 0.01,
+                              ),
                               child: Text(
                                 'Resend Code',
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                   color: canResend ? Colors.blue : Colors.grey,
-                                  decoration: canResend
-                                      ? TextDecoration.underline
-                                      : TextDecoration.none,
+                                  decoration:
+                                      canResend
+                                          ? TextDecoration.underline
+                                          : TextDecoration.none,
                                 ),
                               ),
                             ),
@@ -723,10 +718,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         ElevatedButton(
                           onPressed: resetPassword,
                           style: ElevatedButton.styleFrom(
-                            fixedSize: Size(
-                              width,
-                              height * 0.04,
-                            ),
+                            fixedSize: Size(width, height * 0.04),
                             backgroundColor: Colors.black,
                             elevation: 1,
                             shape: RoundedRectangleBorder(
@@ -737,8 +729,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             step == 1
                                 ? 'Continue'
                                 : step == 2
-                                    ? 'Verify Code'
-                                    : 'Reset Password',
+                                ? 'Verify Code'
+                                : 'Reset Password',
                             style: TextStyle(
                               fontSize: Get.textTheme.titleLarge!.fontSize,
                               fontWeight: FontWeight.normal,
@@ -759,7 +751,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
 
   bool isValidEmail(String email) {
     final RegExp emailRegExp = RegExp(
-        r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$");
+      r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$",
+    );
     return emailRegExp.hasMatch(email);
   }
 
@@ -811,63 +804,80 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   Future<void> handleStep1(String url) async {
     try {
       var responseGetuser = await http.post(
-        Uri.parse("$url/user/getemail"),
+        Uri.parse("$url/email"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: getUserByEmailPostRequestToJson(
-          GetUserByEmailPostRequest(
-            email: emailCtl.text,
-          ),
+          GetUserByEmailPostRequest(email: emailCtl.text),
         ),
       );
 
       if (responseGetuser.statusCode == 200) {
         start = 900;
         countTheTime = "15:00";
-        var responseGetUserByEmail =
-            getUserByEmailPostResponstFromJson(responseGetuser.body);
-
-        var responseOtp = await http.post(
-          Uri.parse("$url/auth/requestresetpassOTP"),
-          headers: {"Content-Type": "application/json; charset=utf-8"},
-          body: sendOtpPostRequestToJson(
-            SendOtpPostRequest(
-              email: responseGetUserByEmail.email,
-            ),
-          ),
+        var responseGetUserByEmail = getUserByEmailPostResponstFromJson(
+          responseGetuser.body,
         );
-        var result = await FirebaseFirestore.instance
-            .collection('EmailBlocked')
-            .doc(emailUser)
-            .get();
-        var data = result.data();
-        if (data != null) {
-          expiresAtEmail = formatTimestampTo12HourTimeWithSeconds(
-              data['expiresAt'] as Timestamp);
-          showNotification(
-              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail');
-          return;
-        }
 
-        if (responseOtp.statusCode == 200) {
-          showNotification('');
-          var sendOTPResponse = sendOtpPostResponstFromJson(responseOtp.body);
-          ref = sendOTPResponse.ref;
-          emailUser = responseGetUserByEmail.email;
+        var responseRef = await http.post(
+          Uri.parse("$url/auth/resetpasswordOTP"),
+          headers: {"Content-Type": "application/json; charset=utf-8"},
+          body: jsonEncode({"email": responseGetUserByEmail.email}),
+        );
 
-          if (!hasStartedCountdown) {
-            hasStartedCountdown = true;
+        if (responseRef.statusCode == 200) {
+          var sendOTPResponse = jsonDecode(responseRef.body);
+
+          var responseOtp = await http.post(
+            Uri.parse("$url/auth/sendemail"),
+            headers: {"Content-Type": "application/json; charset=utf-8"},
+            body: sendOtpPostRequestToJson(
+              SendOtpPostRequest(
+                email: responseGetUserByEmail.email,
+                reference: sendOTPResponse['ref'],
+                record: '2',
+              ),
+            ),
+          );
+
+          var result =
+              await FirebaseFirestore.instance
+                  .collection('EmailBlocked')
+                  .doc(responseGetUserByEmail.email)
+                  .collection('OTPRecords_resetpassword')
+                  .doc(responseGetUserByEmail.email)
+                  .get();
+          var data = result.data();
+          if (data != null) {
+            expiresAtEmail = formatTimestampTo12HourTimeWithSeconds(
+              data['expiresAt'] as Timestamp,
+            );
+            showNotification(
+              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
+            );
+            return;
+          }
+
+          if (responseOtp.statusCode == 200) {
+            showNotification('');
+
+            ref = sendOTPResponse['ref'];
+            emailUser = responseGetUserByEmail.email;
+
+            if (!hasStartedCountdown) {
+              hasStartedCountdown = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                startCountdown(setState, ref);
+              });
+            }
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              startCountdown(setState, ref);
+              startOtpExpiryTimer(emailUser, setState);
+            });
+
+            if (!mounted) return;
+            setState(() {
+              step = 2;
             });
           }
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            startOtpExpiryTimer(emailUser, setState);
-          });
-
-          if (!mounted) return;
-          setState(() {
-            step = 2;
-          });
         }
       } else {
         showNotification('Email not found');
@@ -885,7 +895,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
 
     if (otpCtl.text.trim().length == 6) {
       try {
-        final responseIsverify = await http.post(
+        var responseIsverify = await http.put(
           Uri.parse("$url/auth/verifyOTP"),
           headers: {"Content-Type": "application/json; charset=utf-8"},
           body: isVerifyUserPutRequestToJson(
@@ -893,7 +903,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
               email: emailUser,
               ref: ref,
               otp: otpCtl.text,
-              record: "resetpassword",
+              record: '2',
             ),
           ),
         );
@@ -904,6 +914,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
           });
 
           await FirebaseFirestore.instance
+              .collection('OTPRecords')
+              .doc(emailUser)
               .collection('OTPRecords_resetpassword')
               .doc(ref)
               .delete();
@@ -927,7 +939,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
       return;
     } else if (!isValidPassword(passwordCtl.text)) {
       showNotification(
-          'Password must contain at least 8 digits\nor lowercase letters');
+        'Password must contain at least 8 digits\nor lowercase letters',
+      );
       return;
     }
 
@@ -940,14 +953,11 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("$url/user/resetpassword"),
+      final response = await http.put(
+        Uri.parse("$url/auth/resetpassword"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: resetPasswordPutRequestToJson(
-          ResetPasswordPutRequest(
-            email: emailCtl.text,
-            hashedPassword: passwordCtl.text,
-          ),
+          ResetPasswordPutRequest(email: emailUser, password: passwordCtl.text),
         ),
       );
 
@@ -966,98 +976,95 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
           stopBlockOTP = false;
         });
 
-        Future.delayed(
-          Duration.zero,
-          () {
-            Get.defaultDialog(
-              title: '',
-              titlePadding: EdgeInsets.zero,
-              backgroundColor: Colors.white,
-              barrierDismissible: false,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width * 0.04,
-                vertical: MediaQuery.of(context).size.height * 0.02,
-              ),
-              content: WillPopScope(
-                onWillPop: () async => false,
-                child: Column(
-                  children: [
-                    Image.asset(
-                      "assets/images/aleart/success.png",
-                      height: MediaQuery.of(context).size.height * 0.1,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                    Text(
-                      'Successfully!!',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.headlineSmall!.fontSize,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF007AFF),
-                      ),
-                    ),
-                    Text(
-                      'Your password has been reset successfully',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.offAll(() => LoginPage());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(
-                      MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    backgroundColor: Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
+        Future.delayed(Duration.zero, () {
+          Get.defaultDialog(
+            title: '',
+            titlePadding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            barrierDismissible: false,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
+            content: WillPopScope(
+              onWillPop: () async => false,
+              child: Column(
+                children: [
+                  Image.asset(
+                    "assets/images/aleart/success.png",
+                    height: MediaQuery.of(context).size.height * 0.1,
+                    fit: BoxFit.contain,
                   ),
-                  child: Text(
-                    'OK!',
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                  Text(
+                    'Successfully!!',
                     style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(
-                      MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    backgroundColor: Color(0xFFE7F3FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
-                  ),
-                  child: Text(
-                    'Back',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
+                      fontSize: Get.textTheme.headlineSmall!.fontSize,
+                      fontWeight: FontWeight.w500,
                       color: Color(0xFF007AFF),
                     ),
                   ),
+                  Text(
+                    'Your password has been reset successfully',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color(0xFF007AFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
                 ),
-              ],
-            );
-          },
-        );
+                child: Text(
+                  'OK!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color(0xFFE7F3FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+              ),
+            ],
+          );
+        });
       } else {
         showNotification('Reset failed. Please try again.');
       }
@@ -1070,15 +1077,14 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        content: Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            content: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -1107,6 +1113,8 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
       if (start == 0) {
         timer.cancel();
         await FirebaseFirestore.instance
+            .collection('OTPRecords')
+            .doc(emailUser)
             .collection('OTPRecords_resetpassword')
             .doc(ref)
             .delete();
@@ -1131,10 +1139,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
   }
 
   void startOtpExpiryTimer(String email, StateSetter setState) async {
-    DocumentSnapshot snapshot = await FirebaseFirestore.instance
-        .collection('EmailBlocked')
-        .doc(email)
-        .get();
+    DocumentSnapshot snapshot =
+        await FirebaseFirestore.instance
+            .collection('EmailBlocked')
+            .doc(email)
+            .collection('OTPRecords_resetpassword')
+            .doc(email)
+            .get();
 
     var data = snapshot.data() as Map<String, dynamic>?;
     if (data == null || data['expiresAt'] == null) return;

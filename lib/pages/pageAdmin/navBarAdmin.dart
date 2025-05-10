@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/pages/pageAdmin/adminHome.dart';
 import 'package:mydayplanner/pages/pageAdmin/report.dart';
 import 'package:mydayplanner/pages/pageAdmin/user.dart';
@@ -5,6 +10,7 @@ import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 
 class NavbaradminPage extends StatefulWidget {
@@ -16,18 +22,116 @@ class NavbaradminPage extends StatefulWidget {
 
 class _NavbaradminPageState extends State<NavbaradminPage> {
   late final List<Widget> pageOptions;
+  final storage = FlutterSecureStorage();
+  DateTime? createdAtDate;
+  Timer? _timer;
+  StreamSubscription? _subscription;
+  int? expiresIn;
 
   @override
   void initState() {
     super.initState();
+
+    checkExpiresRefreshToken();
+
     NavBarSelectedPage keep = NavBarSelectedPage();
     keep.selectedPage = 1;
     context.read<Appdata>().navBarPage = keep;
-    pageOptions = [
-      ReportPage(),
-      AdminhomePage(),
-      UserPage(),
-    ];
+    pageOptions = [ReportPage(), AdminhomePage(), UserPage()];
+  }
+
+  checkExpiresRefreshToken() {
+    _subscription = FirebaseFirestore.instance
+        .collection('refreshTokens')
+        .doc(GetStorage().read('userProfile')['userid'].toString())
+        .snapshots()
+        .listen((snapshot) {
+          int createdAt = snapshot['CreatedAt'];
+          expiresIn = snapshot['ExpiresIn'];
+          createdAtDate = DateTime.fromMillisecondsSinceEpoch(createdAt * 1000);
+        });
+
+    _timer = Timer.periodic(Duration(seconds: 1), (_) {
+      if (createdAtDate == null) return;
+
+      DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
+      DateTime now = DateTime.now();
+
+      if (now.isAfter(expiryDate)) {
+        // 1. หยุด Stream
+        _subscription?.cancel();
+        // 2. หยุด Timer
+        _timer?.cancel();
+
+        Get.defaultDialog(
+          title: '',
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          barrierDismissible: false,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: WillPopScope(
+            onWillPop: () async => false,
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/warning.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Waring!!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                Text(
+                  'The system has expired. Please log in again.',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                Get.back();
+                await storage.deleteAll();
+                GetStorage().remove('userProfile');
+                Get.offAll(() => SplashPage());
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    });
   }
 
   @override

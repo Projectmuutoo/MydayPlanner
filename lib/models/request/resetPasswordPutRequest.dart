@@ -12,21 +12,12 @@ String resetPasswordPutRequestToJson(ResetPasswordPutRequest data) =>
 
 class ResetPasswordPutRequest {
   String email;
-  String hashedPassword;
+  String password;
 
-  ResetPasswordPutRequest({
-    required this.email,
-    required this.hashedPassword,
-  });
+  ResetPasswordPutRequest({required this.email, required this.password});
 
   factory ResetPasswordPutRequest.fromJson(Map<String, dynamic> json) =>
-      ResetPasswordPutRequest(
-        email: json["email"],
-        hashedPassword: json["hashed_password"],
-      );
+      ResetPasswordPutRequest(email: json["email"], password: json["password"]);
 
-  Map<String, dynamic> toJson() => {
-        "email": email,
-        "hashed_password": hashedPassword,
-      };
+  Map<String, dynamic> toJson() => {"email": email, "password": password};
 }

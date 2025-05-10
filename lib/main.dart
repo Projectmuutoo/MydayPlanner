@@ -19,8 +19,8 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-  FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.playIntegrity,
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
   );
   FirebaseAuth.instance.setLanguageCode('th');
   await dotenv.load(fileName: ".env");

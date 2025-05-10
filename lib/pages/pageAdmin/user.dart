@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
@@ -12,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/pageAdmin/secondPage/manageUser.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:shimmer/shimmer.dart';
 
 class UserPage extends StatefulWidget {
@@ -24,7 +26,7 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   // 📦 Storage
   var box = GetStorage();
-
+  final storage = FlutterSecureStorage();
   final ScrollController _latestLoginController = ScrollController();
   // 📊 Integer Variables
   int itemCount = 1;
@@ -75,12 +77,28 @@ class _UserPageState extends State<UserPage> {
     _debounce?.cancel();
   }
 
-  Future<void> loadDataAsync() async {
+  Future<http.Response> loadAllUser() async {
     url = await loadAPIEndpoint();
-    var responseAllUser = await http.get(Uri.parse('$url/user/getalluser'));
+    var responseAllUser = await http.get(
+      Uri.parse("$url/user/ReadAllUser"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+    return responseAllUser;
+  }
 
-    if (responseAllUser.statusCode == 200) {
-      responseGetAlluser = allUserGetResponseFromJson(responseAllUser.body);
+  Future<void> loadDataAsync() async {
+    var result = await loadAllUser();
+
+    if (result.statusCode == 403) {
+      await loadNewRefreshToken();
+      result = await loadAllUser();
+    }
+
+    if (result.statusCode == 200) {
+      responseGetAlluser = allUserGetResponseFromJson(result.body);
       await compareUsers();
       if (!mounted) return;
       setState(() {
@@ -165,6 +183,7 @@ class _UserPageState extends State<UserPage> {
                               thumbVisibility: true,
                               controller: _latestLoginController,
                               child: SingleChildScrollView(
+                                physics: AlwaysScrollableScrollPhysics(),
                                 controller: _latestLoginController,
                                 child: Column(
                                   children:
@@ -215,7 +234,7 @@ class _UserPageState extends State<UserPage> {
                                                     padding:
                                                         EdgeInsets.symmetric(
                                                           horizontal:
-                                                              width * 0.02,
+                                                              width * 0.03,
                                                           vertical:
                                                               height * 0.01,
                                                         ),
@@ -312,12 +331,6 @@ class _UserPageState extends State<UserPage> {
                                                                     Colors
                                                                         .black54,
                                                               ),
-                                                            ),
-                                                            SvgPicture.string(
-                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                                              color:
-                                                                  Colors
-                                                                      .black54,
                                                             ),
                                                           ],
                                                         ),
@@ -639,6 +652,91 @@ class _UserPageState extends State<UserPage> {
       }
     } else {
       return DateFormat('d MMM yyyy, HH:mm').format(postTimeLocal);
+    }
+  }
+
+  Future<void> loadNewRefreshToken() async {
+    url = await loadAPIEndpoint();
+    var value = await storage.read(key: 'refreshToken');
+    var loadtoketnew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+
+    if (loadtoketnew.statusCode == 200) {
+      var reponse = jsonDecode(loadtoketnew.body);
+      box.write('accessToken', reponse['accessToken']);
+    } else if (loadtoketnew.statusCode == 403) {
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/warning.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Waring!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+              Text(
+                'The system has expired. Please log in again.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await storage.deleteAll();
+              box.remove('userProfile');
+              Get.offAll(() => SplashPage());
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleLarge!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
     }
   }
 }

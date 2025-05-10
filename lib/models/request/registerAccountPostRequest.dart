@@ -11,26 +11,26 @@ String registerAccountPostRequestToJson(RegisterAccountPostRequest data) =>
     json.encode(data.toJson());
 
 class RegisterAccountPostRequest {
-  String name;
   String email;
-  String hashedPassword;
+  String password;
+  String name;
 
   RegisterAccountPostRequest({
-    required this.name,
     required this.email,
-    required this.hashedPassword,
+    required this.password,
+    required this.name,
   });
 
   factory RegisterAccountPostRequest.fromJson(Map<String, dynamic> json) =>
       RegisterAccountPostRequest(
-        name: json["name"],
         email: json["email"],
-        hashedPassword: json["hashed_password"],
+        password: json["password"],
+        name: json["name"],
       );
 
   Map<String, dynamic> toJson() => {
-        "name": name,
-        "email": email,
-        "hashed_password": hashedPassword,
-      };
+    "email": email,
+    "password": password,
+    "name": name,
+  };
 }

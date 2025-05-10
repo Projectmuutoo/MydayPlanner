@@ -2,21 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
-import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/request/googleLoginUserPostRequest.dart';
-import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
-import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/request/signInUserPostRequest.dart';
-import 'package:mydayplanner/models/response/DataProfileGetResponst.dart';
+import 'package:mydayplanner/models/response/dataProfileGetResponst.dart';
 import 'package:mydayplanner/models/response/boardAllGetResponst.dart';
-import 'package:mydayplanner/models/response/getUserByEmailPostResponst.dart';
-import 'package:mydayplanner/models/response/googleLoginUserPostResponse.dart';
-import 'package:mydayplanner/models/response/sendOTPPostResponst.dart';
+import 'package:mydayplanner/models/response/googleLoginPostResponse.dart';
 import 'package:mydayplanner/models/response/signInUserPostResponst.dart';
 import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:mydayplanner/pages/pageMember/navBar.dart';
@@ -24,12 +18,12 @@ import 'package:mydayplanner/pages/register.dart';
 import 'package:mydayplanner/pages/resetPassword.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:mydayplanner/pages/verifyOTP.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:provider/provider.dart';
 
@@ -54,29 +48,18 @@ class _LoginPageState extends State<LoginPage> {
   // ---------------------- ✅ State Flags ----------------------
   bool isTyping = false;
   bool isCheckedPassword = false;
-  bool canResend = true;
-  bool hasStartedCountdown = false;
   bool blockOTP = false;
-  bool stopBlockOTP = false;
 
   // ---------------------- 🔐 Auth ----------------------
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  int signInAttempts = 0;
-  int countToRequest = 1;
 
   // ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
   final storage = FlutterSecureStorage();
   // ---------------------- 🔤 Strings ----------------------
   String textNotification = '';
-  String warning = '';
   String? expiresAtEmail;
-
-  Timer? timer;
-  int start = 900; // 15 นาที = 900 วินาที
-  String countTheTime = "15:00"; // เวลาเริ่มต้น
   late String url;
-  late String url2;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -469,11 +452,6 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  Future<void> delay(Function action, {int milliseconds = 1000}) async {
-    await Future.delayed(Duration(milliseconds: milliseconds));
-    action();
-  }
-
   Future<void> signInWithGoogle() async {
     try {
       url = await loadAPIEndpoint();
@@ -497,22 +475,9 @@ class _LoginPageState extends State<LoginPage> {
           idToken: googleAuth.idToken,
         );
         await FirebaseAuth.instance.signInWithCredential(credential);
-        log(
-          'accessToken: ${googleAuth.accessToken}\n idToken: ${googleAuth.idToken}',
-        );
       } finally {
-        Get.back(); // ปิด Loading Dialog หลัง auth เสร็จ
+        Get.back();
       }
-      return;
-      loadingDialog(); // แสดง Loading Dialog สำหรับเรียก API /user/getemail
-
-      var responseGetUser = await http.post(
-        Uri.parse("$url/user/getemail"),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: getUserByEmailPostRequestToJson(
-          GetUserByEmailPostRequest(email: googleUser.email),
-        ),
-      );
 
       GoogleLoginUserPostRequest jsonLoginGoogleUser =
           GoogleLoginUserPostRequest(
@@ -520,209 +485,88 @@ class _LoginPageState extends State<LoginPage> {
             name: googleUser.displayName.toString(),
             profile: googleUser.photoUrl.toString(),
           );
+
+      loadingDialog();
+      var responseLoginGoogle = await http.post(
+        Uri.parse("$url/auth/googlelogin"),
+        headers: {"Content-Type": "application/json; charset=utf-8"},
+        body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
+      );
       Get.back();
-      if (responseGetUser.statusCode == 200) {
-        showNotification('');
 
-        GetUserByEmailPostResponst getUserByEmailPostResponst =
-            getUserByEmailPostResponstFromJson(responseGetUser.body);
+      if (responseLoginGoogle.statusCode == 403) {
+        final results = jsonDecode(responseLoginGoogle.body);
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+        showNotification(results['message']);
+        return;
+      }
 
-        // ถ้า admin ปิดการใช้งาน จะทำการยกเลิก GoogleSignInAccount ทันที
-        if (getUserByEmailPostResponst.isActive == '0') {
-          showNotification('Your account has been disabled');
-          googleUser = null;
+      GoogleLoginPostResponse response = googleLoginPostResponseFromJson(
+        responseLoginGoogle.body,
+      );
+      if (response.success) {
+        await storage.write(
+          key: 'refreshToken',
+          value: response.token.refreshToken,
+        );
+        box.write('accessToken', response.token.accessToken);
+
+        loadingDialog();
+        final responseProfile = await http.get(
+          Uri.parse("$url/user/Profile"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+        Get.back();
+
+        if (responseProfile.statusCode != 200) {
           return;
         }
 
-        // กรณีไม่ได้ยืนยัน otp
-        if (getUserByEmailPostResponst.isVerify != '1') {
-          showNotification('Your account must verify your email first');
-          delay(() {
-            // ส่งไปยืนยันเมล
-            Get.defaultDialog(
-              title: "",
-              titlePadding: EdgeInsets.zero,
-              backgroundColor: Colors.white,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width * 0.04,
-                vertical: MediaQuery.of(context).size.height * 0.02,
-              ),
-              content: Column(
-                children: [
-                  Image.asset(
-                    "assets/images/aleart/question.png",
-                    height: MediaQuery.of(context).size.height * 0.1,
-                    fit: BoxFit.contain,
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                  Text(
-                    'Confirm now?',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.headlineSmall!.fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF007AFF),
-                    ),
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.02),
-                  Text(
-                    'Your account must verify your email first',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                    showModalConfirmEmail(googleUser!.email, false);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(
-                      MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    backgroundColor: Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
-                  ),
-                  child: Text(
-                    'Confirm',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    googleUser = null;
-                    await googleSignIn.signOut();
-                    // Sign out from Firebase if needed
-                    await FirebaseAuth.instance.signOut();
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(
-                      MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    backgroundColor: Color(0xFFE7F3FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1,
-                  ),
-                  child: Text(
-                    'Back',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      color: Color(0xFF007AFF),
-                    ),
-                  ),
-                ),
-              ],
-            ).whenComplete(() async {
-              await googleSignIn.signOut();
-              // Sign out from Firebase if needed
-              await FirebaseAuth.instance.signOut();
-            });
-          }, milliseconds: 500);
+        final userProfile = dataProfileGetResponstFromJson(
+          responseProfile.body,
+        );
+        box.write('userProfile', {
+          'userid': userProfile.user.userId,
+          'name': userProfile.user.name,
+          'email': userProfile.user.email,
+          'profile': userProfile.user.profile,
+          'role': userProfile.user.role,
+        });
+
+        if (userProfile.user.role == "admin") {
+          Get.offAll(() => NavbaradminPage());
           return;
         }
 
-        var result =
-            await FirebaseFirestore.instance
-                .collection('usersLogin')
-                .doc(googleUser.email)
-                .get();
-        var data = result.data();
-        if (data != null) {
-          if (data['active'] != '1') {
-            googleUser = null;
-            showNotification('Your account has been disabled');
-            return;
-          }
-        }
+        loadingDialog();
+        final responseBoards = await http.get(
+          Uri.parse("$url/board/allboards"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+        Get.back();
 
-        // กรณีมี email และทำการเข้าระบบไปเลย
-        loadingDialog(); // แสดง Loading Dialog
+        if (responseBoards.statusCode == 200) {
+          final boards = boardAllGetResponstFromJson(responseBoards.body);
+          box.write('boardUser', boards.toJson());
 
-        try {
-          var responseLoginGoogle = await http.post(
-            Uri.parse("$url/auth/googlesignin"),
-            headers: {"Content-Type": "application/json; charset=utf-8"},
-            body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
-          );
-
-          if (responseLoginGoogle.statusCode == 200) {
-            showNotification('');
-
-            GoogleLoginUserPostResponse responseGoogleLogin =
-                googleLoginUserPostResponseFromJson(responseLoginGoogle.body);
-
-            if (responseGoogleLogin.status == 'success') {
-              box.write('email', googleUser.email);
-              if (getUserByEmailPostResponst.hashedPassword == '-') {
-                box.write('password', "-");
-              }
-
-              // โหลดข้อมูล user ซ้ำอีกครั้ง
-              var responseGetUser = await http.post(
-                Uri.parse("$url/user/getemail"),
-                headers: {"Content-Type": "application/json; charset=utf-8"},
-                body: getUserByEmailPostRequestToJson(
-                  GetUserByEmailPostRequest(email: googleUser.email),
-                ),
-              );
-
-              if (responseGetUser.statusCode == 200) {
-                GetUserByEmailPostResponst getUserByEmailPostResponst =
-                    getUserByEmailPostResponstFromJson(responseGetUser.body);
-
-                if (getUserByEmailPostResponst.role == "admin") {
-                  Get.offAll(() => NavbaradminPage());
-                } else {
-                  Get.offAll(() => NavbarPage());
-                }
-              }
-            }
-          }
-        } finally {
-          Get.back(); // ปิด Loading Dialog
+          Get.offAll(() => NavbarPage());
+          return;
         }
       } else {
-        showNotification('');
-
-        // กรณีไม่มี email และทำการสมัครให้
-        loadingDialog(); // แสดง Loading Dialog
-        var responseLoginGoogle = await http.post(
-          Uri.parse("$url/auth/googlesignin"),
-          headers: {"Content-Type": "application/json; charset=utf-8"},
-          body: googleLoginUserPostRequestToJson(jsonLoginGoogleUser),
-        );
-
-        Get.back();
-        if (responseLoginGoogle.statusCode == 200) {
-          showNotification('');
-
-          var results = jsonDecode(responseLoginGoogle.body);
-
-          if (results['status'] == 'not_found') {
-            showModalConfirmEmail(results['email'], true);
-          }
-        } else {
-          showNotification('error!');
-          googleUser = null;
-        }
+        log("awsd");
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
       }
     } catch (e) {
-      Get.back(); // ปิด dialog ถ้าเปิดอยู่
+      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
       showNotification('Something went wrong. Please try again.');
     }
   }
@@ -750,10 +594,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void login() async {
-    // Check if widget is still mounted before proceeding
-    if (!mounted) return;
-
-    // Validate email
     if (emailCtl.text.isEmpty) {
       showNotification('Email address is required');
       return;
@@ -768,14 +608,10 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      // Load API endpoints
-      var url = await loadAPIEndpoint();
-
-      // Sign in request
-      if (!mounted) return;
+      final url = await loadAPIEndpoint();
 
       loadingDialog();
-      var responseGetuser = await http.post(
+      final responseGetuser = await http.post(
         Uri.parse("$url/auth/signin"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: signInUserPostRequestToJson(
@@ -785,580 +621,158 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       );
-      if (!mounted) return;
       Get.back();
 
-      if (responseGetuser.statusCode == 200) {
-        showNotification('');
-
-        final SignInUserPostResponst getUserByEmailResponse =
-            signInUserPostResponstFromJson(responseGetuser.body);
-
-        await storage.write(
-          key: 'refreshToken',
-          value: getUserByEmailResponse.token.refreshToken,
-        );
-        box.write('accessToken', getUserByEmailResponse.token.accessToken);
-
-        // Get user profile
-        if (!mounted) return;
-
-        loadingDialog();
-        final responseGetuser2 = await http.get(
-          Uri.parse("$url/user/Profile"),
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Authorization": "Bearer ${box.read('accessToken')}",
-          },
-        );
-        if (!mounted) return;
-        Get.back();
-
-        if (responseGetuser2.statusCode == 200) {
-          final DataProfileGetResponst response =
-              dataProfileGetResponstFromJson(responseGetuser2.body);
-
-          // Save user data
-          box.write('userProfile', {
-            'userid': response.user.userId,
-            'name': response.user.name,
-            'email': response.user.email,
-            'profile': response.user.profile,
-            'role': response.user.role,
-          });
-
-          if (!mounted) return;
-
-          if (response.user.role == "admin") {
-            Get.offAll(() => NavbaradminPage());
-          } else {
-            // Get all boards for regular users
-            loadingDialog();
-            final responseGetAllboard = await http.get(
-              Uri.parse("$url/board/allboards"),
-              headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "Bearer ${box.read('accessToken')}",
-              },
-            );
-            if (!mounted) return;
-            Get.back();
-
-            if (responseGetAllboard.statusCode == 200) {
-              BoardAllGetResponst boards = boardAllGetResponstFromJson(
-                responseGetAllboard.body,
-              );
-
-              box.write('boardUser', boards.toJson());
-              Get.offAll(() => NavbarPage());
-            }
-          }
-        }
-      } else {
-        if (!mounted) return;
-        var results = jsonDecode(responseGetuser.body);
-        showNotification(results['error']);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      showNotification('Something went wrong. Please try again.');
-    }
-  }
-
-  void verifyOTP(String email, String ref, bool withGoogle) async {
-    // สร้าง FocusNodes สำหรับทุกช่อง
-    final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
-    final otpControllers = List<TextEditingController>.generate(
-      6,
-      (index) => TextEditingController(),
-    );
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            double width = MediaQuery.of(context).size.width;
-            double height = MediaQuery.of(context).size.height;
-
-            if (!hasStartedCountdown) {
-              hasStartedCountdown = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                startCountdown(setState, ref);
-              });
-            }
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              startOtpExpiryTimer(email, setState);
-            });
-
-            return WillPopScope(
-              onWillPop: () async => false,
-              child: SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: width * 0.05,
-                    left: width * 0.05,
-                    top: height * 0.05,
-                    bottom:
-                        MediaQuery.of(context).viewInsets.bottom +
-                        height * 0.02,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Verification Code',
-                                style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.headlineMedium!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'We have send the OTP code verification to',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                email,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: height * 0.02),
-                          Form(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: List.generate(6, (index) {
-                                return SizedBox(
-                                  height: height * 0.08,
-                                  width: width * 0.14,
-                                  child: TextFormField(
-                                    focusNode: focusNodes[index],
-                                    controller: otpControllers[index],
-                                    cursorColor: Colors.grey,
-                                    onChanged: (value) {
-                                      if (value.length == 1) {
-                                        if (index < 5) {
-                                          focusNodes[index + 1]
-                                              .requestFocus(); // โฟกัสไปยังช่องถัดไป
-                                        } else {
-                                          FocusScope.of(
-                                            context,
-                                          ).unfocus(); // ปิดคีย์บอร์ด
-                                          verifyEnteredOTP(
-                                            otpControllers,
-                                            email,
-                                            ref,
-                                            setState,
-                                            withGoogle == true,
-                                          );
-                                        }
-                                      } else if (value.isEmpty && index > 0) {
-                                        focusNodes[index - 1]
-                                            .requestFocus(); // กลับไปช่องก่อนหน้า
-                                      }
-                                    },
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.headlineMedium,
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    inputFormatters: [
-                                      LengthLimitingTextInputFormatter(1),
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    decoration: InputDecoration(
-                                      focusColor: Colors.black,
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: EdgeInsets.all(8),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade300,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color:
-                                              warning.isNotEmpty
-                                                  ? Color(
-                                                    int.parse('0xff$warning'),
-                                                  )
-                                                  : Colors.grey,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      hintText: "-",
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                          if (blockOTP || warning.isNotEmpty)
-                            SizedBox(height: height * 0.02),
-                          if (warning.isNotEmpty)
-                            Text(
-                              'OTP code is invalid',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.red,
-                              ),
-                            ),
-                          if (blockOTP)
-                            Text(
-                              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.red,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          SizedBox(height: height * 0.02),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'OTP copied',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                              SizedBox(width: width * 0.01),
-                              InkWell(
-                                onTap: () async {
-                                  // ดึงข้อความจาก Clipboard
-                                  ClipboardData? data = await Clipboard.getData(
-                                    'text/plain',
-                                  );
-                                  if (data != null && data.text != null) {
-                                    String copiedText = data.text!;
-                                    if (copiedText.length == 6) {
-                                      // ใส่ข้อความลงใน TextControllers
-                                      for (
-                                        int i = 0;
-                                        i < copiedText.length;
-                                        i++
-                                      ) {
-                                        otpControllers[i].text = copiedText[i];
-                                        // โฟกัสไปยังช่องสุดท้าย
-                                        if (i == 5) {
-                                          focusNodes[i].requestFocus();
-                                        }
-                                      }
-                                      verifyEnteredOTP(
-                                        otpControllers,
-                                        email,
-                                        ref,
-                                        setState,
-                                        withGoogle == true,
-                                      ); // ตรวจสอบ OTP
-                                    } else {
-                                      setState(() {
-                                        warning = 'F21F1F';
-                                      });
-                                    }
-                                  }
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01,
-                                  ),
-                                  child: Text(
-                                    'Paste',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            'ref: $ref',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          SizedBox(height: height * 0.01),
-                          Text(
-                            countTheTime,
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          SizedBox(height: height * 0.01),
-                          InkWell(
-                            onTap:
-                                canResend
-                                    ? () async {
-                                      countToRequest++;
-
-                                      if (countToRequest > 3) {
-                                        Map<String, dynamic> data = {
-                                          'email': email,
-                                          'createdAt': Timestamp.fromDate(
-                                            DateTime.now(),
-                                          ),
-                                          'expiresAt': Timestamp.fromDate(
-                                            DateTime.now().add(
-                                              Duration(minutes: 10),
-                                            ),
-                                          ),
-                                        };
-                                        await FirebaseFirestore.instance
-                                            .collection('EmailBlocked')
-                                            .doc(email)
-                                            .set(data);
-                                        if (!mounted) return;
-                                        setState(() {
-                                          blockOTP = true;
-                                          stopBlockOTP = true;
-                                          canResend = false;
-                                          expiresAtEmail =
-                                              formatTimestampTo12HourTimeWithSeconds(
-                                                data['expiresAt'] as Timestamp,
-                                              );
-                                        });
-                                        return;
-                                      }
-
-                                      url = await loadAPIEndpoint();
-                                      loadingDialog();
-                                      var responseOtp = await http.post(
-                                        Uri.parse("$url/auth/requestverifyOTP"),
-                                        headers: {
-                                          "Content-Type":
-                                              "application/json; charset=utf-8",
-                                        },
-                                        body: sendOtpPostRequestToJson(
-                                          SendOtpPostRequest(email: email),
-                                        ),
-                                      );
-
-                                      if (responseOtp.statusCode == 200) {
-                                        Get.back();
-                                        SendOtpPostResponst sendOTPResponse =
-                                            sendOtpPostResponstFromJson(
-                                              responseOtp.body,
-                                            );
-
-                                        if (timer != null && timer!.isActive) {
-                                          timer!.cancel();
-                                        }
-
-                                        setState(() {
-                                          ref = sendOTPResponse.ref;
-                                          hasStartedCountdown = true;
-                                          canResend =
-                                              false; // ล็อกการกดชั่วคราว
-                                          warning = '';
-                                          for (var controller
-                                              in otpControllers) {
-                                            controller.clear();
-                                          }
-                                        });
-                                        startCountdown(setState, ref);
-                                        // รอ 30 วิค่อยให้กดได้อีก
-                                        Future.delayed(
-                                          Duration(seconds: 30),
-                                          () {
-                                            if (!mounted) return;
-                                            setState(() {
-                                              canResend = true;
-                                            });
-                                          },
-                                        );
-                                      } else {
-                                        Get.back();
-                                      }
-                                    }
-                                    : null,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.01,
-                              ),
-                              child: Text(
-                                'Resend Code',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                  color: canResend ? Colors.blue : Colors.grey,
-                                  decoration:
-                                      canResend
-                                          ? TextDecoration.underline
-                                          : TextDecoration.none,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (stopBlockOTP)
-                        Column(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Get.offAll(() => LoginPage());
-                              },
-                              style: ElevatedButton.styleFrom(
-                                fixedSize: Size(width, height * 0.04),
-                                backgroundColor: Colors.black,
-                                elevation: 1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'Sign in',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
+      if (responseGetuser.statusCode == 403) {
+        showNotification('Your account must verify your email first');
+        Get.defaultDialog(
+          title: "",
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/question.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Confirm now?',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
                 ),
               ),
-            );
-          },
-        );
-      },
-    ).whenComplete(() {
-      if (timer != null && timer!.isActive) {
-        timer!.cancel();
-      }
-    });
-  }
-
-  // ฟังก์ชันตรวจสอบ OTP
-  void verifyEnteredOTP(
-    List<TextEditingController> otpControllers,
-    String email,
-    String ref,
-    StateSetter setState1,
-    bool withGoogle,
-  ) async {
-    url = await loadAPIEndpoint();
-    String enteredOTP =
-        otpControllers
-            .map((controller) => controller.text)
-            .join(); // รวมค่าที่ป้อน
-    if (enteredOTP.length == 6) {
-      // แสดง Loading Dialog
-      loadingDialog();
-      var responseIsverify = await http.post(
-        Uri.parse("$url/auth/verifyOTP"),
-        headers: {"Content-Type": "application/json; charset=utf-8"},
-        body: isVerifyUserPutRequestToJson(
-          IsVerifyUserPutRequest(
-            email: email,
-            ref: ref,
-            otp: enteredOTP,
-            record: "verify",
+              SizedBox(height: MediaQuery.of(context).size.width * 0.02),
+              Text(
+                'Your account must verify your email first',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-        ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+                showModalConfirmEmail(emailCtl.text);
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFFE7F3FF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Back',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+            ),
+          ],
+        );
+        return;
+      } else if (responseGetuser.statusCode != 200) {
+        final results = jsonDecode(responseGetuser.body);
+        showNotification(results['error']);
+        return;
+      }
+
+      final signInResponse = signInUserPostResponstFromJson(
+        responseGetuser.body,
       );
+      await storage.write(
+        key: 'refreshToken',
+        value: signInResponse.token.refreshToken,
+      );
+      box.write('accessToken', signInResponse.token.accessToken);
 
-      // Close loading dialog first
+      loadingDialog();
+      final responseProfile = await http.get(
+        Uri.parse("$url/user/Profile"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
       Get.back();
-      if (!mounted) return;
 
-      if (responseIsverify.statusCode == 200) {
-        setState1(() {
-          warning = ''; // Clear warning when successful
-        });
-
-        loadingDialog();
-        var responseGetuser = await http.post(
-          Uri.parse("$url/user/getemail"),
-          headers: {"Content-Type": "application/json; charset=utf-8"},
-          body: getUserByEmailPostRequestToJson(
-            GetUserByEmailPostRequest(email: email),
-          ),
-        );
-
-        Get.back();
-        if (!mounted) return;
-
-        if (responseGetuser.statusCode == 200) {
-          GetUserByEmailPostResponst responseGetUserByEmail =
-              getUserByEmailPostResponstFromJson(responseGetuser.body);
-
-          await FirebaseFirestore.instance
-              .collection('OTPRecords')
-              .doc(ref)
-              .delete();
-          await FirebaseFirestore.instance
-              .collection('EmailBlocked')
-              .doc(email)
-              .delete();
-          if (timer != null && timer!.isActive) {
-            timer!.cancel();
-          }
-
-          //เก็บ email user ไว้ใน storage ไว้ใช้ด้วย
-          box.write('email', email);
-          if (withGoogle) {
-            box.write('password', '-');
-          }
-          //เข้าไปเรียบร้อบละ
-          if (responseGetUserByEmail.role == "admin") {
-            Get.offAll(() => NavbaradminPage());
-          } else {
-            Get.offAll(() => NavbarPage());
-          }
-        }
-      } else {
-        setState1(() {
-          warning = 'F21F1F';
-        });
+      if (responseProfile.statusCode != 200) {
+        return;
       }
+
+      final userProfile = dataProfileGetResponstFromJson(responseProfile.body);
+      box.write('userProfile', {
+        'userid': userProfile.user.userId,
+        'name': userProfile.user.name,
+        'email': userProfile.user.email,
+        'profile': userProfile.user.profile,
+        'role': userProfile.user.role,
+      });
+
+      if (userProfile.user.role == "admin") {
+        Get.offAll(() => NavbaradminPage());
+        return;
+      }
+
+      loadingDialog();
+      final responseBoards = await http.get(
+        Uri.parse("$url/board/allboards"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+      Get.back();
+
+      if (responseBoards.statusCode == 200) {
+        final boards = boardAllGetResponstFromJson(responseBoards.body);
+        box.write('boardUser', boards.toJson());
+
+        Get.offAll(() => NavbarPage());
+        return;
+      }
+    } catch (e) {
+      showNotification('Something went wrong. Please try again.');
     }
   }
 
@@ -1370,45 +784,14 @@ class _LoginPageState extends State<LoginPage> {
     Get.to(() => RegisterPage());
   }
 
-  void startCountdown(StateSetter setState, String ref) {
-    // ยกเลิก timer เดิมถ้ามี
-    if (timer != null && timer!.isActive) {
-      timer!.cancel();
-    }
-
-    // รีเซ็ตค่าเริ่มต้น
-    start = 900;
-    countTheTime = "15:00";
-
-    // เริ่ม timer ใหม่
-    timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-      if (start == 0) {
-        timer.cancel();
-        await FirebaseFirestore.instance
-            .collection('OTPRecords_verify')
-            .doc(ref)
-            .delete();
-        if (!mounted) return;
-        setState(() {
-          canResend = true;
-        });
-      } else {
-        start--;
-        if (!mounted) return;
-        setState(() {
-          countTheTime = formatTime(start);
-        });
-      }
-    });
+  String formatTimestampTo12HourTimeWithSeconds(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    String formattedTime = DateFormat('hh:mm:ss a').format(dateTime);
+    return formattedTime;
   }
 
-  String formatTime(int seconds) {
-    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
-    final secs = (seconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$secs';
-  }
-
-  showModalConfirmEmail(String email, bool withGoogle) async {
+  showModalConfirmEmail(String email) {
+    emailConfirmOtpCtl.text = email;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1419,13 +802,6 @@ class _LoginPageState extends State<LoginPage> {
           builder: (BuildContext context, StateSetter setState) {
             double width = MediaQuery.of(context).size.width;
             double height = MediaQuery.of(context).size.height;
-
-            emailConfirmOtpCtl = emailCtl;
-            if (withGoogle) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                emailConfirmOtpCtl.text = email;
-              });
-            }
 
             return GestureDetector(
               onTap: () {
@@ -1454,7 +830,6 @@ class _LoginPageState extends State<LoginPage> {
                                 onTap: () async {
                                   blockOTP = false;
                                   await googleSignIn.signOut();
-                                  // Sign out from Firebase if needed
                                   await FirebaseAuth.instance.signOut();
                                   Get.back();
                                 },
@@ -1598,45 +973,55 @@ class _LoginPageState extends State<LoginPage> {
                                 url = await loadAPIEndpoint();
                                 // แสดง Loading Dialog
                                 loadingDialog();
-                                var responseOtp = await http.post(
-                                  Uri.parse("$url/auth/requestverifyOTP"),
+                                var responseRef = await http.post(
+                                  Uri.parse("$url/auth/IdentityOTP"),
                                   headers: {
                                     "Content-Type":
                                         "application/json; charset=utf-8",
                                   },
-                                  body: sendOtpPostRequestToJson(
-                                    SendOtpPostRequest(email: email),
-                                  ),
+                                  body: jsonEncode({
+                                    "email": emailConfirmOtpCtl.text,
+                                  }),
                                 );
 
-                                if (responseOtp.statusCode == 200) {
-                                  Get.back();
+                                Get.back();
+                                if (responseRef.statusCode == 200) {
                                   Get.back();
                                   setState(() {
                                     showNotification('');
                                     blockOTP = false;
                                   });
-                                  SendOtpPostResponst sendOTPResponse =
-                                      sendOtpPostResponstFromJson(
-                                        responseOtp.body,
-                                      );
+                                  var sendOTPResponse = jsonDecode(
+                                    responseRef.body,
+                                  );
 
                                   //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-                                  verifyOTP(
-                                    email,
-                                    sendOTPResponse.ref,
-                                    withGoogle == true,
+                                  var appData = Provider.of<Appdata>(
+                                    context,
+                                    listen: false,
                                   );
+                                  appData.keepEmailToUserPageVerifyOTP.setEmail(
+                                    emailConfirmOtpCtl.text,
+                                  );
+                                  appData.keepEmailToUserPageVerifyOTP
+                                      .setPassword(passwordCtl.text);
+                                  appData.keepEmailToUserPageVerifyOTP.setRef(
+                                    sendOTPResponse['ref'],
+                                  );
+                                  appData.keepEmailToUserPageVerifyOTP.setCase(
+                                    'verifyEmail',
+                                  );
+                                  Get.to(() => VerifyotpPage());
                                 } else {
-                                  Get.back();
                                   var result =
                                       await FirebaseFirestore.instance
                                           .collection('EmailBlocked')
                                           .doc(email)
+                                          .collection('OTPRecords_verify')
+                                          .doc(email)
                                           .get();
                                   var data = result.data();
                                   if (data != null) {
-                                    if (!mounted) return;
                                     setState(() {
                                       blockOTP = true;
                                       expiresAtEmail =
@@ -1676,38 +1061,7 @@ class _LoginPageState extends State<LoginPage> {
       },
     ).whenComplete(() async {
       await googleSignIn.signOut();
-      // Sign out from Firebase if needed
       await FirebaseAuth.instance.signOut();
     });
-  }
-
-  String formatTimestampTo12HourTimeWithSeconds(Timestamp timestamp) {
-    DateTime dateTime = timestamp.toDate();
-    String formattedTime = DateFormat('hh:mm:ss a').format(dateTime);
-    return formattedTime;
-  }
-
-  void startOtpExpiryTimer(String email, StateSetter setState) async {
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance
-            .collection('EmailBlocked')
-            .doc(email)
-            .get();
-
-    var data = snapshot.data() as Map<String, dynamic>?;
-    if (data == null || data['expiresAt'] == null) return;
-
-    Timestamp expiresAt = data['expiresAt'] as Timestamp;
-    DateTime expireTime = expiresAt.toDate();
-    DateTime now = DateTime.now();
-
-    if (now.isAfter(expireTime)) {
-      if (!mounted) return;
-      setState(() {
-        stopBlockOTP = false;
-        blockOTP = false;
-        canResend = true;
-      });
-    }
   }
 }

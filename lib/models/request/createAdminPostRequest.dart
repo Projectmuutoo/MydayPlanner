@@ -12,21 +12,12 @@ String createAdminPostRequestToJson(CreateAdminPostRequest data) =>
 
 class CreateAdminPostRequest {
   String email;
-  String hashedPassword;
+  String password;
 
-  CreateAdminPostRequest({
-    required this.email,
-    required this.hashedPassword,
-  });
+  CreateAdminPostRequest({required this.email, required this.password});
 
   factory CreateAdminPostRequest.fromJson(Map<String, dynamic> json) =>
-      CreateAdminPostRequest(
-        email: json["email"],
-        hashedPassword: json["hashed_password"],
-      );
+      CreateAdminPostRequest(email: json["email"], password: json["password"]);
 
-  Map<String, dynamic> toJson() => {
-        "email": email,
-        "hashed_password": hashedPassword,
-      };
+  Map<String, dynamic> toJson() => {"email": email, "password": password};
 }

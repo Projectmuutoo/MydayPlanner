@@ -6,7 +6,8 @@ import 'dart:convert';
 
 List<AllUserGetResponse> allUserGetResponseFromJson(String str) =>
     List<AllUserGetResponse>.from(
-        json.decode(str).map((x) => AllUserGetResponse.fromJson(x)));
+      json.decode(str).map((x) => AllUserGetResponse.fromJson(x)),
+    );
 
 String allUserGetResponseToJson(List<AllUserGetResponse> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
@@ -48,14 +49,14 @@ class AllUserGetResponse {
       );
 
   Map<String, dynamic> toJson() => {
-        "UserID": userId,
-        "Name": name,
-        "Email": email,
-        "HashedPassword": hashedPassword,
-        "Profile": profile,
-        "Role": role,
-        "IsVerify": isVerify,
-        "IsActive": isActive,
-        "CreatedAt": createdAt,
-      };
+    "UserID": userId,
+    "Name": name,
+    "Email": email,
+    "HashedPassword": hashedPassword,
+    "Profile": profile,
+    "Role": role,
+    "IsVerify": isVerify,
+    "IsActive": isActive,
+    "CreatedAt": createdAt,
+  };
 }

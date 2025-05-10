@@ -106,132 +106,15 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<bool> checkExpiresRefreshToken() async {
-    var result =
-        await FirebaseFirestore.instance
-            .collection('refreshTokens')
-            .doc(box.read('userProfile')['userid'].toString())
-            .get();
-    var data = result.data();
-    if (data != null) {
-      int createdAt = data['CreatedAt'];
-      int expiresIn = data['ExpiresIn'];
-
-      DateTime createdAtDate = DateTime.fromMillisecondsSinceEpoch(
-        createdAt * 1000,
-      );
-      DateTime expiryDate = createdAtDate.add(Duration(seconds: expiresIn));
-      DateTime now = DateTime.now();
-
-      if (now.isAfter(expiryDate)) {
-        Get.defaultDialog(
-          title: '',
-          titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          barrierDismissible: false,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width * 0.04,
-            vertical: MediaQuery.of(context).size.height * 0.02,
-          ),
-          content: WillPopScope(
-            onWillPop: () async => false,
-            child: Column(
-              children: [
-                Image.asset(
-                  "assets/images/aleart/warning.png",
-                  height: MediaQuery.of(context).size.height * 0.1,
-                  fit: BoxFit.contain,
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                Text(
-                  'Waring!!',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.headlineSmall!.fontSize,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF007AFF),
-                  ),
-                ),
-                Text(
-                  'หมดอายุการใช้งานแล้ว',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                Get.back();
-                await storage.deleteAll();
-                box.erase();
-                Get.offAll(() => SplashPage());
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Color(0xFF007AFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 1,
-              ),
-              child: Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-        return true;
-      } else {
-        return false;
-      }
-    }
-    return false;
-  }
-
-  loadDisplays() {
-    if (mounted) {
-      setState(() {
-        emailUser = box.read('userProfile')['email'];
-        name = getFirstName(box.read('userProfile')['name']);
-        userProfile = box.read('userProfile')['profile'];
-        context.read<Appdata>().changeMyProfileProvider.setName(name);
-        context.read<Appdata>().changeMyProfileProvider.setProfile(userProfile);
-
-        var boardData = BoardAllGetResponst.fromJson(box.read('boardUser'));
-
-        if (listsFontWeight == FontWeight.w600) {
-          boards = boardData.memberBoards;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            moveSliderToKey(listKey);
-          });
-        } else if (groupFontWeight == FontWeight.w600) {
-          boards = boardData.createdBoards;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            moveSliderToKey(groupKey);
-          });
-        }
-
-        isLoadings = false;
-        showShimmer = false;
-      });
-    }
-  }
-
   Future<void> loadDataAsync() async {
     loadDisplays();
     bool isExpired = await checkExpiresRefreshToken();
     if (isExpired) return;
+    if (mounted) {
+      setState(() {
+        isLoadings = false;
+      });
+    }
 
     showDisplays();
 
@@ -251,13 +134,12 @@ class _HomePageState extends State<HomePage> {
 
     if (mounted) {
       setState(() {
-        isLoadings = false;
         showShimmer = false;
       });
     }
   }
 
-  Future<void> loadNewtoken() async {
+  Future<void> loadNewRefreshToken() async {
     url = await loadAPIEndpoint();
     var value = await storage.read(key: 'refreshToken');
     loadingDialog();
@@ -335,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               Text(
-                'หมดอายุการใช้งานแล้ว',
+                'The system has expired. Please log in again.',
                 style: TextStyle(
                   fontSize: Get.textTheme.titleMedium!.fontSize,
                   color: Colors.black,
@@ -350,7 +232,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () async {
               Get.back();
               await storage.deleteAll();
-              box.erase();
+              box.remove('userProfile');
               Get.offAll(() => SplashPage());
             },
             style: ElevatedButton.styleFrom(
@@ -1647,6 +1529,129 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<bool> checkExpiresRefreshToken() async {
+    var result =
+        await FirebaseFirestore.instance
+            .collection('refreshTokens')
+            .doc(box.read('userProfile')['userid'].toString())
+            .get();
+    var data = result.data();
+    if (data != null) {
+      int createdAt = data['CreatedAt'];
+      int expiresIn = data['ExpiresIn'];
+
+      DateTime createdAtDate = DateTime.fromMillisecondsSinceEpoch(
+        createdAt * 1000,
+      );
+      DateTime expiryDate = createdAtDate.add(Duration(seconds: expiresIn));
+      DateTime now = DateTime.now();
+
+      if (now.isAfter(expiryDate)) {
+        Get.defaultDialog(
+          title: '',
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          barrierDismissible: false,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: WillPopScope(
+            onWillPop: () async => false,
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/warning.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Waring!!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                Text(
+                  'The system has expired. Please log in again.',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                Get.back();
+                await storage.deleteAll();
+                box.remove('userProfile');
+                Get.offAll(() => SplashPage());
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  loadDisplays() {
+    if (mounted) {
+      setState(() {
+        isLoadings = false;
+
+        emailUser = box.read('userProfile')['email'];
+        name = getFirstName(box.read('userProfile')['name']);
+        userProfile = box.read('userProfile')['profile'];
+        context.read<Appdata>().changeMyProfileProvider.setName(name);
+        context.read<Appdata>().changeMyProfileProvider.setProfile(userProfile);
+
+        var boardData = BoardAllGetResponst.fromJson(box.read('boardUser'));
+
+        if (listsFontWeight == FontWeight.w600) {
+          boards = boardData.memberBoards;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            moveSliderToKey(listKey);
+          });
+        } else if (groupFontWeight == FontWeight.w600) {
+          boards = boardData.createdBoards;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            moveSliderToKey(groupKey);
+          });
+        }
+
+        showShimmer = false;
+      });
+    }
+  }
+
   String getFirstName(String fullName) {
     List<String> parts = fullName.trim().split(' ');
     return parts.isNotEmpty ? parts.first : '';
@@ -2329,6 +2334,8 @@ class _HomePageState extends State<HomePage> {
 
     if (result == 'refresh') {
       showDisplays();
+    } else if (result == 'loadDisplays') {
+      loadDataAsync();
     }
   }
 
