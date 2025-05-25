@@ -54,8 +54,8 @@ class _UserPageState extends State<UserPage> {
   @override
   void initState() {
     super.initState();
-    startRepeatingTask();
 
+    startRepeatingTask();
     loadData = loadDataAsync();
   }
 
@@ -544,7 +544,9 @@ class _UserPageState extends State<UserPage> {
       var active = data['active'];
 
       var matchedUser = responseGetAlluser.firstWhereOrNull(
-        (u) => u.email == email,
+        (u) =>
+            u.email == email &&
+            u.email.toLowerCase() != 'mydayplanner.noreply@gmail.com',
       );
 
       if (matchedUser != null && login == 1) {

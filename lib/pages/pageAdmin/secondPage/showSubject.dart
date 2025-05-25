@@ -133,238 +133,243 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
             });
           });
         }
-        return Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            if (confirm == true) {
-                              Navigator.pop(context, 'refresh');
-                            } else {
-                              Get.back();
-                            }
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: width * 0.02,
-                              vertical: height * 0.01,
-                            ),
-                            child: SvgPicture.string(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
-                              height: height * 0.03,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${context.read<Appdata>().subject.subjectReport} (${countSubject(context.read<Appdata>().subject.subjectReport)})',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            SizedBox(width: width * 0.05),
-                            InkWell(
-                              onTap: () {
-                                setState(() {
-                                  isSortLatestFirst = !isSortLatestFirst;
-                                  sortReportData();
-                                });
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.01,
-                                  vertical: height * 0.005,
-                                ),
-                                child: SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M7 20h2V8h3L8 4 4 8h3zm13-4h-3V4h-2v12h-3l4 4z"></path></svg>',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+        return WillPopScope(
+          onWillPop: () async {
+            if (confirm == true) {
+              Navigator.pop(context, 'refresh');
+            } else {
+              Get.back();
+            }
+            return false;
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              foregroundColor: Colors.black,
+              centerTitle: true,
+              leading: InkWell(
+                onTap: () {
+                  if (confirm == true) {
+                    Navigator.pop(context, 'refresh');
+                  } else {
+                    Get.back();
+                  }
+                },
+                child: Center(
+                  child: SvgPicture.string(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
+                    height: height * 0.03,
+                    width: width * 0.03,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              title: Text(
+                '${context.read<Appdata>().subject.subjectReport} (${countSubject(context.read<Appdata>().subject.subjectReport)})',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: EdgeInsets.all(width * 0.02),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        isSortLatestFirst = !isSortLatestFirst;
+                        sortReportData();
+                      });
+                    },
+                    child: SvgPicture.string(
+                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M7 20h2V8h3L8 4 4 8h3zm13-4h-3V4h-2v12h-3l4 4z"></path></svg>',
+                      height: height * 0.03,
+                      fit: BoxFit.contain,
                     ),
-                    SizedBox(height: height * 0.01),
-                    Expanded(
-                      child: Scrollbar(
-                        interactive: true,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children:
-                                isLoadings || showShimmer
-                                    ? List.generate(
-                                      itemCount,
-                                      (index) => Padding(
-                                        padding: EdgeInsets.only(
-                                          bottom: height * 0.01,
-                                        ),
-                                        child: Shimmer.fromColors(
-                                          baseColor: Color(0xFFF7F7F7),
-                                          highlightColor: Colors.grey[300]!,
-                                          child: Container(
-                                            width: width,
-                                            height: height * 0.065,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Scrollbar(
+                          interactive: true,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children:
+                                  isLoadings || showShimmer
+                                      ? List.generate(
+                                        itemCount,
+                                        (index) => Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom: height * 0.01,
+                                          ),
+                                          child: Shimmer.fromColors(
+                                            baseColor: Color(0xFFF7F7F7),
+                                            highlightColor: Colors.grey[300]!,
+                                            child: Container(
+                                              width: width,
+                                              height: height * 0.065,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    )
-                                    : [
-                                      ...reportData
-                                          .where(
-                                            (item) =>
-                                                item['Category'] ==
-                                                context
-                                                    .read<Appdata>()
-                                                    .subject
-                                                    .subjectReport,
-                                          )
-                                          .map((item) {
-                                            bool isRead = readReportNos
-                                                .contains(
-                                                  'ID: ${item['ReportID']}',
-                                                );
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.01,
-                                              ),
-                                              child: Material(
-                                                color:
-                                                    isRead
-                                                        ? Colors.grey[300]
-                                                        : Color(0xFFF2F2F6),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: InkWell(
+                                      )
+                                      : [
+                                        ...reportData
+                                            .where(
+                                              (item) =>
+                                                  item['Category'] ==
+                                                  context
+                                                      .read<Appdata>()
+                                                      .subject
+                                                      .subjectReport,
+                                            )
+                                            .map((item) {
+                                              bool isRead = readReportNos
+                                                  .contains(
+                                                    'ID: ${item['ReportID']}',
+                                                  );
+                                              return Padding(
+                                                padding: EdgeInsets.only(
+                                                  bottom: height * 0.01,
+                                                ),
+                                                child: Material(
+                                                  color:
+                                                      isRead
+                                                          ? Colors.grey[300]
+                                                          : Color(0xFFF2F2F6),
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                  onTap: () {
-                                                    showModal(
-                                                      item['ReportID'],
-                                                      item['Category'],
-                                                      item['Email'],
-                                                      item['Name'],
-                                                      item['Description'],
-                                                      item['CreateAt'],
-                                                    );
-                                                    markAsRead(item);
-                                                  },
-                                                  child: Container(
-                                                    width: width,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              width * 0.025,
-                                                          vertical:
-                                                              height * 0.005,
+                                                  child: InkWell(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
                                                         ),
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
+                                                    onTap: () {
+                                                      showModal(
+                                                        item['ReportID'],
+                                                        item['Category'],
+                                                        item['Email'],
+                                                        item['Name'],
+                                                        item['Description'],
+                                                        item['CreateAt'],
+                                                      );
+                                                      markAsRead(item);
+                                                    },
+                                                    child: Container(
+                                                      width: width,
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                width * 0.025,
+                                                            vertical:
+                                                                height * 0.005,
                                                           ),
-                                                    ),
-                                                    child: Column(
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  item['Category'],
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        Get
-                                                                            .textTheme
-                                                                            .titleLarge!
-                                                                            .fontSize,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w500,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: Column(
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Row(
+                                                                children: [
+                                                                  Text(
+                                                                    item['Category'],
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          Get
+                                                                              .textTheme
+                                                                              .titleLarge!
+                                                                              .fontSize,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                    ),
                                                                   ),
+                                                                  SvgPicture.string(
+                                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                                    color:
+                                                                        Colors
+                                                                            .black54,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              Text(
+                                                                timeAgo(
+                                                                  item['CreateAt'],
                                                                 ),
-                                                                SvgPicture.string(
-                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                                style: TextStyle(
+                                                                  fontSize:
+                                                                      Get
+                                                                          .textTheme
+                                                                          .titleMedium!
+                                                                          .fontSize,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .normal,
                                                                   color:
                                                                       Colors
                                                                           .black54,
                                                                 ),
-                                                              ],
-                                                            ),
-                                                            Text(
-                                                              timeAgo(
-                                                                item['CreateAt'],
                                                               ),
-                                                              style: TextStyle(
-                                                                fontSize:
-                                                                    Get
-                                                                        .textTheme
-                                                                        .titleMedium!
-                                                                        .fontSize,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal,
-                                                                color:
-                                                                    Colors
-                                                                        .black54,
+                                                            ],
+                                                          ),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              SizedBox(
+                                                                width:
+                                                                    width * 0.1,
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            SizedBox(
-                                                              width:
-                                                                  width * 0.1,
-                                                            ),
-                                                            Text(
-                                                              item['Email'],
-                                                              style: TextStyle(
-                                                                fontSize:
-                                                                    Get
-                                                                        .textTheme
-                                                                        .titleSmall!
-                                                                        .fontSize,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
+                                                              Text(
+                                                                item['Email'],
+                                                                style: TextStyle(
+                                                                  fontSize:
+                                                                      Get
+                                                                          .textTheme
+                                                                          .titleSmall!
+                                                                          .fontSize,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            );
-                                          }),
-                                    ],
+                                              );
+                                            }),
+                                      ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

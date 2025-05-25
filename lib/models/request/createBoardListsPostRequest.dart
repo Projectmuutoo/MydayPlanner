@@ -12,7 +12,7 @@ String createBoardListsPostRequestToJson(CreateBoardListsPostRequest data) =>
 
 class CreateBoardListsPostRequest {
   String boardName;
-  String createdBy;
+  int createdBy;
   String isGroup;
 
   CreateBoardListsPostRequest({

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 
 class Appdata with ChangeNotifier {
   KeepRoleUser keepUser = KeepRoleUser();
@@ -8,9 +9,44 @@ class Appdata with ChangeNotifier {
   ChangeMyProfileProvider changeMyProfileProvider = ChangeMyProfileProvider();
   KeepEmailToUserPageVerifyOTP keepEmailToUserPageVerifyOTP =
       KeepEmailToUserPageVerifyOTP();
+  ShowMyBoards showMyBoards = ShowMyBoards();
 }
 
-//use page verify otp
+//use page homeuser
+class ShowMyBoards extends ChangeNotifier {
+  List<Board> _createdBoards = [];
+  List<Board> _memberBoards = [];
+
+  List<Board> get createdBoards => _createdBoards;
+  List<Board> get memberBoards => _memberBoards;
+
+  void setBoards(AllDataUserGetResponst boardData) {
+    _createdBoards = boardData.board;
+    _memberBoards = boardData.boardgroup;
+    notifyListeners();
+  }
+
+  void addCreatedBoard(Board board) {
+    _createdBoards.add(board);
+    notifyListeners();
+  }
+
+  void addMemberBoard(Board board) {
+    _memberBoards.add(board);
+    notifyListeners();
+  }
+
+  void removeCreatedBoardById(int boardId) {
+    _createdBoards.removeWhere((board) => board.boardId == boardId);
+    notifyListeners();
+  }
+
+  void removeMemberBoardById(int boardId) {
+    _memberBoards.removeWhere((board) => board.boardId == boardId);
+    notifyListeners();
+  }
+}
+
 class KeepEmailToUserPageVerifyOTP extends ChangeNotifier {
   String _email = '';
   String _password = '';

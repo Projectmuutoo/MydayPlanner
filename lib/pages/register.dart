@@ -21,7 +21,6 @@ import 'package:provider/provider.dart';
 import 'package:recaptcha_enterprise_flutter/recaptcha_action.dart';
 import 'package:recaptcha_enterprise_flutter/recaptcha_enterprise.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -47,9 +46,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ---------------------- 🕒 Timer ----------------------
   Timer? _debounce;
-
-  // ---------------------- 🌐 WebView ----------------------
-  late final WebViewController _controller;
 
   // ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
@@ -96,25 +92,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
     emailController.addListener(_onTextChanged);
     emailFocusNode.addListener(_onFocusChange);
-
-    // สร้าง WebViewController สำหรับใช้เป็น fallback
-    _controller =
-        WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..addJavaScriptChannel(
-            'captchaToken',
-            onMessageReceived: (JavaScriptMessage message) {
-              Navigator.of(context).pop(); // ปิด dialog
-              _verifyWebViewCaptcha(message.message);
-            },
-          )
-          ..loadRequest(
-            Uri.dataFromString(
-              _getCaptchaHTML(),
-              mimeType: 'text/html',
-              encoding: Encoding.getByName('utf-8'),
-            ),
-          );
   }
 
   @override
@@ -1352,119 +1329,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  void _verifyWebViewCaptcha(String token) async {
-    try {
-      await verifyCaptchaOnServer(token);
-    } catch (e) {
-      // _showErrorDialog("Error verifying CAPTCHA: $e");
-    }
-  }
-
-  // Webview implementation for reCAPTCHA fallback
-  String _getCaptchaHTML() {
-    return '''
-<html>
-<head>
-  <title>reCAPTCHA</title>
-  <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f9f9f9;
-      font-family: Arial, sans-serif;
-    }
-    .captcha-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      background-color: white;
-    }
-    .captcha-title {
-      margin-bottom: 20px;
-      font-size: 16px;
-      color: #333;
-    }
-  </style>
-  <script>
-    function onSubmit(token) {
-      window.captchaToken.postMessage(token);
-    }
-  </script>
-</head>
-<body>
-  <div class="captcha-container">
-    <div class="captcha-title">Please verify you're human</div>
-    <div class="g-recaptcha"
-         data-sitekey="$siteKey"
-         data-callback="onSubmit"
-         data-action="LOGIN">
-    </div>
-  </div>
-</body>
-</html>
-  ''';
-  }
-
-  void _showCaptchaWebView() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10.0,
-                  offset: Offset(0.0, 10.0),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Verify you\'re human',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                SizedBox(
-                  height: 320,
-                  width: 320,
-                  child: WebViewWidget(controller: _controller),
-                ),
-                SizedBox(height: 16),
-                TextButton(
-                  child: Text('Cancel'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   showModalConfirmEmail(String email, String password) {
     emailConfirmOtpCtl.text = email;
 
@@ -1707,7 +1571,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               fixedSize: Size(width, height * 0.04),
-                              backgroundColor: Colors.black,
+                              backgroundColor: Color(0xFF007AFF),
                               elevation: 1,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

@@ -25,7 +25,6 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
   final storage = FlutterSecureStorage();
   DateTime? createdAtDate;
   Timer? _timer;
-  StreamSubscription? _subscription;
   int? expiresIn;
 
   @override
@@ -40,15 +39,19 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
     pageOptions = [ReportPage(), AdminhomePage(), UserPage()];
   }
 
-  checkExpiresRefreshToken() {
-    _subscription = FirebaseFirestore.instance
+  checkExpiresRefreshToken() async {
+    await FirebaseFirestore.instance
         .collection('refreshTokens')
         .doc(GetStorage().read('userProfile')['userid'].toString())
-        .snapshots()
-        .listen((snapshot) {
-          int createdAt = snapshot['CreatedAt'];
-          expiresIn = snapshot['ExpiresIn'];
-          createdAtDate = DateTime.fromMillisecondsSinceEpoch(createdAt * 1000);
+        .get()
+        .then((snapshot) {
+          if (snapshot.exists) {
+            var createdAt = snapshot['CreatedAt'];
+            expiresIn = snapshot['ExpiresIn'];
+            createdAtDate = DateTime.fromMillisecondsSinceEpoch(
+              createdAt * 1000,
+            );
+          }
         });
 
     _timer = Timer.periodic(Duration(seconds: 1), (_) {
@@ -58,9 +61,7 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
       DateTime now = DateTime.now();
 
       if (now.isAfter(expiryDate)) {
-        // 1. หยุด Stream
-        _subscription?.cancel();
-        // 2. หยุด Timer
+        // 1. หยุด Timer
         _timer?.cancel();
 
         Get.defaultDialog(

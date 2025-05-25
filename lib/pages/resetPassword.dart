@@ -719,7 +719,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           onPressed: resetPassword,
                           style: ElevatedButton.styleFrom(
                             fixedSize: Size(width, height * 0.04),
-                            backgroundColor: Colors.black,
+                            backgroundColor: Color(0xFF007AFF),
                             elevation: 1,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -737,6 +737,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             ),
                           ),
                         ),
+                        SizedBox(height: height * 0.02),
                       ],
                     ),
                   ],

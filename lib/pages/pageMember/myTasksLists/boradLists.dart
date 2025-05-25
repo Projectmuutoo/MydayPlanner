@@ -32,7 +32,7 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
 
   Future<void> loadDataAsync() async {
     url = await loadAPIEndpoint();
-    log(box.read('email'));
+    log(box.read('userProfile')['email']);
     log(context.read<Appdata>().idBoard.idBoard);
   }
 

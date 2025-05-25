@@ -13,8 +13,7 @@ import 'package:mydayplanner/models/request/isVerifyUserPutRequest.dart';
 import 'package:mydayplanner/models/request/reSendOtpPostRequest.dart';
 import 'package:mydayplanner/models/request/sendOTPPostRequest.dart';
 import 'package:mydayplanner/models/request/signInUserPostRequest.dart';
-import 'package:mydayplanner/models/response/DataProfileGetResponst.dart';
-import 'package:mydayplanner/models/response/boardAllGetResponst.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/models/response/reSendOtpPostResponst.dart';
 import 'package:mydayplanner/models/response/signInUserPostResponst.dart';
 import 'package:mydayplanner/pages/login.dart';
@@ -34,24 +33,29 @@ class VerifyotpPage extends StatefulWidget {
 class _VerifyotpPageState extends State<VerifyotpPage> {
   String warning = '';
   String textNotification = '';
-  bool blockOTP = false;
   String? expiresAtEmail;
-  int start = 900; // 15 นาที = 900 วินาที
   String countTheTime = "15:00";
+  late String url;
+
+  bool blockOTP = false;
   bool canResend = true;
   bool hasStartedCountdown = false;
-  int countToRequest = 1;
   bool stopBlockOTP = false;
+
+  int start = 900; // 15 นาที = 900 วินาที
+  int countToRequest = 1;
+
   Timer? timer;
+
   var appData = Appdata();
   var box = GetStorage();
   final storage = FlutterSecureStorage();
+
   final focusNodes = List<FocusNode>.generate(6, (index) => FocusNode());
   final otpControllers = List<TextEditingController>.generate(
     6,
     (index) => TextEditingController(),
   );
-  late String url;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -910,7 +914,7 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                           },
                           style: ElevatedButton.styleFrom(
                             fixedSize: Size(width, height * 0.04),
-                            backgroundColor: Colors.black,
+                            backgroundColor: Colors.black54,
                             elevation: 1,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1023,8 +1027,8 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
           box.write('accessToken', signInResponse.token.accessToken);
 
           loadingDialog();
-          final responseProfile = await http.get(
-            Uri.parse("$url/user/Profile"),
+          final responseAll = await http.get(
+            Uri.parse("$url/user/AlldataUser"),
             headers: {
               "Content-Type": "application/json; charset=utf-8",
               "Authorization": "Bearer ${box.read('accessToken')}",
@@ -1032,40 +1036,25 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
           );
           Get.back();
 
-          if (responseProfile.statusCode != 200) {
-            return false;
-          }
+          if (responseAll.statusCode != 200) return false;
 
-          final userProfile = dataProfileGetResponstFromJson(
-            responseProfile.body,
-          );
+          final response = allDataUserGetResponstFromJson(responseAll.body);
+
           box.write('userProfile', {
-            'userid': userProfile.user.userId,
-            'name': userProfile.user.name,
-            'email': userProfile.user.email,
-            'profile': userProfile.user.profile,
-            'role': userProfile.user.role,
+            'userid': response.user.userId,
+            'name': response.user.name,
+            'email': response.user.email,
+            'profile': response.user.profile,
+            'role': response.user.role,
           });
 
-          if (userProfile.user.role == "admin") {
+          if (response.user.role == "admin") {
             Get.offAll(() => NavbaradminPage());
             return false;
           }
 
-          loadingDialog();
-          final responseBoards = await http.get(
-            Uri.parse("$url/board/allboards"),
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Authorization": "Bearer ${box.read('accessToken')}",
-            },
-          );
-          Get.back();
-
-          if (responseBoards.statusCode == 200) {
-            final boards = boardAllGetResponstFromJson(responseBoards.body);
-            box.write('boardUser', boards.toJson());
-
+          if (responseAll.statusCode == 200) {
+            box.write('boardUser', response.toJson());
             Get.offAll(() => NavbarPage());
             return false;
           }

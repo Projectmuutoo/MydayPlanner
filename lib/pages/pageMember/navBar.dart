@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -27,7 +28,6 @@ class _NavbarPageState extends State<NavbarPage> {
   final storage = FlutterSecureStorage();
   DateTime? createdAtDate;
   Timer? _timer;
-  StreamSubscription? _subscription;
   int? expiresIn;
 
   @override
@@ -48,15 +48,19 @@ class _NavbarPageState extends State<NavbarPage> {
     ];
   }
 
-  checkExpiresRefreshToken() {
-    _subscription = FirebaseFirestore.instance
+  checkExpiresRefreshToken() async {
+    await FirebaseFirestore.instance
         .collection('refreshTokens')
         .doc(GetStorage().read('userProfile')['userid'].toString())
-        .snapshots()
-        .listen((snapshot) {
-          int createdAt = snapshot['CreatedAt'];
-          expiresIn = snapshot['ExpiresIn'];
-          createdAtDate = DateTime.fromMillisecondsSinceEpoch(createdAt * 1000);
+        .get()
+        .then((snapshot) {
+          if (snapshot.exists) {
+            var createdAt = snapshot['CreatedAt'];
+            expiresIn = snapshot['ExpiresIn'];
+            createdAtDate = DateTime.fromMillisecondsSinceEpoch(
+              createdAt * 1000,
+            );
+          }
         });
 
     _timer = Timer.periodic(Duration(seconds: 1), (_) {
@@ -66,9 +70,7 @@ class _NavbarPageState extends State<NavbarPage> {
       DateTime now = DateTime.now();
 
       if (now.isAfter(expiryDate)) {
-        // 1. หยุด Stream
-        _subscription?.cancel();
-        // 2. หยุด Timer
+        //1. หยุด Timer
         _timer?.cancel();
 
         Get.defaultDialog(
@@ -145,7 +147,6 @@ class _NavbarPageState extends State<NavbarPage> {
   @override
   void dispose() {
     _timer?.cancel();
-    _subscription?.cancel();
     super.dispose();
   }
 

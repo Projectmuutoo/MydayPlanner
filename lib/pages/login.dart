@@ -8,8 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/googleLoginUserPostRequest.dart';
 import 'package:mydayplanner/models/request/signInUserPostRequest.dart';
-import 'package:mydayplanner/models/response/dataProfileGetResponst.dart';
-import 'package:mydayplanner/models/response/boardAllGetResponst.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/models/response/googleLoginPostResponse.dart';
 import 'package:mydayplanner/models/response/signInUserPostResponst.dart';
 import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
@@ -513,8 +512,8 @@ class _LoginPageState extends State<LoginPage> {
         box.write('accessToken', response.token.accessToken);
 
         loadingDialog();
-        final responseProfile = await http.get(
-          Uri.parse("$url/user/Profile"),
+        final responseAll = await http.get(
+          Uri.parse("$url/user/AlldataUser"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
@@ -522,45 +521,29 @@ class _LoginPageState extends State<LoginPage> {
         );
         Get.back();
 
-        if (responseProfile.statusCode != 200) {
-          return;
-        }
+        if (responseAll.statusCode != 200) return;
 
-        final userProfile = dataProfileGetResponstFromJson(
-          responseProfile.body,
-        );
+        final response2 = allDataUserGetResponstFromJson(responseAll.body);
+
         box.write('userProfile', {
-          'userid': userProfile.user.userId,
-          'name': userProfile.user.name,
-          'email': userProfile.user.email,
-          'profile': userProfile.user.profile,
-          'role': userProfile.user.role,
+          'userid': response2.user.userId,
+          'name': response2.user.name,
+          'email': response2.user.email,
+          'profile': response2.user.profile,
+          'role': response2.user.role,
         });
 
-        if (userProfile.user.role == "admin") {
+        if (response2.user.role == "admin") {
           Get.offAll(() => NavbaradminPage());
           return;
         }
 
-        loadingDialog();
-        final responseBoards = await http.get(
-          Uri.parse("$url/board/allboards"),
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Authorization": "Bearer ${box.read('accessToken')}",
-          },
-        );
-        Get.back();
-
-        if (responseBoards.statusCode == 200) {
-          final boards = boardAllGetResponstFromJson(responseBoards.body);
-          box.write('boardUser', boards.toJson());
-
+        if (responseAll.statusCode == 200) {
+          box.write('boardUser', response2.toJson());
           Get.offAll(() => NavbarPage());
           return;
         }
       } else {
-        log("awsd");
         await googleSignIn.signOut();
         await FirebaseAuth.instance.signOut();
       }
@@ -727,8 +710,8 @@ class _LoginPageState extends State<LoginPage> {
       box.write('accessToken', signInResponse.token.accessToken);
 
       loadingDialog();
-      final responseProfile = await http.get(
-        Uri.parse("$url/user/Profile"),
+      final responseAll = await http.get(
+        Uri.parse("$url/user/AlldataUser"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -736,38 +719,25 @@ class _LoginPageState extends State<LoginPage> {
       );
       Get.back();
 
-      if (responseProfile.statusCode != 200) {
-        return;
-      }
+      if (responseAll.statusCode != 200) return;
 
-      final userProfile = dataProfileGetResponstFromJson(responseProfile.body);
+      final response = allDataUserGetResponstFromJson(responseAll.body);
+
       box.write('userProfile', {
-        'userid': userProfile.user.userId,
-        'name': userProfile.user.name,
-        'email': userProfile.user.email,
-        'profile': userProfile.user.profile,
-        'role': userProfile.user.role,
+        'userid': response.user.userId,
+        'name': response.user.name,
+        'email': response.user.email,
+        'profile': response.user.profile,
+        'role': response.user.role,
       });
 
-      if (userProfile.user.role == "admin") {
+      if (response.user.role == "admin") {
         Get.offAll(() => NavbaradminPage());
         return;
       }
 
-      loadingDialog();
-      final responseBoards = await http.get(
-        Uri.parse("$url/board/allboards"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${box.read('accessToken')}",
-        },
-      );
-      Get.back();
-
-      if (responseBoards.statusCode == 200) {
-        final boards = boardAllGetResponstFromJson(responseBoards.body);
-        box.write('boardUser', boards.toJson());
-
+      if (responseAll.statusCode == 200) {
+        box.write('boardUser', response.toJson());
         Get.offAll(() => NavbarPage());
         return;
       }
@@ -1035,7 +1005,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               fixedSize: Size(width, height * 0.04),
-                              backgroundColor: Colors.black,
+                              backgroundColor: Colors.black54,
                               elevation: 1,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/torikiton/Applications/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/torikiton/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/torikiton/Desktop/Project happy ending/Code/CodeFrontend/android/app/.cxx/RelWithDebInfo/6y6h2e4k/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/torikiton/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/torikiton/Desktop/Project happy ending/Code/CodeFrontend/android/app/.cxx/RelWithDebInfo/6y6h2e4k/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
