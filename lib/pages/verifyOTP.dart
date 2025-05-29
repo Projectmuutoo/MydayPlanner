@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -1047,12 +1050,32 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
             'profile': response.user.profile,
             'role': response.user.role,
           });
+          var docSnapshot =
+              await FirebaseFirestore.instance
+                  .collection('usersLogin')
+                  .doc(response.user.email)
+                  .get();
+          final result = docSnapshot.data();
+          if (result != null) {
+            String deviceName = await getDeviceName();
+            Map<String, dynamic> currentData = box.read('userLogin') ?? {};
+            currentData['deviceName'] = deviceName;
+            await box.write('userLogin', currentData);
+            await FirebaseFirestore.instance
+                .collection('usersLogin')
+                .doc(response.user.email)
+                .update({'deviceName': deviceName});
+          }
 
+          if (response.user.role != "admin") {
+            await box.write('userDataAll', response.toJson());
+          }
+
+          Get.back();
           if (response.user.role == "admin") {
             Get.offAll(() => NavbaradminPage());
             return false;
           } else {
-            box.write('userDataAll', response.toJson());
             Get.offAll(() => NavbarPage());
             return false;
           }
@@ -1104,6 +1127,17 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
       }
     }
     return false;
+  }
+
+  Future<String> getDeviceName() async {
+    final deviceInfoPlugin = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+      return androidInfo.model;
+    } else {
+      return Random().nextInt(100000000).toString();
+    }
   }
 
   void loadingDialog() {

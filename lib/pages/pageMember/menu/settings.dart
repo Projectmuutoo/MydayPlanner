@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -1662,17 +1663,25 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     if (responseLogout.statusCode == 200) {
-      Get.offAll(() => SplashPage());
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(box.read('userProfile')['email'])
+          .update({'deviceName': FieldValue.delete()});
+      await box.erase();
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.erase();
+      Get.offAll(() => SplashPage());
     } else {
-      Get.offAll(() => SplashPage());
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(box.read('userProfile')['email'])
+          .update({'deviceName': FieldValue.delete()});
+      await box.erase();
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.erase();
+      Get.offAll(() => SplashPage());
     }
   }
 
@@ -1838,10 +1847,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                   );
 
                                   if (responseDelete.statusCode == 200) {
+                                    await FirebaseFirestore.instance
+                                        .collection('usersLogin')
+                                        .doc(box.read('userProfile')['email'])
+                                        .update({
+                                          'deviceName': FieldValue.delete(),
+                                        });
+                                    await box.erase();
                                     await googleSignIn.signOut();
                                     await FirebaseAuth.instance.signOut();
                                     await storage.deleteAll();
-                                    box.erase();
                                     Get.offAll(() => SplashPage());
                                   }
                                 });

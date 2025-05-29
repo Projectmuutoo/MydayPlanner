@@ -431,7 +431,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                       padding:
                                                           EdgeInsets.symmetric(
                                                             vertical:
-                                                                height * 0.002,
+                                                                height * 0.005,
                                                           ),
                                                       child: InkWell(
                                                         onTap:
@@ -811,7 +811,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       descriptionToSave,
       userEmail,
     );
-    if (success['message']) {
+    if (success['success']) {
       final realTaskId = success['taskId'];
       await _replaceWithRealTask(tempId, realTaskId, tempTask, userId);
     } else {
@@ -863,7 +863,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     if (responseCreate.statusCode == 200) {
       final responseData = jsonDecode(responseCreate.body);
-      return {'message': true, 'taskId': responseData['taskID']};
+      return {'success': true, 'taskId': responseData['taskID']};
     } else {
       return {
         'success': false,

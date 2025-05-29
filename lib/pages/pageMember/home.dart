@@ -2178,16 +2178,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void startMessageRotation() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       final boardDataRaw = box.read('userDataAll');
       final boardData = AllDataUserGetResponst.fromJson(boardDataRaw);
       final appData = Provider.of<Appdata>(context, listen: false);
       appData.showMyTasks.setTasks(boardData.todaytasks);
-      tasks = appData.showMyTasks.tasks;
-    });
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       if (!mounted) return;
       setState(() {
+        tasks = appData.showMyTasks.tasks;
         currentIndexMessagesRandom =
             (currentIndexMessagesRandom + 1) % messagesRandom.length;
       });

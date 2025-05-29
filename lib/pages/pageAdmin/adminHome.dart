@@ -1425,18 +1425,25 @@ class _AdminhomePageState extends State<AdminhomePage> {
       );
       Get.back();
     }
-
     if (responseLogout.statusCode == 200) {
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(box.read('userProfile')['email'])
+          .update({'deviceName': FieldValue.delete()});
+      await box.erase();
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.erase();
       Get.offAll(() => SplashPage());
     } else {
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(box.read('userProfile')['email'])
+          .update({'deviceName': FieldValue.delete()});
+      await box.erase();
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.erase();
       Get.offAll(() => SplashPage());
     }
   }

@@ -332,6 +332,7 @@ class Todaytask {
   String status;
   String taskId;
   String taskName;
+  String? updatedAt;
 
   Todaytask({
     required this.archived,
@@ -344,6 +345,7 @@ class Todaytask {
     required this.status,
     required this.taskId,
     required this.taskName,
+    this.updatedAt,
   });
 
   factory Todaytask.fromJson(Map<String, dynamic> json) => Todaytask(
@@ -361,6 +363,7 @@ class Todaytask {
     status: json["Status"],
     taskId: json["TaskID"],
     taskName: json["TaskName"],
+    updatedAt: json["updated_at"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -374,6 +377,7 @@ class Todaytask {
     "Status": status,
     "TaskID": taskId,
     "TaskName": taskName,
+    "updated_at": updatedAt,
   };
 }
 

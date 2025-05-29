@@ -107,8 +107,14 @@ class KeepSubjectReportPageAdmin {
 }
 
 //use change page
-class NavBarSelectedPage {
-  int selectedPage = 0;
+class NavBarSelectedPage extends ChangeNotifier {
+  int _selectedPage = 0;
+  int get selectedPage => _selectedPage;
+
+  void setSelectedPage(int newSelectedPage) {
+    _selectedPage = newSelectedPage;
+    notifyListeners();
+  }
 }
 
 //use page homeuser

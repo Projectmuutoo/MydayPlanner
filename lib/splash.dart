@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mydayplanner/pages/login.dart';
 import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
@@ -29,27 +31,22 @@ class _SplashPageState extends State<SplashPage> {
           .doc(email)
           .snapshots()
           .listen((snapshot) {
-            if (!snapshot.exists) {
+            if (['0', '1'].contains(snapshot['active'])) {
               box.write('userLogin', {
-                'keepActiveUser': '',
-                'keepRoleUser': '',
+                'keepActiveUser': snapshot['active'] == '0' ? '0' : '1',
+                'keepRoleUser': snapshot['role'],
               });
-            } else if (snapshot['active'] == '0') {
-              box.write('userLogin', {
-                'keepActiveUser': '0',
-                'keepRoleUser': '',
-              });
-              Get.snackbar(
-                '⚠️ Warning',
-                'You have been blocked!',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.red.shade600,
-                colorText: Colors.white,
-                duration: Duration(seconds: 3),
-                forwardAnimationCurve: Curves.easeOutBack,
-              );
-            } else if (snapshot['login'] == 1) {
-              box.write('userLogin', {'keepRoleUser': snapshot['role']});
+              if (snapshot['active'] == '0') {
+                Get.snackbar(
+                  '⚠️ Warning',
+                  'You have been blocked!',
+                  snackPosition: SnackPosition.TOP,
+                  backgroundColor: Colors.red.shade600,
+                  colorText: Colors.white,
+                  duration: Duration(seconds: 3),
+                  forwardAnimationCurve: Curves.easeOutBack,
+                );
+              }
             }
             goToPage();
           });
@@ -59,20 +56,13 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void goToPage() {
-    if (!mounted) return;
     final box = GetStorage();
     var keepActiveUser = box.read('userLogin')['keepActiveUser'];
     var keepRoleUser = box.read('userLogin')['keepRoleUser'];
     Future.delayed(Duration(seconds: 1), () {
-      if (keepActiveUser == '' && keepRoleUser == '') {
-        Get.offAll(() => LoginPage());
-      }
-      if (keepActiveUser == '0') {
-        Get.offAll(() => LoginPage());
-      }
-      if (keepRoleUser == "admin") {
+      if (keepRoleUser == "admin" && keepActiveUser == '1') {
         Get.offAll(() => NavbaradminPage());
-      } else if (keepRoleUser == "user") {
+      } else if (keepRoleUser == "user" && keepActiveUser == '1') {
         Get.offAll(() => NavbarPage());
       } else {
         Get.offAll(() => LoginPage());

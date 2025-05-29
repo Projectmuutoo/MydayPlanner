@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -532,11 +535,31 @@ class _LoginPageState extends State<LoginPage> {
           'profile': response2.user.profile,
           'role': response2.user.role,
         });
+        var docSnapshot =
+            await FirebaseFirestore.instance
+                .collection('usersLogin')
+                .doc(response.user.email)
+                .get();
+        final result = docSnapshot.data();
+        if (result != null) {
+          String deviceName = await getDeviceName();
+          Map<String, dynamic> currentData = box.read('userLogin') ?? {};
+          currentData['deviceName'] = deviceName;
+          await box.write('userLogin', currentData);
+          await FirebaseFirestore.instance
+              .collection('usersLogin')
+              .doc(response.user.email)
+              .update({'deviceName': deviceName});
+        }
 
+        if (response.user.role != "admin") {
+          await box.write('userDataAll', response.toJson());
+        }
+
+        Get.back();
         if (response.user.role == "admin") {
           Get.offAll(() => NavbaradminPage());
         } else {
-          box.write('userDataAll', response.toJson());
           Get.offAll(() => NavbarPage());
         }
       } else {
@@ -703,7 +726,7 @@ class _LoginPageState extends State<LoginPage> {
         key: 'refreshToken',
         value: signInResponse.token.refreshToken,
       );
-      box.write('accessToken', signInResponse.token.accessToken);
+      await box.write('accessToken', signInResponse.token.accessToken);
 
       loadingDialog();
       final responseAll = await http.get(
@@ -713,28 +736,62 @@ class _LoginPageState extends State<LoginPage> {
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
       );
-      Get.back();
 
-      if (responseAll.statusCode != 200) return;
+      if (responseAll.statusCode != 200) {
+        Get.back();
+        return;
+      }
 
       final response = allDataUserGetResponstFromJson(responseAll.body);
 
-      box.write('userProfile', {
+      await box.write('userProfile', {
         'userid': response.user.userId,
         'name': response.user.name,
         'email': response.user.email,
         'profile': response.user.profile,
         'role': response.user.role,
       });
+      var docSnapshot =
+          await FirebaseFirestore.instance
+              .collection('usersLogin')
+              .doc(response.user.email)
+              .get();
+      final result = docSnapshot.data();
+      if (result != null) {
+        String deviceName = await getDeviceName();
+        Map<String, dynamic> currentData = box.read('userLogin') ?? {};
+        currentData['deviceName'] = deviceName;
+        await box.write('userLogin', currentData);
+        await FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(response.user.email)
+            .update({'deviceName': deviceName});
+      }
 
+      if (response.user.role != "admin") {
+        await box.write('userDataAll', response.toJson());
+      }
+
+      Get.back();
       if (response.user.role == "admin") {
         Get.offAll(() => NavbaradminPage());
       } else {
-        box.write('userDataAll', response.toJson());
         Get.offAll(() => NavbarPage());
       }
     } catch (e) {
+      Get.back();
       showNotification('Something went wrong. Please try again.');
+    }
+  }
+
+  Future<String> getDeviceName() async {
+    final deviceInfoPlugin = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+      return androidInfo.model;
+    } else {
+      return Random().nextInt(100000000).toString();
     }
   }
 
