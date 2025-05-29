@@ -1425,16 +1425,19 @@ class _AdminhomePageState extends State<AdminhomePage> {
       );
       Get.back();
     }
+
     if (responseLogout.statusCode == 200) {
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.remove('userProfile');
+      box.erase();
       Get.offAll(() => SplashPage());
-      return;
     } else {
+      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
+      await storage.deleteAll();
+      box.erase();
       Get.offAll(() => SplashPage());
-      return;
     }
   }
 

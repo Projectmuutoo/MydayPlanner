@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/createBoardListsPostRequest.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
@@ -82,13 +83,12 @@ class _HomePageState extends State<HomePage> {
 
   // 🧠 Data (Lists and Future)
   late Future<void> loadData;
-
-  List<Board> boards = [];
+  List boards = [];
+  List<Todaytask> tasks = [];
   List<String> messagesRandom = [];
 
   // 🎯 Utility
   Timer? _timer;
-  Timer? _debounce;
   late String url;
 
   Future<String> loadAPIEndpoint() async {
@@ -111,6 +111,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    searchCtl.dispose();
+    searchFocusNode.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -139,11 +141,12 @@ class _HomePageState extends State<HomePage> {
             });
           });
         }
+
         return PopScope(
           canPop: false,
           child: GestureDetector(
             onTap: () {
-              if (searchFocusNode.hasFocus) {
+              if (searchFocusNode.hasFocus || hideSearchMyBoards) {
                 searchFocusNode.unfocus();
                 setState(() {
                   hideSearchMyBoards = false;
@@ -249,38 +252,17 @@ class _HomePageState extends State<HomePage> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          isLoadings || showShimmer
-                                              ? Shimmer.fromColors(
-                                                baseColor: Color(0xFFF7F7F7),
-                                                highlightColor:
-                                                    Colors.grey[300]!,
-                                                child: Container(
-                                                  width: _calculateTextWidth(
-                                                    'Hello, $name',
-                                                    Get
-                                                        .textTheme
-                                                        .titleSmall!
-                                                        .fontSize!,
-                                                  ),
-                                                  height:
-                                                      Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize,
-                                                  color: Colors.white,
-                                                ),
-                                              )
-                                              : Text(
-                                                'Hello, ${context.watch<Appdata>().changeMyProfileProvider.name}',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
+                                          Text(
+                                            'Hello, ${context.watch<Appdata>().changeMyProfileProvider.name}',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                           isLoadings || showShimmer
                                               ? SizedBox.shrink()
                                               : Text(
@@ -429,7 +411,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.08,
+                                            horizontal: width * 0.06,
                                             vertical: height * 0.005,
                                           ),
                                           child: Column(
@@ -466,53 +448,90 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                 ],
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      SvgPicture.string(
-                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2z"></path></svg>',
-                                                        height: height * 0.01,
-                                                        fit: BoxFit.contain,
-                                                        color: Color(
-                                                          0xFF979595,
-                                                        ),
-                                                      ),
-                                                      SizedBox(
-                                                        width: width * 0.01,
-                                                      ),
-                                                      Text(
-                                                        'awd',
-                                                        style: TextStyle(
-                                                          fontSize:
-                                                              Get
-                                                                  .textTheme
-                                                                  .labelMedium!
-                                                                  .fontSize,
-                                                          fontWeight:
-                                                              FontWeight.normal,
-                                                          fontFamily: 'mali',
-                                                        ),
-                                                      ),
-                                                    ],
+                                              if (getUpcomingTasks(
+                                                tasks,
+                                              ).isEmpty)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    top: height * 0.01,
                                                   ),
-                                                  Text(
-                                                    '10m',
+                                                  child: Text(
+                                                    "No tasks for today",
                                                     style: TextStyle(
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .labelMedium!
+                                                              .titleMedium!
                                                               .fontSize,
+                                                      color: Colors.grey,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ...getUpcomingTasks(tasks).map((
+                                                task,
+                                              ) {
+                                                return Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.task,
+                                                            color: Colors.grey,
+                                                            size:
+                                                                Get
+                                                                    .textTheme
+                                                                    .labelLarge!
+                                                                    .fontSize,
+                                                          ),
+                                                          SizedBox(
+                                                            width: width * 0.01,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              task.taskName,
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    Get
+                                                                        .textTheme
+                                                                        .labelMedium!
+                                                                        .fontSize,
+                                                                fontFamily:
+                                                                    'mali',
+                                                              ),
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    SizedBox(
+                                                      width: width * 0.15,
+                                                    ),
+                                                    Text(
+                                                      timeUntilDetailed(
+                                                        task.createdAt,
+                                                      ),
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            Get
+                                                                .textTheme
+                                                                .labelMedium!
+                                                                .fontSize,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }),
                                             ],
                                           ),
                                         ),
@@ -591,7 +610,7 @@ class _HomePageState extends State<HomePage> {
                                             onTap: () {
                                               var boardData =
                                                   AllDataUserGetResponst.fromJson(
-                                                    box.read('boardUser'),
+                                                    box.read('userDataAll'),
                                                   );
                                               Provider.of<Appdata>(
                                                 context,
@@ -640,7 +659,7 @@ class _HomePageState extends State<HomePage> {
                                             onTap: () {
                                               var boardData =
                                                   AllDataUserGetResponst.fromJson(
-                                                    box.read('boardUser'),
+                                                    box.read('userDataAll'),
                                                   );
                                               Provider.of<Appdata>(
                                                 context,
@@ -648,7 +667,6 @@ class _HomePageState extends State<HomePage> {
                                               ).showMyBoards.setBoards(
                                                 boardData,
                                               );
-
                                               var memberBoards =
                                                   Provider.of<Appdata>(
                                                     context,
@@ -1498,26 +1516,138 @@ class _HomePageState extends State<HomePage> {
                             Padding(
                               padding: EdgeInsets.only(top: height * 0.02),
                               child: Column(
-                                children:
-                                    showSearchResultCreatedBoards(
-                                      searchCtl.text,
-                                    ).map((data) {
-                                      return Row(
-                                        children: [
-                                          Text(
-                                            "Lists (${data.length}) ${data.entries}",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  Get
-                                                      .textTheme
-                                                      .titleLarge!
-                                                      .fontSize,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }).toList(),
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Lists",
+                                        style: TextStyle(
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .fontSize,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    children:
+                                        showSearchResultCreatedBoards(
+                                          searchCtl.text,
+                                        ).map((data) {
+                                          return Column(
+                                            children: [
+                                              InkWell(
+                                                onTap: () {},
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.02,
+                                                    vertical: height * 0.01,
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        data.boardName,
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              Get
+                                                                  .textTheme
+                                                                  .titleLarge!
+                                                                  .fontSize,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: height * 0.001,
+                                                ),
+                                                child: Container(
+                                                  width: width,
+                                                  height: 0.5,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (searchCtl.text.isNotEmpty)
+                            Padding(
+                              padding: EdgeInsets.only(top: height * 0.02),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Groups",
+                                        style: TextStyle(
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .fontSize,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    children:
+                                        showSearchResultMemberBoards(
+                                          searchCtl.text,
+                                        ).map((data) {
+                                          return Column(
+                                            children: [
+                                              InkWell(
+                                                onTap: () {},
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.02,
+                                                    vertical: height * 0.01,
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        data.boardName,
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              Get
+                                                                  .textTheme
+                                                                  .titleLarge!
+                                                                  .fontSize,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: height * 0.001,
+                                                ),
+                                                child: Container(
+                                                  width: width,
+                                                  height: 0.5,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -1531,6 +1661,50 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  List<Todaytask> getUpcomingTasks(List<Todaytask> tasks) {
+    final now = DateTime.now();
+
+    List<Todaytask> upcomingTasks =
+        tasks.where((task) {
+          final taskTime = DateTime.parse(task.createdAt);
+          return taskTime.isAfter(now) || now.difference(taskTime).inHours < 24;
+        }).toList();
+
+    upcomingTasks.sort(
+      (a, b) =>
+          DateTime.parse(a.createdAt).compareTo(DateTime.parse(b.createdAt)),
+    );
+
+    return upcomingTasks.take(3).toList();
+  }
+
+  String timeUntilDetailed(String timestamp) {
+    final DateTime targetTime = DateTime.parse(timestamp).toLocal();
+    final DateTime now = DateTime.now();
+    final Duration diff = targetTime.difference(now);
+
+    if (diff.isNegative) {
+      return 'Time’s up';
+    }
+
+    final int days = diff.inDays;
+    final int hours = diff.inHours % 24;
+    final int minutes = diff.inMinutes % 60;
+    final int seconds = diff.inSeconds % 60;
+
+    if (diff.inSeconds < 60) {
+      return '$seconds seconds left';
+    } else if (diff.inMinutes < 60) {
+      return '$minutes minutes ${seconds}s left';
+    } else if (diff.inHours < 24) {
+      return '$hours hours ${minutes}m left';
+    } else if (days < 7) {
+      return '$days days ${hours}h left';
+    } else {
+      return 'Due on ${DateFormat('d MMM yyyy, HH:mm').format(targetTime)}';
+    }
   }
 
   Future<bool> checkExpiresRefreshToken() async {
@@ -1630,7 +1804,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
 
     // อ่านข้อมูลจาก box
-    final boardDataRaw = box.read('boardUser');
+    final boardDataRaw = box.read('userDataAll');
     final userProfileData = box.read('userProfile');
 
     if (boardDataRaw == null ||
@@ -1642,12 +1816,14 @@ class _HomePageState extends State<HomePage> {
     final boardData = AllDataUserGetResponst.fromJson(boardDataRaw);
     final appData = Provider.of<Appdata>(context, listen: false);
     appData.showMyBoards.setBoards(boardData);
+    appData.showMyTasks.setTasks(boardData.todaytasks);
 
     final createdBoards = appData.showMyBoards.createdBoards;
     final memberBoards = appData.showMyBoards.memberBoards;
+    final task = appData.showMyTasks.tasks;
 
     // เตรียมค่าใหม่ทั้งหมด
-    List<Board> newBoards =
+    List newBoards =
         listsFontWeight == FontWeight.w600 ? createdBoards : memberBoards;
     GlobalKey? sliderKey =
         listsFontWeight == FontWeight.w600 ? listKey : groupKey;
@@ -1663,6 +1839,7 @@ class _HomePageState extends State<HomePage> {
       showShimmer = false;
 
       boards = newBoards;
+      tasks = task;
 
       emailUser = userProfileData['email'] ?? '';
       name = getFirstName(userProfileData['name'] ?? '');
@@ -1775,7 +1952,7 @@ class _HomePageState extends State<HomePage> {
         try {
           final appData = Provider.of<Appdata>(context, listen: false);
           var existingData = AllDataUserGetResponst.fromJson(
-            box.read('boardUser'),
+            box.read('userDataAll'),
           );
           if (listsFontWeight == FontWeight.w600) {
             appData.showMyBoards.removeCreatedBoardById(boardId);
@@ -1784,7 +1961,7 @@ class _HomePageState extends State<HomePage> {
             appData.showMyBoards.removeMemberBoardById(boardId);
             existingData.boardgroup.removeWhere((b) => b.boardId == boardId);
           }
-          box.write('boardUser', existingData.toJson());
+          box.write('userDataAll', existingData.toJson());
 
           var response = await http.delete(
             Uri.parse("$url/board/delete/$boardId"),
@@ -2001,6 +2178,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void startMessageRotation() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      final boardDataRaw = box.read('userDataAll');
+      final boardData = AllDataUserGetResponst.fromJson(boardDataRaw);
+      final appData = Provider.of<Appdata>(context, listen: false);
+      appData.showMyTasks.setTasks(boardData.todaytasks);
+      tasks = appData.showMyTasks.tasks;
+    });
     _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       if (!mounted) return;
       setState(() {
@@ -2017,38 +2201,26 @@ class _HomePageState extends State<HomePage> {
     Future.delayed(Duration(milliseconds: 100), () {
       searchFocusNode.requestFocus();
     });
-    searchCtl.addListener(_onTextChanged);
-    searchFocusNode.addListener(_onFocusChange);
   }
 
-  void _onTextChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(Duration(milliseconds: 500), () async {
-      if (!searchFocusNode.hasFocus) return;
-      if (searchCtl.text.isNotEmpty) {
-        showSearchResultCreatedBoards(searchCtl.text);
-      }
-    });
-  }
-
-  List<Map<String, dynamic>> showSearchResultCreatedBoards(String text) {
+  List<Board> showSearchResultCreatedBoards(String text) {
     final appData = Provider.of<Appdata>(context, listen: false);
     final createdBoards = appData.showMyBoards.createdBoards;
     return createdBoards
         .where((u) => u.boardName.toLowerCase().contains(text.toLowerCase()))
-        .map((u) => u.toJson())
         .toList();
   }
 
-  void _onFocusChange() {
-    if (!searchFocusNode.hasFocus) {
-      // ถ้าเลิก focus ก็ยกเลิก timer
-      _debounce?.cancel();
-    }
+  List<Boardgroup> showSearchResultMemberBoards(String text) {
+    final appData = Provider.of<Appdata>(context, listen: false);
+    final memberBoards = appData.showMyBoards.memberBoards;
+    return memberBoards
+        .where((u) => u.boardName.toLowerCase().contains(text.toLowerCase()))
+        .toList();
   }
 
   void showDisplays(String? show) {
-    var boardData = AllDataUserGetResponst.fromJson(box.read('boardUser'));
+    var boardData = AllDataUserGetResponst.fromJson(box.read('userDataAll'));
     Provider.of<Appdata>(
       context,
       listen: false,
@@ -2105,18 +2277,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       displayFormat = isList;
     });
-  }
-
-  double _calculateTextWidth(String text, double fontSize) {
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w500),
-      ),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return textPainter.width;
   }
 
   void startLoading(int tempId) {
@@ -2258,6 +2418,14 @@ class _HomePageState extends State<HomePage> {
                               boardName: boardName,
                               createdAt: '',
                               createdBy: box.read('userProfile')['userid'],
+                              tasks: [],
+                            );
+                            Boardgroup tempBoardGroup = Boardgroup(
+                              boardId: tempId,
+                              boardName: boardName,
+                              createdAt: '',
+                              createdBy: box.read('userProfile')['userid'],
+                              tasks: [],
                             );
 
                             final appData = Provider.of<Appdata>(
@@ -2265,7 +2433,7 @@ class _HomePageState extends State<HomePage> {
                               listen: false,
                             );
                             var existingData = AllDataUserGetResponst.fromJson(
-                              box.read('boardUser'),
+                              box.read('userDataAll'),
                             );
 
                             await Future.delayed(Duration(milliseconds: 100));
@@ -2275,7 +2443,7 @@ class _HomePageState extends State<HomePage> {
                             if (listsFontWeight == FontWeight.w600) {
                               existingData.board.add(tempBoard);
                               appData.showMyBoards.addCreatedBoard(tempBoard);
-                              box.write('boardUser', existingData.toJson());
+                              box.write('userDataAll', existingData.toJson());
 
                               var responseCreateBoradList = await http.post(
                                 Uri.parse("$url/board/create"),
@@ -2324,6 +2492,7 @@ class _HomePageState extends State<HomePage> {
                                   boardName: boardName,
                                   createdAt: DateTime.now().toIso8601String(),
                                   createdBy: box.read('userProfile')['userid'],
+                                  tasks: [],
                                 );
                                 await completeLoading();
                                 appData.showMyBoards.addCreatedBoard(realBoard);
@@ -2334,7 +2503,7 @@ class _HomePageState extends State<HomePage> {
                                   (b) => b.boardId == tempId,
                                 );
                                 existingData.board.add(realBoard);
-                                box.write('boardUser', existingData.toJson());
+                                box.write('userDataAll', existingData.toJson());
 
                                 // ปิดหน้าต่างและเคลียร์ฟอร์ม
                                 showDisplays(null);
@@ -2345,9 +2514,11 @@ class _HomePageState extends State<HomePage> {
                                 });
                               }
                             } else if (groupFontWeight == FontWeight.w600) {
-                              existingData.boardgroup.add(tempBoard);
-                              appData.showMyBoards.addMemberBoard(tempBoard);
-                              box.write('boardUser', existingData.toJson());
+                              existingData.boardgroup.add(tempBoardGroup);
+                              appData.showMyBoards.addMemberBoard(
+                                tempBoardGroup,
+                              );
+                              box.write('userDataAll', existingData.toJson());
 
                               var responseCreateBoradGroup = await http.post(
                                 Uri.parse("$url/board/create"),
@@ -2391,11 +2562,12 @@ class _HomePageState extends State<HomePage> {
                                   responseCreateBoradGroup.body,
                                 );
                                 // สร้างบอร์ดจริง
-                                Board realBoard = Board(
+                                Boardgroup realBoard = Boardgroup(
                                   boardId: data['boardID'],
                                   boardName: boardName,
                                   createdAt: DateTime.now().toIso8601String(),
                                   createdBy: box.read('userProfile')['userid'],
+                                  tasks: [],
                                 );
                                 await completeLoading();
                                 appData.showMyBoards.addMemberBoard(realBoard);
@@ -2406,7 +2578,7 @@ class _HomePageState extends State<HomePage> {
                                   (b) => b.boardId == tempId,
                                 );
                                 existingData.boardgroup.add(realBoard);
-                                box.write('boardUser', existingData.toJson());
+                                box.write('userDataAll', existingData.toJson());
 
                                 // ปิดหน้าต่างและเคลียร์ฟอร์ม
                                 showDisplays('group');
@@ -2604,8 +2776,10 @@ class _HomePageState extends State<HomePage> {
       if (responseAll.statusCode == 200) {
         final response2 = allDataUserGetResponstFromJson(responseAll.body);
 
-        box.write('boardUser', response2.toJson());
-        var boardData = AllDataUserGetResponst.fromJson(box.read('boardUser'));
+        box.write('userDataAll', response2.toJson());
+        var boardData = AllDataUserGetResponst.fromJson(
+          box.read('userDataAll'),
+        );
 
         if (listsFontWeight == FontWeight.w600) {
           setState(() {
@@ -2616,7 +2790,7 @@ class _HomePageState extends State<HomePage> {
           });
         } else if (groupFontWeight == FontWeight.w600) {
           setState(() {
-            boards = boardData.boardgroup;
+            boards = boardData.boardgroup.cast<Board>();
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
             moveSliderToKey(groupKey);

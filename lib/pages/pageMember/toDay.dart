@@ -1,11 +1,22 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:math' show Random;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/request/todayTasksCreatePostRequest.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
+import 'package:mydayplanner/shared/appData.dart';
+import 'package:mydayplanner/splash.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class TodayPage extends StatefulWidget {
   const TodayPage({super.key});
@@ -17,34 +28,55 @@ class TodayPage extends StatefulWidget {
 class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   // 🧠 Data (Lists and Future)
   late Future<void> loadData;
+  var box = GetStorage();
+  final storage = FlutterSecureStorage();
   TextEditingController addTasknameCtl = TextEditingController();
   TextEditingController addDescriptionCtl = TextEditingController();
-  List<TextEditingController> edittaskControllers = [];
-  List<TextEditingController> editDescriptionControllers = [];
-  List<FocusNode> editTasknameFocusNode = [];
-  List<FocusNode> editDescriptionFocusNode = [];
   FocusNode addTasknameFocusNode = FocusNode();
   FocusNode addDescriptionFocusNode = FocusNode();
+  ScrollController scrollController = ScrollController();
+  GlobalKey addFormKey = GlobalKey();
   bool isLoadings = true;
   bool showShimmer = true;
   bool isTyping = false;
   bool addToday = false;
+  bool hideMenu = false;
   int itemCount = 1;
-  List tasks = [];
+  GlobalKey iconKey = GlobalKey();
+  List<Todaytask> tasks = [];
+  List<String> selectedTaskIds = [];
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     loadData = loadDataAsync();
+
+    addTasknameFocusNode.addListener(() {
+      if (addTasknameFocusNode.hasFocus && addToday) {
+        _scrollToAddForm();
+      }
+    });
+
+    addDescriptionFocusNode.addListener(() {
+      if (addDescriptionFocusNode.hasFocus && addToday) {
+        _scrollToAddForm();
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    for (var controller in edittaskControllers) {
-      controller.dispose();
-    }
+    scrollController.dispose();
+    addTasknameFocusNode.dispose();
+    addDescriptionFocusNode.dispose();
     super.dispose();
   }
 
@@ -52,34 +84,19 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       // แอปถูกย่อหน้าต่างหรือสลับไปแอปอื่น
-      for (var controller in edittaskControllers) {
-        _saveData(controller.text);
-      }
+      _saveData(addTasknameCtl.text, addDescriptionCtl.text);
     }
-  }
-
-  void _saveData(String value) {
-    // ตัวอย่าง: บันทึกข้อความลงใน local storage, database หรือ Firestore
-    log('บันทึกข้อความ: $value');
-    // เช่น: await FirebaseFirestore.instance.collection('tasks').doc('yourDocId').update({'description': value});
   }
 
   Future<void> loadDataAsync() async {
-    final String response = await rootBundle.loadString(
-      'assets/text/today.json',
-    );
-    tasks = jsonDecode(response);
-    edittaskControllers.clear();
-    editDescriptionControllers.clear();
-    for (var task in tasks) {
-      edittaskControllers.add(TextEditingController(text: task['taskname']));
-      editDescriptionControllers.add(
-        TextEditingController(text: task['description']),
-      );
-      editTasknameFocusNode.add(FocusNode());
-      editDescriptionFocusNode.add(FocusNode());
-    }
+    final rawData = box.read('userDataAll');
+    final tasksData = AllDataUserGetResponst.fromJson(rawData);
+
+    final appData = Provider.of<Appdata>(context, listen: false);
+    appData.showMyTasks.setTasks(tasksData.todaytasks);
+
     setState(() {
+      tasks = appData.showMyTasks.tasks;
       isLoadings = false;
       showShimmer = false;
     });
@@ -106,29 +123,16 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
         return GestureDetector(
           onTap: () {
-            if (editTasknameFocusNode.any((focusNode) => focusNode.hasFocus)) {
-              for (var focusNode in editTasknameFocusNode) {
-                focusNode.unfocus();
-              }
+            if (hideMenu) {
               setState(() {
-                addToday = false;
+                addToday = true;
               });
             }
-            if (editDescriptionFocusNode.any(
-              (focusNode) => focusNode.hasFocus,
-            )) {
-              for (var focusNode in editDescriptionFocusNode) {
-                focusNode.unfocus();
-              }
-              setState(() {
-                addToday = false;
-              });
-            }
-
             setState(() {
               addToday = !addToday;
             });
             addTasknameFocusNode.requestFocus();
+            _saveData(addTasknameCtl.text, addDescriptionCtl.text);
           },
           child: Scaffold(
             body: SafeArea(
@@ -138,44 +142,19 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                   left: width * 0.05,
                   top: height * 0.01,
                   bottom:
-                      addToday &&
-                              !editTasknameFocusNode.any(
-                                (focusNode) => focusNode.hasFocus,
-                              ) &&
-                              !editDescriptionFocusNode.any(
-                                (focusNode) => focusNode.hasFocus,
-                              )
+                      addToday
                           ? MediaQuery.of(context).viewInsets.bottom +
-                              height * 0.08
+                              height * 0.06
                           : height * 0.01,
                 ),
                 child: Column(
                   children: [
                     GestureDetector(
                       onTap: () {
-                        if (editTasknameFocusNode.any(
-                          (focusNode) => focusNode.hasFocus,
-                        )) {
-                          for (var focusNode in editTasknameFocusNode) {
-                            focusNode.unfocus();
-                          }
-                          setState(() {
-                            addToday = false;
-                          });
-                        }
-                        if (editDescriptionFocusNode.any(
-                          (focusNode) => focusNode.hasFocus,
-                        )) {
-                          for (var focusNode in editDescriptionFocusNode) {
-                            focusNode.unfocus();
-                          }
-                          setState(() {
-                            addToday = false;
-                          });
-                        }
                         setState(() {
                           addToday = false;
                         });
+                        _saveData(addTasknameCtl.text, addDescriptionCtl.text);
                       },
                       child: Container(
                         color: Colors.transparent,
@@ -184,61 +163,134 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Today',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.displaySmall!.fontSize,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () {
-                                    if (editTasknameFocusNode.any(
-                                      (focusNode) => focusNode.hasFocus,
-                                    )) {
-                                      for (var focusNode
-                                          in editTasknameFocusNode) {
-                                        focusNode.unfocus();
-                                      }
-                                      setState(() {
-                                        addToday = false;
-                                      });
-                                    }
-                                    if (editDescriptionFocusNode.any(
-                                      (focusNode) => focusNode.hasFocus,
-                                    )) {
-                                      for (var focusNode
-                                          in editDescriptionFocusNode) {
-                                        focusNode.unfocus();
-                                      }
-                                      setState(() {
-                                        addToday = false;
-                                      });
-                                    }
-                                    setState(() {
-                                      addToday = false;
-                                    });
-                                  },
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
-                                    height: height * 0.035,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
+                                !hideMenu
+                                    ? Text(
+                                      'Today',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get
+                                                .textTheme
+                                                .displaySmall!
+                                                .fontSize,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    )
+                                    : Text(
+                                      selectedTaskIds.isNotEmpty
+                                          ? '${selectedTaskIds.length} Selected'
+                                          : 'Select Task',
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get
+                                                .textTheme
+                                                .displaySmall!
+                                                .fontSize,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                !hideMenu
+                                    ? InkWell(
+                                      key: iconKey,
+                                      onTap: () {
+                                        showPopupMenu(context);
+                                        setState(() {
+                                          addToday = false;
+                                        });
+                                        _saveData(
+                                          addTasknameCtl.text,
+                                          addDescriptionCtl.text,
+                                        );
+                                      },
+                                      child: SvgPicture.string(
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
+                                        height: height * 0.035,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    )
+                                    : InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedTaskIds.clear();
+                                          hideMenu = false;
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.01,
+                                          vertical: height * 0.005,
+                                        ),
+                                        child: Text(
+                                          "Save",
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .titleLarge!
+                                                    .fontSize,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF007AFF),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                               ],
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  getCurrentDayAndDate(),
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                !hideMenu
+                                    ? Text(
+                                      getCurrentDayAndDate(),
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleLarge!.fontSize,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    )
+                                    : InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          if (selectedTaskIds.length ==
+                                              tasks.length) {
+                                            selectedTaskIds.clear();
+                                          } else {
+                                            selectedTaskIds =
+                                                tasks
+                                                    .map((task) => task.taskId)
+                                                    .toList();
+                                          }
+                                        });
+                                      },
+                                      child: Row(
+                                        children: [
+                                          SvgPicture.string(
+                                            selectedTaskIds.length ==
+                                                    tasks.length
+                                                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                            height: height * 0.04,
+                                            fit: BoxFit.contain,
+                                            color:
+                                                selectedTaskIds.length ==
+                                                        tasks.length
+                                                    ? Color(0xFF007AFF)
+                                                    : Colors.grey,
+                                          ),
+                                          SizedBox(width: width * 0.01),
+                                          Text(
+                                            'Select All',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleLarge!
+                                                      .fontSize,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 Text(
                                   '${tasks.length} tasks',
                                   style: TextStyle(
@@ -256,316 +308,313 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     SizedBox(height: height * 0.01),
                     Expanded(
                       child: SingleChildScrollView(
-                        reverse:
-                            addTasknameFocusNode.hasFocus ||
-                                    addDescriptionFocusNode.hasFocus
-                                ? addToday
-                                : false,
+                        controller: scrollController,
                         child: Column(
                           children: [
-                            ...tasks.asMap().entries.map((entry) {
-                              int index = entry.key;
-                              var task = entry.value;
-                              return GestureDetector(
-                                onTap: () {
-                                  if (editTasknameFocusNode.any(
-                                    (focusNode) => focusNode.hasFocus,
-                                  )) {
-                                    for (var focusNode
-                                        in editTasknameFocusNode) {
-                                      focusNode.unfocus();
-                                    }
-                                    setState(() {
-                                      addToday = false;
-                                    });
-                                  }
-                                  if (editDescriptionFocusNode.any(
-                                    (focusNode) => focusNode.hasFocus,
-                                  )) {
-                                    for (var focusNode
-                                        in editDescriptionFocusNode) {
-                                      focusNode.unfocus();
-                                    }
-                                    setState(() {
-                                      addToday = false;
-                                    });
-                                  }
-                                },
-                                child: Container(
-                                  color: Colors.transparent,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          InkWell(
-                                            onTap: () {},
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.005,
-                                                vertical: height * 0.002,
-                                              ),
-                                              child: SvgPicture.string(
-                                                '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>',
-                                                height: height * 0.04,
-                                                fit: BoxFit.contain,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: width * 0.02),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                TextField(
-                                                  controller:
-                                                      edittaskControllers[index],
-                                                  focusNode:
-                                                      editTasknameFocusNode[index],
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      task['taskname'] = value;
-                                                    });
-                                                  },
-                                                  onTap: () {
-                                                    setState(() {
-                                                      addToday = true;
-                                                    });
-                                                  },
-                                                  cursorColor: Color(
-                                                    0xFF007AFF,
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                    isDense: true,
-                                                    contentPadding:
-                                                        EdgeInsets.zero,
-                                                  ),
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .titleLarge!
-                                                            .fontSize,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  height: height * 0.005,
-                                                ),
-                                                TextField(
-                                                  controller:
-                                                      editDescriptionControllers[index],
-                                                  focusNode:
-                                                      editDescriptionFocusNode[index],
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      task['description'] =
-                                                          value;
-                                                    });
-                                                  },
-                                                  onTap: () {
-                                                    setState(() {
-                                                      addToday = true;
-                                                    });
-                                                  },
-                                                  cursorColor: Color(
-                                                    0xFF007AFF,
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                    isDense: true,
-                                                    contentPadding:
-                                                        EdgeInsets.zero,
-                                                  ),
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .titleSmall!
-                                                            .fontSize,
-                                                    color: Colors.grey,
-                                                  ),
-                                                  minLines: 1,
-                                                  maxLines: 5,
-                                                ),
-                                                Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    vertical: height * 0.01,
-                                                  ),
-                                                  child: Container(
-                                                    width: width,
-                                                    height: 0.5,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            // Column(
-                                            //   children: [
-                                            //     InkWell(
-                                            //       onTap: () {},
-                                            //       child: Column(
-                                            //         crossAxisAlignment:
-                                            //             CrossAxisAlignment
-                                            //                 .start,
-                                            //         children: [
-                                            //           Text(
-                                            //             task['taskname'] ?? '',
-                                            //             style: TextStyle(
-                                            //               fontSize:
-                                            //                   Get
-                                            //                       .textTheme
-                                            //                       .titleLarge!
-                                            //                       .fontSize,
-                                            //               color: Colors.black,
-                                            //             ),
-                                            //             overflow:
-                                            //                 TextOverflow
-                                            //                     .ellipsis,
-                                            //           ),
-                                            //           SizedBox(
-                                            //             height: height * 0.005,
-                                            //           ),
-                                            //           Text(
-                                            //             task['description'] ??
-                                            //                 '',
-                                            //             style: TextStyle(
-                                            //               fontSize:
-                                            //                   Get
-                                            //                       .textTheme
-                                            //                       .titleSmall!
-                                            //                       .fontSize,
-                                            //               color: Colors.grey,
-                                            //             ),
-                                            //             maxLines: 6,
-                                            //             overflow:
-                                            //                 TextOverflow
-                                            //                     .ellipsis,
-                                            //           ),
-                                            //         ],
-                                            //       ),
-                                            //     ),
-                                            //     Padding(
-                                            //       padding: EdgeInsets.symmetric(
-                                            //         vertical: height * 0.01,
-                                            //       ),
-                                            //       child: Container(
-                                            //         width: width,
-                                            //         height: 0.5,
-                                            //         color: Colors.grey,
-                                            //       ),
-                                            //     ),
-                                            //   ],
-                                            // ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                            if (tasks.isEmpty && !addToday)
+                              Container(
+                                width: width,
+                                height: height * 0.6,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'No tasks for today',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleLarge!.fontSize,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                              );
-                            }),
-                            if (addToday &&
-                                !editTasknameFocusNode.any(
-                                  (focusNode) => focusNode.hasFocus,
-                                ) &&
-                                !editDescriptionFocusNode.any(
-                                  (focusNode) => focusNode.hasFocus,
-                                ))
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  SizedBox(
-                                    width: width * 0.8,
-                                    child: TextField(
-                                      controller: addTasknameCtl,
-                                      focusNode: addTasknameFocusNode,
-                                      keyboardType: TextInputType.text,
-                                      cursorColor: Color(0xFF007AFF),
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: isTyping ? '' : 'Add title',
-                                        hintStyle: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.grey,
-                                        ),
-                                        constraints: BoxConstraints(
-                                          maxHeight: height * 0.04,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        border: InputBorder.none,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            if (addToday &&
-                                !editTasknameFocusNode.any(
-                                  (focusNode) => focusNode.hasFocus,
-                                ) &&
-                                !editDescriptionFocusNode.any(
-                                  (focusNode) => focusNode.hasFocus,
-                                ))
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  SizedBox(
-                                    width: width * 0.8,
-                                    child: TextField(
-                                      controller: addDescriptionCtl,
-                                      focusNode: addDescriptionFocusNode,
-                                      keyboardType: TextInputType.text,
-                                      cursorColor: Color(0xFF007AFF),
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText:
-                                            isTyping ? '' : 'Add Description',
-                                        hintStyle: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.grey,
+                            if (tasks.isNotEmpty)
+                              ...tasks.map((data) {
+                                return InkWell(
+                                  onTap:
+                                      hideMenu
+                                          ? () {
+                                            if (selectedTaskIds.contains(
+                                              data.taskId,
+                                            )) {
+                                              selectedTaskIds.remove(
+                                                data.taskId,
+                                              );
+                                            } else {
+                                              selectedTaskIds.add(data.taskId);
+                                            }
+                                          }
+                                          : null,
+                                  child: Container(
+                                    color: Colors.transparent,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Dismissible(
+                                          key: ValueKey(data.taskId),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          background: Container(
+                                            alignment: Alignment.centerRight,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * 0.02,
+                                            ),
+                                            color: Colors.red,
+                                            child: Icon(
+                                              Icons.delete,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          confirmDismiss: (direction) async {
+                                            return true;
+                                          },
+                                          onDismissed: (direction) {
+                                            setState(() {
+                                              tasks.removeWhere(
+                                                (t) => t.taskId == data.taskId,
+                                              );
+                                            });
+                                            deleteTaskById(
+                                              data.taskId,
+                                              data.taskName,
+                                            );
+                                          },
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                !hideMenu
+                                                    ? CrossAxisAlignment.start
+                                                    : CrossAxisAlignment.center,
+                                            children: [
+                                              GestureDetector(
+                                                onTap:
+                                                    !hideMenu
+                                                        ? () {
+                                                          if (!hideMenu) {
+                                                            setState(() {
+                                                              hideMenu = false;
+                                                            });
+                                                          }
+                                                        }
+                                                        : null,
+                                                child:
+                                                    !hideMenu
+                                                        ? SvgPicture.string(
+                                                          '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                          height: height * 0.04,
+                                                          fit: BoxFit.contain,
+                                                          color: Colors.grey,
+                                                        )
+                                                        : SvgPicture.string(
+                                                          selectedTaskIds
+                                                                  .contains(
+                                                                    data.taskId,
+                                                                  )
+                                                              ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                                              : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                          height: height * 0.04,
+                                                          fit: BoxFit.contain,
+                                                          color:
+                                                              selectedTaskIds
+                                                                      .contains(
+                                                                        data.taskId,
+                                                                      )
+                                                                  ? Color(
+                                                                    0xFF007AFF,
+                                                                  )
+                                                                  : Colors.grey,
+                                                        ),
+                                              ),
+                                              SizedBox(width: width * 0.02),
+                                              Expanded(
+                                                child: Column(
+                                                  children: [
+                                                    Padding(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            vertical:
+                                                                height * 0.002,
+                                                          ),
+                                                      child: InkWell(
+                                                        onTap:
+                                                            !hideMenu
+                                                                ? () {
+                                                                  if (!hideMenu) {
+                                                                    setState(() {
+                                                                      hideMenu =
+                                                                          false;
+                                                                      addToday =
+                                                                          false;
+                                                                    });
+                                                                  }
+                                                                }
+                                                                : null,
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Row(
+                                                                    children: [
+                                                                      Expanded(
+                                                                        child: Text(
+                                                                          data.taskName,
+                                                                          style: TextStyle(
+                                                                            fontSize:
+                                                                                Get.textTheme.titleLarge!.fontSize,
+                                                                            color:
+                                                                                Colors.black,
+                                                                          ),
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  Text(
+                                                                    data.description,
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          Get
+                                                                              .textTheme
+                                                                              .titleSmall!
+                                                                              .fontSize,
+                                                                      color:
+                                                                          Colors
+                                                                              .grey,
+                                                                    ),
+                                                                    maxLines: 6,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      width: width,
+                                                      height: 0.5,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        constraints: BoxConstraints(
-                                          maxHeight: height * 0.04,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        border: InputBorder.none,
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                );
+                              }),
+                            if (addToday)
+                              Container(
+                                key: addFormKey,
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        SizedBox(
+                                          width: width * 0.8,
+                                          child: TextField(
+                                            controller: addTasknameCtl,
+                                            focusNode: addTasknameFocusNode,
+                                            keyboardType: TextInputType.text,
+                                            cursorColor: Color(0xFF007AFF),
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  isTyping ? '' : 'Add title',
+                                              hintStyle: TextStyle(
+                                                fontSize:
+                                                    Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.grey,
+                                              ),
+                                              constraints: BoxConstraints(
+                                                maxHeight: height * 0.04,
+                                              ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                    horizontal: width * 0.02,
+                                                  ),
+                                              border: InputBorder.none,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        SizedBox(
+                                          width: width * 0.8,
+                                          child: TextField(
+                                            controller: addDescriptionCtl,
+                                            focusNode: addDescriptionFocusNode,
+                                            keyboardType: TextInputType.text,
+                                            cursorColor: Color(0xFF007AFF),
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  isTyping
+                                                      ? ''
+                                                      : 'Add Description',
+                                              hintStyle: TextStyle(
+                                                fontSize:
+                                                    Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.grey,
+                                              ),
+                                              constraints: BoxConstraints(
+                                                maxHeight: height * 0.04,
+                                              ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                    horizontal: width * 0.02,
+                                                  ),
+                                              border: InputBorder.none,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                           ],
                         ),
                       ),
                     ),
-                    if (!addToday) SizedBox(height: height * 0.02),
-                    if (!addToday)
+                    if (!addToday || !hideMenu) SizedBox(height: height * 0.02),
+                    if (!addToday && !hideMenu)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -574,7 +623,11 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               setState(() {
                                 addToday = !addToday;
                               });
-                              addTasknameFocusNode.requestFocus();
+                              if (addToday) {
+                                Future.delayed(Duration(milliseconds: 100), () {
+                                  addTasknameFocusNode.requestFocus();
+                                });
+                              }
                             },
                             child: Padding(
                               padding: EdgeInsets.symmetric(
@@ -604,6 +657,66 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ),
                         ],
                       ),
+                    if (hideMenu)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          InkWell(
+                            onTap:
+                                selectedTaskIds.isNotEmpty
+                                    ? () async {
+                                      List<Map<String, String>> tasksToDelete =
+                                          selectedTaskIds
+                                              .map((id) {
+                                                try {
+                                                  final task = tasks.firstWhere(
+                                                    (t) => t.taskId == id,
+                                                  );
+                                                  return {
+                                                    'id': id,
+                                                    'name': task.taskName,
+                                                  };
+                                                } catch (e) {
+                                                  return null;
+                                                }
+                                              })
+                                              .where((task) => task != null)
+                                              .cast<Map<String, String>>()
+                                              .toList();
+
+                                      setState(() {
+                                        hideMenu = false;
+                                      });
+
+                                      for (var taskInfo in tasksToDelete) {
+                                        await deleteTaskById(
+                                          taskInfo['id']!,
+                                          taskInfo['name']!,
+                                        );
+                                      }
+
+                                      selectedTaskIds.clear();
+                                    }
+                                    : null,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.01,
+                                vertical: height * 0.005,
+                              ),
+                              child: SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                                width: width * 0.032,
+                                height: height * 0.032,
+                                fit: BoxFit.contain,
+                                color:
+                                    selectedTaskIds.isNotEmpty
+                                        ? Colors.red
+                                        : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -614,9 +727,410 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> deleteTaskById(String id, String name) async {
+    if (!mounted) return;
+
+    await FirebaseFirestore.instance
+        .collection('TodayTasks')
+        .doc(box.read('userProfile')['email'])
+        .collection('tasks')
+        .doc(id)
+        .delete();
+
+    if (!mounted) return;
+
+    var existingData = AllDataUserGetResponst.fromJson(box.read('userDataAll'));
+    final appData = Provider.of<Appdata>(context, listen: false);
+
+    appData.showMyTasks.removeTaskById(id);
+    existingData.todaytasks.removeWhere((t) => t.taskId == id);
+    box.write('userDataAll', existingData.toJson());
+
+    if (mounted) {
+      setState(() {
+        tasks.removeWhere((t) => t.taskId == id);
+      });
+    }
+  }
+
+  Future<void> _saveData(String value, String description) async {
+    if (!mounted) return;
+
+    final trimmedTitle = value.trim();
+    final trimmedDescription = description.trim();
+
+    if (trimmedTitle.isEmpty && trimmedDescription.isEmpty) return;
+
+    final titleToSave = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle;
+    final descriptionToSave = trimmedDescription;
+
+    final userProfile = readMapSafely(box, 'userProfile');
+    if (userProfile == null) {
+      return;
+    }
+
+    final userId = userProfile['userid'];
+    final userEmail = userProfile['email']?.toString();
+
+    if (userId == null || userEmail == null) {
+      return;
+    }
+
+    url = await loadAPIEndpoint();
+
+    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+    final tempTask = Todaytask(
+      taskName: titleToSave,
+      description: descriptionToSave,
+      archived: false,
+      createdAt: DateTime.now().toIso8601String(),
+      priority: '',
+      status: '0',
+      attachments: [],
+      checklists: [],
+      createdBy: userId,
+      taskId: tempId,
+    );
+
+    if (mounted) {
+      final appData = Provider.of<Appdata>(context, listen: false);
+      appData.showMyTasks.addTask(tempTask);
+
+      setState(() {
+        tasks = List.from(appData.showMyTasks.tasks);
+        addTasknameCtl.clear();
+        addDescriptionCtl.clear();
+        addToday = false;
+      });
+    }
+
+    await _updateLocalStorage(tempTask, isTemp: true);
+
+    final success = await _createTaskAPI(
+      titleToSave,
+      descriptionToSave,
+      userEmail,
+    );
+    if (success['message']) {
+      final realTaskId = success['taskId'];
+      await _replaceWithRealTask(tempId, realTaskId, tempTask, userId);
+    } else {
+      await _removeTempTask(tempId);
+    }
+  }
+
+  Future<Map<String, dynamic>> _createTaskAPI(
+    String title,
+    String description,
+    String email,
+  ) async {
+    var responseCreate = await http.post(
+      Uri.parse("$url/todaytasks/create"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${readStringSafely(box, 'accessToken')}",
+      },
+      body: todayTasksCreatePostRequestToJson(
+        TodayTasksCreatePostRequest(
+          email: email,
+          taskName: title,
+          description: description,
+          status: '0',
+          priority: '',
+        ),
+      ),
+    );
+
+    if (responseCreate.statusCode == 403) {
+      await loadNewRefreshToken();
+      responseCreate = await http.post(
+        Uri.parse("$url/todaytasks/create"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${readStringSafely(box, 'accessToken')}",
+        },
+        body: todayTasksCreatePostRequestToJson(
+          TodayTasksCreatePostRequest(
+            email: email,
+            taskName: title,
+            description: description,
+            status: '0',
+            priority: '',
+          ),
+        ),
+      );
+    }
+
+    if (responseCreate.statusCode == 200) {
+      final responseData = jsonDecode(responseCreate.body);
+      return {'message': true, 'taskId': responseData['taskID']};
+    } else {
+      return {
+        'success': false,
+        'error': 'Server error: ${responseCreate.statusCode}',
+      };
+    }
+  }
+
+  Future<void> _replaceWithRealTask(
+    String tempId,
+    String realId,
+    Todaytask tempTask,
+    int userId,
+  ) async {
+    if (!mounted) return;
+
+    final realTask = Todaytask(
+      taskName: tempTask.taskName,
+      description: tempTask.description,
+      archived: false,
+      createdAt: DateTime.now().toIso8601String(),
+      priority: tempTask.priority,
+      status: '0',
+      attachments: [],
+      checklists: [],
+      createdBy: userId,
+      taskId: realId,
+    );
+
+    final appData = Provider.of<Appdata>(context, listen: false);
+    appData.showMyTasks.removeTaskById(tempId);
+    appData.showMyTasks.addTask(realTask);
+
+    if (mounted) {
+      setState(() {
+        tasks = List.from(appData.showMyTasks.tasks);
+      });
+    }
+
+    await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
+  }
+
+  Future<void> _removeTempTask(String tempId) async {
+    if (!mounted) return;
+
+    final appData = Provider.of<Appdata>(context, listen: false);
+    appData.showMyTasks.removeTaskById(tempId);
+
+    if (mounted) {
+      setState(() {
+        tasks = List.from(appData.showMyTasks.tasks);
+      });
+    }
+
+    final existingData = AllDataUserGetResponst.fromJson(
+      box.read('userDataAll'),
+    );
+    existingData.todaytasks.removeWhere((t) => t.taskId == tempId);
+    box.write('userDataAll', existingData.toJson());
+  }
+
+  Future<void> _updateLocalStorage(
+    Todaytask task, {
+    bool isTemp = false,
+    String? tempIdToRemove,
+  }) async {
+    final existingData = AllDataUserGetResponst.fromJson(
+      box.read('userDataAll'),
+    );
+
+    if (tempIdToRemove != null) {
+      existingData.todaytasks.removeWhere((t) => t.taskId == tempIdToRemove);
+    }
+
+    existingData.todaytasks.add(task);
+    box.write('userDataAll', existingData.toJson());
+  }
+
+  Map<String, dynamic>? readMapSafely(GetStorage box, String key) {
+    try {
+      final data = box.read(key);
+      if (data != null && data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String readStringSafely(
+    GetStorage box,
+    String key, [
+    String defaultValue = '',
+  ]) {
+    try {
+      final data = box.read(key);
+      return data?.toString() ?? defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+
+  void _scrollToAddForm() {
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (addFormKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          addFormKey.currentContext!,
+          duration: Duration(milliseconds: 0),
+          curve: Curves.easeInOut,
+          alignment: 1.0,
+        );
+      }
+    });
+  }
+
   String getCurrentDayAndDate() {
     final now = DateTime.now();
     final formatter = DateFormat('EEEE - d MMMM');
     return formatter.format(now);
+  }
+
+  void showPopupMenu(BuildContext context) {
+    //horizontal left right
+    double width = MediaQuery.of(context).size.width;
+    //vertical tob bottom
+    double height = MediaQuery.of(context).size.height;
+
+    final RenderBox renderBox =
+        iconKey.currentContext!.findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final Size size = renderBox.size;
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height,
+        width - offset.dx - size.width,
+        0,
+      ),
+      elevation: 1,
+      items: [
+        PopupMenuItem(
+          value: 'select',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              SvgPicture.string(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>',
+                height: height * 0.025,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(width: width * 0.02),
+              Text(
+                'Select Task',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      menuPadding: EdgeInsets.zero,
+    ).then((value) {
+      if (value == 'select') {
+        setState(() {
+          hideMenu = true;
+        });
+      }
+    });
+  }
+
+  Future<void> loadNewRefreshToken() async {
+    url = await loadAPIEndpoint();
+    var value = await storage.read(key: 'refreshToken');
+    var loadtoketnew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+    if (loadtoketnew.statusCode == 200) {
+      var reponse = jsonDecode(loadtoketnew.body);
+      box.write('accessToken', reponse['accessToken']);
+
+      // final responseAllToday = await http.post(
+      //   Uri.parse("$url/todaytasks/alltoday"),
+      //   headers: {
+      //     "Content-Type": "application/json; charset=utf-8",
+      //     "Authorization": "Bearer ${box.read('accessToken')}",
+      //   },
+      //   body: jsonEncode({"email": box.read('userProfile')['email']}),
+      // );
+      // final responseToday = allTodayPostResponseFromJson(responseAllToday.body);
+      // box.write('todayTasksAll', jsonEncode(responseToday));
+    } else if (loadtoketnew.statusCode == 403) {
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/warning.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Waring!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+              Text(
+                'The system has expired. Please log in again.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await storage.deleteAll();
+              box.remove('userProfile');
+              Get.offAll(() => SplashPage());
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleLarge!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 }

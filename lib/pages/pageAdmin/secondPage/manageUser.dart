@@ -12,13 +12,13 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/main.dart';
 import 'package:mydayplanner/models/request/createAdminPostRequest.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/verifyOTP.dart';
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -2580,7 +2580,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
               Get.back();
               await storage.deleteAll();
               box.remove('userProfile');
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => MainApp());
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(

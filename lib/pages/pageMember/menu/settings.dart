@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
+import 'package:mydayplanner/pages/login.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:file_picker/file_picker.dart';
@@ -1661,15 +1662,17 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     if (responseLogout.statusCode == 200) {
+      Get.offAll(() => SplashPage());
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.remove('userProfile');
-      Get.offAll(() => SplashPage());
-      return;
+      box.erase();
     } else {
       Get.offAll(() => SplashPage());
-      return;
+      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
+      await storage.deleteAll();
+      box.erase();
     }
   }
 

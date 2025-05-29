@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 
 class Appdata with ChangeNotifier {
-  KeepRoleUser keepUser = KeepRoleUser();
   NavBarSelectedPage navBarPage = NavBarSelectedPage();
   KeepIdBoard idBoard = KeepIdBoard();
   KeepSubjectReportPageAdmin subject = KeepSubjectReportPageAdmin();
@@ -10,15 +9,38 @@ class Appdata with ChangeNotifier {
   KeepEmailToUserPageVerifyOTP keepEmailToUserPageVerifyOTP =
       KeepEmailToUserPageVerifyOTP();
   ShowMyBoards showMyBoards = ShowMyBoards();
+  ShowMyTasks showMyTasks = ShowMyTasks();
+}
+
+//use page todayuser
+class ShowMyTasks extends ChangeNotifier {
+  List<Todaytask> _allTasks = [];
+
+  List<Todaytask> get tasks => _allTasks;
+
+  void setTasks(List<Todaytask> tasksData) {
+    _allTasks = tasksData;
+    notifyListeners();
+  }
+
+  void addTask(Todaytask task) {
+    _allTasks.add(task);
+    notifyListeners();
+  }
+
+  void removeTaskById(String value) {
+    _allTasks.removeWhere((task) => task.taskId == value);
+    notifyListeners();
+  }
 }
 
 //use page homeuser
 class ShowMyBoards extends ChangeNotifier {
   List<Board> _createdBoards = [];
-  List<Board> _memberBoards = [];
+  List<Boardgroup> _memberBoards = [];
 
   List<Board> get createdBoards => _createdBoards;
-  List<Board> get memberBoards => _memberBoards;
+  List<Boardgroup> get memberBoards => _memberBoards;
 
   void setBoards(AllDataUserGetResponst boardData) {
     _createdBoards = boardData.board;
@@ -31,7 +53,7 @@ class ShowMyBoards extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addMemberBoard(Board board) {
+  void addMemberBoard(Boardgroup board) {
     _memberBoards.add(board);
     notifyListeners();
   }
@@ -82,12 +104,6 @@ class KeepEmailToUserPageVerifyOTP extends ChangeNotifier {
 //user page report admin
 class KeepSubjectReportPageAdmin {
   String subjectReport = '';
-}
-
-//used to control users
-class KeepRoleUser {
-  String keepRoleUser = '';
-  String keepActiveUser = '';
 }
 
 //use change page

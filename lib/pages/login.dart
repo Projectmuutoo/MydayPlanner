@@ -533,15 +533,11 @@ class _LoginPageState extends State<LoginPage> {
           'role': response2.user.role,
         });
 
-        if (response2.user.role == "admin") {
+        if (response.user.role == "admin") {
           Get.offAll(() => NavbaradminPage());
-          return;
-        }
-
-        if (responseAll.statusCode == 200) {
-          box.write('boardUser', response2.toJson());
+        } else {
+          box.write('userDataAll', response.toJson());
           Get.offAll(() => NavbarPage());
-          return;
         }
       } else {
         await googleSignIn.signOut();
@@ -577,15 +573,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void login() async {
-    if (emailCtl.text.isEmpty) {
+    if (emailCtl.text.trim().isEmpty) {
       showNotification('Email address is required');
       return;
-    } else if (!isValidEmail(emailCtl.text)) {
+    } else if (!isValidEmail(emailCtl.text.trim())) {
       showNotification('Invalid email address');
       return;
     }
 
-    if (passwordCtl.text.isEmpty) {
+    if (passwordCtl.text.trim().isEmpty) {
       showNotification('Please enter your password');
       return;
     }
@@ -599,8 +595,8 @@ class _LoginPageState extends State<LoginPage> {
         headers: {"Content-Type": "application/json; charset=utf-8"},
         body: signInUserPostRequestToJson(
           SignInUserPostRequest(
-            email: emailCtl.text,
-            password: passwordCtl.text,
+            email: emailCtl.text.trim(),
+            password: passwordCtl.text.trim(),
           ),
         ),
       );
@@ -711,7 +707,7 @@ class _LoginPageState extends State<LoginPage> {
 
       loadingDialog();
       final responseAll = await http.get(
-        Uri.parse("$url/user/AlldataUser"),
+        Uri.parse("$url/user/alldata"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -733,13 +729,9 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.user.role == "admin") {
         Get.offAll(() => NavbaradminPage());
-        return;
-      }
-
-      if (responseAll.statusCode == 200) {
-        box.write('boardUser', response.toJson());
+      } else {
+        box.write('userDataAll', response.toJson());
         Get.offAll(() => NavbarPage());
-        return;
       }
     } catch (e) {
       showNotification('Something went wrong. Please try again.');

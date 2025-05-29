@@ -1051,10 +1051,8 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
           if (response.user.role == "admin") {
             Get.offAll(() => NavbaradminPage());
             return false;
-          }
-
-          if (responseAll.statusCode == 200) {
-            box.write('boardUser', response.toJson());
+          } else {
+            box.write('userDataAll', response.toJson());
             Get.offAll(() => NavbarPage());
             return false;
           }
