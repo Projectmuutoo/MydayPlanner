@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -27,6 +29,7 @@ class _UserPageState extends State<UserPage> {
   // 📦 Storage
   var box = GetStorage();
   final storage = FlutterSecureStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
   final ScrollController _latestLoginController = ScrollController();
   // 📊 Integer Variables
   int itemCount = 1;
@@ -713,10 +716,19 @@ class _UserPageState extends State<UserPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(

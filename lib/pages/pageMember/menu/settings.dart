@@ -47,7 +47,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String textNotification = '';
 
   // ---------------------- 🧮 State / Counter ----------------------
-  int lists = 400;
+  int private = 400;
   int group = 200;
   int priority = 200;
   int itemCount = 1;
@@ -140,7 +140,7 @@ class _SettingsPageState extends State<SettingsPage> {
         return WillPopScope(
           onWillPop: () async {
             if (box.read('showDisplays')['groupTF'] ||
-                box.read('showDisplays')['listsTF']) {
+                box.read('showDisplays')['privateTF']) {
               Navigator.pop(context, 'refresh');
             } else if (hasSuccess) {
               Navigator.pop(context, 'loadDisplays');
@@ -158,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
               leading: InkWell(
                 onTap: () {
                   if (box.read('showDisplays')['groupTF'] ||
-                      box.read('showDisplays')['listsTF']) {
+                      box.read('showDisplays')['privateTF']) {
                     Navigator.pop(context, 'refresh');
                   } else if (hasSuccess) {
                     Navigator.pop(context, 'loadDisplays');
@@ -593,12 +593,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                   onTap: () {
                                     if (mounted) {
                                       box.write('showDisplays', {
-                                        'listsTF': true,
+                                        'privateTF': true,
                                         'groupTF': false,
                                       });
 
                                       setState(() {
-                                        lists = 400;
+                                        private = 400;
                                         group = 200;
                                       });
                                     }
@@ -609,21 +609,24 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                     decoration: BoxDecoration(
                                       color:
-                                          lists == 400
+                                          private == 400
                                               ? Color(0xFF007AFF)
-                                              : Colors.grey[lists],
+                                              : Colors.grey[private],
                                       borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
+                                        Radius.circular(8),
                                       ),
                                     ),
                                     child: Text(
-                                      'Lists',
+                                      'private',
                                       style: TextStyle(
                                         fontSize:
                                             Get.textTheme.titleSmall!.fontSize,
-                                        fontWeight: FontWeight.normal,
+                                        fontWeight:
+                                            private == 400
+                                                ? FontWeight.w500
+                                                : FontWeight.normal,
                                         color:
-                                            lists == 400
+                                            private == 400
                                                 ? Colors.white
                                                 : Colors.black,
                                       ),
@@ -635,11 +638,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                   onTap: () {
                                     if (mounted) {
                                       box.write('showDisplays', {
-                                        'listsTF': false,
+                                        'privateTF': false,
                                         'groupTF': true,
                                       });
                                       setState(() {
-                                        lists = 200;
+                                        private = 200;
                                         group = 400;
                                       });
                                     }
@@ -654,7 +657,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                               ? Color(0xFF007AFF)
                                               : Colors.grey[group],
                                       borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
+                                        Radius.circular(8),
                                       ),
                                     ),
                                     child: Text(
@@ -662,7 +665,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       style: TextStyle(
                                         fontSize:
                                             Get.textTheme.titleSmall!.fontSize,
-                                        fontWeight: FontWeight.normal,
+                                        fontWeight:
+                                            group == 400
+                                                ? FontWeight.w500
+                                                : FontWeight.normal,
                                         color:
                                             group == 400
                                                 ? Colors.white
@@ -1611,13 +1617,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void firstPageShow() {
     setState(() {
-      if (box.read('showDisplays')['listsTF']) {
-        box.write('showDisplays', {'listsTF': true, 'groupTF': false});
-        lists = 400;
+      if (box.read('showDisplays')['privateTF']) {
+        box.write('showDisplays', {'privateTF': true, 'groupTF': false});
+        private = 400;
         group = 200;
       } else if (box.read('showDisplays')['groupTF']) {
-        box.write('showDisplays', {'listsTF': false, 'groupTF': true});
-        lists = 200;
+        box.write('showDisplays', {'privateTF': false, 'groupTF': true});
+        private = 200;
         group = 400;
       }
     });
@@ -1639,20 +1645,10 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void logout() async {
-    url = await loadAPIEndpoint();
-    loadingDialog();
-    var responseLogout = await http.post(
-      Uri.parse("$url/auth/signout"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-    );
-    Get.back();
-    if (responseLogout.statusCode == 403) {
+    try {
+      url = await loadAPIEndpoint();
       loadingDialog();
-      await loadNewRefreshToken();
-      responseLogout = await http.post(
+      var responseLogout = await http.post(
         Uri.parse("$url/auth/signout"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
@@ -1660,28 +1656,44 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       );
       Get.back();
+
+      if (responseLogout.statusCode == 403) {
+        loadingDialog();
+        await loadNewRefreshToken();
+        responseLogout = await http.post(
+          Uri.parse("$url/auth/signout"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+        Get.back();
+      }
+
+      await _performCleanup();
+    } catch (e) {
+      await _performCleanup();
+    }
+  }
+
+  Future<void> _performCleanup() async {
+    final userProfile = box.read('userProfile');
+    if (userProfile != null && userProfile['email'] != null) {
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userProfile['email'])
+          .update({'deviceName': FieldValue.delete()});
     }
 
-    if (responseLogout.statusCode == 200) {
-      await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(box.read('userProfile')['email'])
-          .update({'deviceName': FieldValue.delete()});
-      await box.erase();
+    try {
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      Get.offAll(() => SplashPage());
-    } else {
-      await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(box.read('userProfile')['email'])
-          .update({'deviceName': FieldValue.delete()});
       await box.erase();
-      await googleSignIn.signOut();
-      await FirebaseAuth.instance.signOut();
-      await storage.deleteAll();
-      Get.offAll(() => SplashPage());
+
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+    } catch (e) {
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }
   }
 
@@ -1857,7 +1869,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     await googleSignIn.signOut();
                                     await FirebaseAuth.instance.signOut();
                                     await storage.deleteAll();
-                                    Get.offAll(() => SplashPage());
+                                    Get.offAll(
+                                      () => SplashPage(),
+                                      arguments: {'fromLogout': true},
+                                    );
                                   }
                                 });
                               }
@@ -1982,9 +1997,18 @@ class _SettingsPageState extends State<SettingsPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
               Get.offAll(() => SplashPage());
             },
             style: ElevatedButton.styleFrom(

@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allReportAllGetResponst.dart';
@@ -29,6 +31,8 @@ class _ReportPageState extends State<ReportPage> {
   List<Map<String, dynamic>> reportData = [];
   List<Map<String, dynamic>> rawReportData = [];
   int? touchedIndex;
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+
   var box = GetStorage();
   final storage = FlutterSecureStorage();
   late Future<void> loadData;
@@ -1014,10 +1018,19 @@ class _ReportPageState extends State<ReportPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(

@@ -1031,19 +1031,21 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
 
           loadingDialog();
           final responseAll = await http.get(
-            Uri.parse("$url/user/AlldataUser"),
+            Uri.parse("$url/user"),
             headers: {
               "Content-Type": "application/json; charset=utf-8",
               "Authorization": "Bearer ${box.read('accessToken')}",
             },
           );
-          Get.back();
 
-          if (responseAll.statusCode != 200) return false;
+          if (responseAll.statusCode != 200) {
+            Get.back();
+            return false;
+          }
 
           final response = allDataUserGetResponstFromJson(responseAll.body);
 
-          box.write('userProfile', {
+          await box.write('userProfile', {
             'userid': response.user.userId,
             'name': response.user.name,
             'email': response.user.email,
@@ -1066,7 +1068,6 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                 .doc(response.user.email)
                 .update({'deviceName': deviceName});
           }
-
           if (response.user.role != "admin") {
             await box.write('userDataAll', response.toJson());
           }

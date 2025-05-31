@@ -49,7 +49,7 @@ class MainApp extends StatelessWidget {
         fontFamily: 'baloo',
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: SplashPage(),
+      home: const SplashPage(),
     );
   }
 }

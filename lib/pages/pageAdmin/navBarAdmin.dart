@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/pages/pageAdmin/adminHome.dart';
 import 'package:mydayplanner/pages/pageAdmin/report.dart';
 import 'package:mydayplanner/pages/pageAdmin/user.dart';
@@ -13,7 +15,184 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:mydayplanner/splash.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+
+mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
+  StreamSubscription<DocumentSnapshot>? _statusSubscription;
+  final box = GetStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final storage = FlutterSecureStorage();
+
+  void startRealtimeMonitoring() {
+    final userProfile = box.read('userProfile');
+    if (userProfile != null && userProfile['email'] != null) {
+      _statusSubscription = FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userProfile['email'])
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.exists && snapshot['active'] == '0') {
+              Future.delayed(Duration.zero, () {
+                if (mounted) {
+                  Get.snackbar(
+                    '⚠️ Warning',
+                    'You have been blocked!',
+                    snackPosition: SnackPosition.TOP,
+                    backgroundColor: Colors.red.shade600,
+                    colorText: Colors.white,
+                    duration: Duration(seconds: 3),
+                  );
+                  logout();
+                  Get.offAll(
+                    () => SplashPage(),
+                    arguments: {'fromLogout': true},
+                  );
+                }
+              });
+            }
+            if (snapshot['active'] == '1') {
+              box.write('userLogin', {
+                'keepActiveUser': snapshot['active'] == '0' ? '0' : '1',
+                'keepRoleUser': snapshot['role'],
+              });
+            }
+          });
+    }
+  }
+
+  void logout() async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+
+    await googleSignIn.signOut();
+    await FirebaseAuth.instance.signOut();
+
+    var responseLogout = await http.post(
+      Uri.parse("$url/auth/signout"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+
+    if (responseLogout.statusCode == 403) {
+      await loadNewRefreshToken();
+      responseLogout = await http.post(
+        Uri.parse("$url/auth/signout"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
+  }
+
+  Future<void> loadNewRefreshToken() async {
+    var config = await Configuration.getConfig();
+    var url = config['apiEndpoint'];
+    var value = await storage.read(key: 'refreshToken');
+    var loadtoketnew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+
+    if (loadtoketnew.statusCode == 200) {
+      var reponse = jsonDecode(loadtoketnew.body);
+      box.write('accessToken', reponse['accessToken']);
+    } else if (loadtoketnew.statusCode == 403) {
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+          vertical: MediaQuery.of(context).size.height * 0.02,
+        ),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/warning.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+              Text(
+                'Waring!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF007AFF),
+                ),
+              ),
+              Text(
+                'The system has expired. Please log in again.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
+              await storage.deleteAll();
+              Get.offAll(() => SplashPage());
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleLarge!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  void stopRealtimeMonitoring() {
+    _statusSubscription?.cancel();
+  }
+
+  @override
+  void dispose() {
+    stopRealtimeMonitoring();
+    super.dispose();
+  }
+}
 
 class NavbaradminPage extends StatefulWidget {
   const NavbaradminPage({super.key});
@@ -22,11 +201,9 @@ class NavbaradminPage extends StatefulWidget {
   State<NavbaradminPage> createState() => _NavbaradminPageState();
 }
 
-class _NavbaradminPageState extends State<NavbaradminPage> {
+class _NavbaradminPageState extends State<NavbaradminPage>
+    with RealtimeUserStatusMixin<NavbaradminPage> {
   late final List<Widget> pageOptions;
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final box = GetStorage();
-  final storage = FlutterSecureStorage();
   DateTime? createdAtDate;
   Timer? _timer;
   Timer? _timer2;
@@ -39,12 +216,13 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
     homePage();
     checkExpiresRefreshToken();
     checkInSystem();
+    startRealtimeMonitoring();
   }
 
   void homePage() {
     final appData = Provider.of<Appdata>(context, listen: false);
     setState(() {
-      appData.navBarPage.setSelectedPage(0);
+      appData.navBarPage.setSelectedPage(1);
     });
     pageOptions = [ReportPage(), AdminhomePage(), UserPage()];
   }
@@ -130,7 +308,7 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
                 await googleSignIn.signOut();
                 await FirebaseAuth.instance.signOut();
                 await storage.deleteAll();
-                Get.offAll(() => SplashPage());
+                Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
               },
               style: ElevatedButton.styleFrom(
                 fixedSize: Size(
@@ -227,7 +405,10 @@ class _NavbaradminPageState extends State<NavbaradminPage> {
                   await googleSignIn.signOut();
                   await FirebaseAuth.instance.signOut();
                   await storage.deleteAll();
-                  Get.offAll(() => SplashPage());
+                  Get.offAll(
+                    () => SplashPage(),
+                    arguments: {'fromLogout': true},
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   fixedSize: Size(

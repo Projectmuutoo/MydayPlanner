@@ -4,11 +4,13 @@ import 'dart:developer';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -19,6 +21,7 @@ import 'package:mydayplanner/models/response/allUserGetResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/verifyOTP.dart';
 import 'package:mydayplanner/shared/appData.dart';
+import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -32,6 +35,7 @@ class ManageuserPage extends StatefulWidget {
 class _ManageuserPageState extends State<ManageuserPage> {
   // 📦 Storage
   var box = GetStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
 
   // 📊 Integer Variables
   int itemCount = 1;
@@ -2577,10 +2581,19 @@ class _ManageuserPageState extends State<ManageuserPage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
-              Get.offAll(() => MainApp());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(

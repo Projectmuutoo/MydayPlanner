@@ -3,12 +3,14 @@ import 'dart:developer';
 import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/todayTasksCreatePostRequest.dart';
@@ -29,6 +31,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   // 🧠 Data (Lists and Future)
   late Future<void> loadData;
   var box = GetStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
   final storage = FlutterSecureStorage();
   TextEditingController addTasknameCtl = TextEditingController();
   TextEditingController addDescriptionCtl = TextEditingController();
@@ -36,11 +39,11 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   FocusNode addDescriptionFocusNode = FocusNode();
   ScrollController scrollController = ScrollController();
   GlobalKey addFormKey = GlobalKey();
-  bool isLoadings = true;
-  bool showShimmer = true;
   bool isTyping = false;
   bool addToday = false;
   bool hideMenu = false;
+  bool isKeyboardVisible = false;
+  bool wasKeyboardOpen = false;
   int itemCount = 1;
   GlobalKey iconKey = GlobalKey();
   List<Todaytask> tasks = [];
@@ -71,23 +74,6 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     });
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    scrollController.dispose();
-    addTasknameFocusNode.dispose();
-    addDescriptionFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // แอปถูกย่อหน้าต่างหรือสลับไปแอปอื่น
-      _saveData(addTasknameCtl.text, addDescriptionCtl.text);
-    }
-  }
-
   Future<void> loadDataAsync() async {
     final rawData = box.read('userDataAll');
     final tasksData = AllDataUserGetResponst.fromJson(rawData);
@@ -97,9 +83,49 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     setState(() {
       tasks = appData.showMyTasks.tasks;
-      isLoadings = false;
-      showShimmer = false;
     });
+  }
+
+  @override
+  void didChangeMetrics() {
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+    final newKeyboardVisible = bottomInset > 0;
+
+    if (newKeyboardVisible != isKeyboardVisible) {
+      setState(() {
+        isKeyboardVisible = newKeyboardVisible;
+      });
+      if (newKeyboardVisible) {
+        wasKeyboardOpen = true;
+      }
+      if (!newKeyboardVisible && wasKeyboardOpen) {
+        wasKeyboardOpen = false;
+
+        setState(() {
+          addToday = false;
+        });
+        _saveData(addTasknameCtl.text, addDescriptionCtl.text);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    addTasknameCtl.dispose();
+    addDescriptionCtl.dispose();
+    scrollController.dispose();
+    addTasknameFocusNode.dispose();
+    addDescriptionFocusNode.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // แอปถูกย่อหน้าต่างหรือสลับไปแอปอื่น
+      _saveData(addTasknameCtl.text, addDescriptionCtl.text);
+    }
   }
 
   @override
@@ -247,7 +273,9 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                         fontWeight: FontWeight.w500,
                                       ),
                                     )
-                                    : InkWell(
+                                    : selectedTaskIds.isNotEmpty ||
+                                        tasks.isNotEmpty
+                                    ? InkWell(
                                       onTap: () {
                                         setState(() {
                                           if (selectedTaskIds.length ==
@@ -290,7 +318,8 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                           ),
                                         ],
                                       ),
-                                    ),
+                                    )
+                                    : SizedBox.shrink(),
                                 Text(
                                   '${tasks.length} tasks',
                                   style: TextStyle(
@@ -352,7 +381,9 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                         Dismissible(
                                           key: ValueKey(data.taskId),
                                           direction:
-                                              DismissDirection.endToStart,
+                                              hideMenu
+                                                  ? DismissDirection.none
+                                                  : DismissDirection.endToStart,
                                           background: Container(
                                             alignment: Alignment.centerRight,
                                             padding: EdgeInsets.symmetric(
@@ -373,10 +404,7 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                 (t) => t.taskId == data.taskId,
                                               );
                                             });
-                                            deleteTaskById(
-                                              data.taskId,
-                                              data.taskName,
-                                            );
+                                            deleteTaskById(data.taskId, false);
                                           },
                                           child: Row(
                                             crossAxisAlignment:
@@ -665,36 +693,10 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                             onTap:
                                 selectedTaskIds.isNotEmpty
                                     ? () async {
-                                      List<Map<String, String>> tasksToDelete =
-                                          selectedTaskIds
-                                              .map((id) {
-                                                try {
-                                                  final task = tasks.firstWhere(
-                                                    (t) => t.taskId == id,
-                                                  );
-                                                  return {
-                                                    'id': id,
-                                                    'name': task.taskName,
-                                                  };
-                                                } catch (e) {
-                                                  return null;
-                                                }
-                                              })
-                                              .where((task) => task != null)
-                                              .cast<Map<String, String>>()
-                                              .toList();
-
                                       setState(() {
                                         hideMenu = false;
                                       });
-
-                                      for (var taskInfo in tasksToDelete) {
-                                        await deleteTaskById(
-                                          taskInfo['id']!,
-                                          taskInfo['name']!,
-                                        );
-                                      }
-
+                                      deleteTaskById(selectedTaskIds, true);
                                       selectedTaskIds.clear();
                                     }
                                     : null,
@@ -727,30 +729,54 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> deleteTaskById(String id, String name) async {
+  void deleteTaskById(dynamic ids, bool select) async {
     if (!mounted) return;
 
-    await FirebaseFirestore.instance
-        .collection('TodayTasks')
-        .doc(box.read('userProfile')['email'])
-        .collection('tasks')
-        .doc(id)
-        .delete();
-
-    if (!mounted) return;
-
+    List<String> idList;
     var existingData = AllDataUserGetResponst.fromJson(box.read('userDataAll'));
     final appData = Provider.of<Appdata>(context, listen: false);
 
-    appData.showMyTasks.removeTaskById(id);
-    existingData.todaytasks.removeWhere((t) => t.taskId == id);
-    box.write('userDataAll', existingData.toJson());
-
-    if (mounted) {
-      setState(() {
-        tasks.removeWhere((t) => t.taskId == id);
-      });
+    if (ids is String) {
+      idList = [ids];
+    } else if (ids is List<String>) {
+      idList = ids;
+    } else {
+      throw ArgumentError();
     }
+
+    for (var id in idList) {
+      appData.showMyTasks.removeTaskById(id);
+      existingData.todaytasks.removeWhere((t) => t.taskId == id);
+      tasks.removeWhere((t) => t.taskId == id);
+    }
+    box.write('userDataAll', existingData.toJson());
+    if (mounted) {
+      setState(() {});
+    }
+
+    if (select) {
+      var response = await http.delete(
+        Uri.parse("$url/todaytasks/deltoday"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+        body: jsonEncode({"task_id": idList}),
+      );
+      if (response.statusCode == 403) {
+        await loadNewRefreshToken();
+        response = await http.delete(
+          Uri.parse("$url/todaytasks/deltoday"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+          body: jsonEncode({"task_id": idList}),
+        );
+      }
+      log(response.statusCode.toString());
+      if (response.statusCode == 200) {}
+    } else {}
   }
 
   Future<void> _saveData(String value, String description) async {
@@ -1052,17 +1078,6 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (loadtoketnew.statusCode == 200) {
       var reponse = jsonDecode(loadtoketnew.body);
       box.write('accessToken', reponse['accessToken']);
-
-      // final responseAllToday = await http.post(
-      //   Uri.parse("$url/todaytasks/alltoday"),
-      //   headers: {
-      //     "Content-Type": "application/json; charset=utf-8",
-      //     "Authorization": "Bearer ${box.read('accessToken')}",
-      //   },
-      //   body: jsonEncode({"email": box.read('userProfile')['email']}),
-      // );
-      // final responseToday = allTodayPostResponseFromJson(responseAllToday.body);
-      // box.write('todayTasksAll', jsonEncode(responseToday));
     } else if (loadtoketnew.statusCode == 403) {
       Get.defaultDialog(
         title: '',
@@ -1105,10 +1120,19 @@ class _TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(

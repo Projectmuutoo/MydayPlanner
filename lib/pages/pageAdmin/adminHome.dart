@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AdminhomePage extends StatefulWidget {
@@ -1403,20 +1405,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
   }
 
   void logout() async {
-    url = await loadAPIEndpoint();
-    loadingDialog();
-    var responseLogout = await http.post(
-      Uri.parse("$url/auth/signout"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-    );
-    Get.back();
-    if (responseLogout.statusCode == 403) {
+    try {
+      url = await loadAPIEndpoint();
       loadingDialog();
-      await loadNewRefreshToken();
-      responseLogout = await http.post(
+      var responseLogout = await http.post(
         Uri.parse("$url/auth/signout"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
@@ -1424,27 +1416,44 @@ class _AdminhomePageState extends State<AdminhomePage> {
         },
       );
       Get.back();
+
+      if (responseLogout.statusCode == 403) {
+        loadingDialog();
+        await loadNewRefreshToken();
+        responseLogout = await http.post(
+          Uri.parse("$url/auth/signout"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+        Get.back();
+      }
+
+      await _performCleanup();
+    } catch (e) {
+      await _performCleanup();
     }
-    if (responseLogout.statusCode == 200) {
+  }
+
+  Future<void> _performCleanup() async {
+    final userProfile = box.read('userProfile');
+    if (userProfile != null && userProfile['email'] != null) {
       await FirebaseFirestore.instance
           .collection('usersLogin')
-          .doc(box.read('userProfile')['email'])
+          .doc(userProfile['email'])
           .update({'deviceName': FieldValue.delete()});
-      await box.erase();
+    }
+
+    try {
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      Get.offAll(() => SplashPage());
-    } else {
-      await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(box.read('userProfile')['email'])
-          .update({'deviceName': FieldValue.delete()});
       await box.erase();
-      await googleSignIn.signOut();
-      await FirebaseAuth.instance.signOut();
-      await storage.deleteAll();
-      Get.offAll(() => SplashPage());
+
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+    } catch (e) {
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }
   }
 
@@ -1539,9 +1548,18 @@ class _AdminhomePageState extends State<AdminhomePage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              Get.back();
+              final currentUserProfile = box.read('userProfile');
+              if (currentUserProfile != null && currentUserProfile is Map) {
+                await FirebaseFirestore.instance
+                    .collection('usersLogin')
+                    .doc(currentUserProfile['email'])
+                    .update({'deviceName': FieldValue.delete()});
+              }
+              await box.remove('userProfile');
+              await box.remove('userLogin');
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              box.remove('userProfile');
               Get.offAll(() => SplashPage());
             },
             style: ElevatedButton.styleFrom(
