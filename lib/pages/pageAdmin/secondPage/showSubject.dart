@@ -172,7 +172,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
               title: Text(
                 '${context.read<Appdata>().subject.subjectReport} (${countSubject(context.read<Appdata>().subject.subjectReport)})',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleMedium!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -301,8 +303,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                                                       fontSize:
                                                                           Get
                                                                               .textTheme
-                                                                              .titleLarge!
-                                                                              .fontSize,
+                                                                              .titleMedium!
+                                                                              .fontSize! *
+                                                                          MediaQuery.of(
+                                                                            context,
+                                                                          ).textScaleFactor,
                                                                       fontWeight:
                                                                           FontWeight
                                                                               .w500,
@@ -324,8 +329,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                                                   fontSize:
                                                                       Get
                                                                           .textTheme
-                                                                          .titleMedium!
-                                                                          .fontSize,
+                                                                          .labelMedium!
+                                                                          .fontSize! *
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).textScaleFactor,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .normal,
@@ -351,8 +359,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                                                   fontSize:
                                                                       Get
                                                                           .textTheme
-                                                                          .titleSmall!
-                                                                          .fontSize,
+                                                                          .labelMedium!
+                                                                          .fontSize! *
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).textScaleFactor,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w500,
@@ -435,7 +446,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           Text(
                             subject,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -468,7 +481,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             child: Text(
                               'Send by',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -496,7 +511,13 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       'Name: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -504,7 +525,13 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       name,
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -517,7 +544,13 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       'Email: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -525,7 +558,13 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       email,
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -544,7 +583,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             child: Text(
                               'Detail',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -566,7 +607,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           child: Text(
                             detail,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                             ),
                             softWrap: true,
@@ -580,7 +623,9 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           Text(
                             formatFullDateTime(timestamp),
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.labelMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -970,8 +1015,10 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();

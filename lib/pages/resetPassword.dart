@@ -88,11 +88,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: width * 0.05,
-                left: width * 0.05,
-                top: height * 0.01,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: width * 0.05),
               child: Column(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

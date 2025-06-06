@@ -112,11 +112,7 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: EdgeInsets.only(
-                right: width * 0.05,
-                left: width * 0.05,
-                top: height * 0.01,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: width * 0.05),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1031,7 +1027,7 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
 
           loadingDialog();
           final responseAll = await http.get(
-            Uri.parse("$url/user"),
+            Uri.parse("$url/user/data"),
             headers: {
               "Content-Type": "application/json; charset=utf-8",
               "Authorization": "Bearer ${box.read('accessToken')}",

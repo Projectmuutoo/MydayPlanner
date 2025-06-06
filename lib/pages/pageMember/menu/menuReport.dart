@@ -830,8 +830,10 @@ class _MenureportPageState extends State<MenureportPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();

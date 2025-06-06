@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 
 class Appdata with ChangeNotifier {
-  NavBarSelectedPage navBarPage = NavBarSelectedPage();
   KeepIdBoard idBoard = KeepIdBoard();
   KeepSubjectReportPageAdmin subject = KeepSubjectReportPageAdmin();
   ChangeMyProfileProvider changeMyProfileProvider = ChangeMyProfileProvider();
@@ -106,20 +105,15 @@ class KeepSubjectReportPageAdmin {
   String subjectReport = '';
 }
 
-//use change page
-class NavBarSelectedPage extends ChangeNotifier {
-  int _selectedPage = 0;
-  int get selectedPage => _selectedPage;
+//use page homeuser
+class KeepIdBoard extends ChangeNotifier {
+  String _idBoard = '';
+  String get idBoard => _idBoard;
 
-  void setSelectedPage(int newSelectedPage) {
-    _selectedPage = newSelectedPage;
+  void setIdBoard(String newIdBoard) {
+    _idBoard = newIdBoard;
     notifyListeners();
   }
-}
-
-//use page homeuser
-class KeepIdBoard {
-  String idBoard = '';
 }
 
 //use page homeuser

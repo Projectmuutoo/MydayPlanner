@@ -17,6 +17,7 @@ class BoradlistsPage extends StatefulWidget {
 class _BoradlistsPageState extends State<BoradlistsPage> {
   late Future<void> loadData;
   var box = GetStorage();
+  String text = '';
   late String url;
 
   Future<String> loadAPIEndpoint() async {
@@ -33,7 +34,6 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
   Future<void> loadDataAsync() async {
     url = await loadAPIEndpoint();
     log(box.read('userProfile')['email']);
-    log(context.read<Appdata>().idBoard.idBoard);
   }
 
   @override
@@ -46,25 +46,43 @@ class _BoradlistsPageState extends State<BoradlistsPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: EdgeInsets.only(
-            right: width * 0.05,
-            left: width * 0.05,
-            top: height * 0.01,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: width * 0.05),
           child: SingleChildScrollView(
             physics: AlwaysScrollableScrollPhysics(),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  context.read<Appdata>().idBoard.idBoard,
+                  box.read('userProfile')['email'],
                   style: TextStyle(
                     fontSize: Get.textTheme.titleLarge!.fontSize,
                     fontFamily: 'mali',
                   ),
                 ),
+                SizedBox(height: height * 0.03),
+                Text(
+                  context.watch<Appdata>().idBoard.idBoard,
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontFamily: 'mali',
+                  ),
+                ),
+                SizedBox(height: height * 0.03),
+                if (text.isNotEmpty)
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleLarge!.fontSize,
+                      fontFamily: 'mali',
+                    ),
+                  ),
+                if (text.isNotEmpty) SizedBox(height: height * 0.03),
                 FilledButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    setState(() {
+                      text.isEmpty ? text = 'อุอิ' : text = '';
+                    });
+                  },
                   child: Text(
                     'ปุ่ม',
                     style: TextStyle(

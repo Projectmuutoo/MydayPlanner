@@ -64,7 +64,7 @@ class Board {
     createdAt: json["CreatedAt"],
     createdBy: json["CreatedBy"],
     tasks: List<BoardTask>.from(
-      json["tasks"].map((x) => BoardTask.fromJson(x)),
+      json["Tasks"].map((x) => BoardTask.fromJson(x)),
     ),
   );
 
@@ -73,7 +73,7 @@ class Board {
     "BoardName": boardName,
     "CreatedAt": createdAt,
     "CreatedBy": createdBy,
-    "tasks": List<dynamic>.from(tasks.map((x) => x.toJson())),
+    "Tasks": List<dynamic>.from(tasks.map((x) => x.toJson())),
   };
 }
 
@@ -170,12 +170,14 @@ class TaskAttachment {
 }
 
 class TaskChecklist {
+  bool archived;
   int checklistId;
   String checklistName;
   String createdAt;
   int taskId;
 
   TaskChecklist({
+    required this.archived,
     required this.checklistId,
     required this.checklistName,
     required this.createdAt,
@@ -183,6 +185,7 @@ class TaskChecklist {
   });
 
   factory TaskChecklist.fromJson(Map<String, dynamic> json) => TaskChecklist(
+    archived: json["Archived"],
     checklistId: json["ChecklistID"],
     checklistName: json["ChecklistName"],
     createdAt: json["CreatedAt"],
@@ -190,6 +193,7 @@ class TaskChecklist {
   );
 
   Map<String, dynamic> toJson() => {
+    "Archived": archived,
     "ChecklistID": checklistId,
     "ChecklistName": checklistName,
     "CreatedAt": createdAt,
@@ -218,7 +222,7 @@ class Boardgroup {
     createdAt: json["CreatedAt"],
     createdBy: json["CreatedBy"],
     tasks: List<BoardgroupTask>.from(
-      json["tasks"].map((x) => BoardgroupTask.fromJson(x)),
+      json["Tasks"].map((x) => BoardgroupTask.fromJson(x)),
     ),
   );
 
@@ -227,7 +231,7 @@ class Boardgroup {
     "BoardName": boardName,
     "CreatedAt": createdAt,
     "CreatedBy": createdBy,
-    "tasks": List<dynamic>.from(tasks.map((x) => x.toJson())),
+    "Tasks": List<dynamic>.from(tasks.map((x) => x.toJson())),
   };
 }
 

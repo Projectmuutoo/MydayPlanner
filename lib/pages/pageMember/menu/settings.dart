@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
-import 'package:mydayplanner/pages/login.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:file_picker/file_picker.dart';
@@ -178,7 +177,9 @@ class _SettingsPageState extends State<SettingsPage> {
               title: Text(
                 'Settings',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleMedium!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -212,7 +213,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               Text(
                                 'Account',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -301,7 +304,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       'Profile',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Colors.black,
                                       ),
@@ -339,7 +348,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               Text(
                                 'My notifications',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -364,7 +375,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Mobile push notifications',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
@@ -374,7 +388,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       text: 'Receive push notifications\n',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Color(0xFF979595),
                                       ),
@@ -385,8 +405,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleSmall!
-                                                    .fontSize,
+                                                    .labelMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                             height: 0.9,
                                             color: Color(0xFF979595),
@@ -444,7 +467,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Send email notifications',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
@@ -454,7 +480,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       text: 'Receive send notifications\n',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Color(0xFF979595),
                                       ),
@@ -465,8 +497,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleSmall!
-                                                    .fontSize,
+                                                    .labelMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                             height: 0.9,
                                             color: Color(0xFF979595),
@@ -528,7 +563,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               Text(
                                 'My settings',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -553,7 +590,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'First page',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
@@ -563,7 +603,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       text: 'Choose the home page\n',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Color(0xFF979595),
                                       ),
@@ -574,8 +620,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleSmall!
-                                                    .fontSize,
+                                                    .labelMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                             height: 0.9,
                                             color: Color(0xFF979595),
@@ -620,7 +669,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       'private',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight:
                                             private == 400
                                                 ? FontWeight.w500
@@ -664,7 +719,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                       'Groups',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight:
                                             group == 400
                                                 ? FontWeight.w500
@@ -705,7 +766,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Sign Out',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize,
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                       color: Color(0xFFFF3A31),
                                     ),
@@ -813,7 +877,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Text(
                       'My profile',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -850,6 +916,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   color: Colors.white,
                                   items: [
                                     PopupMenuItem(
+                                      height: height * 0.05,
                                       value: 'แกลลอรี่',
                                       child: Text(
                                         'Choose Photo',
@@ -857,12 +924,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
+                                                  .titleSmall!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                         ),
                                       ),
                                     ),
                                     PopupMenuItem(
+                                      height: height * 0.05,
                                       value: 'เลือกไฟล์',
                                       child: Text(
                                         'Choose file',
@@ -870,12 +941,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
+                                                  .titleSmall!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                         ),
                                       ),
                                     ),
                                     PopupMenuItem(
+                                      height: height * 0.05,
                                       value: 'ถ่ายรูป',
                                       child: Text(
                                         'Take Photo',
@@ -883,8 +958,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
+                                                  .titleSmall!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                         ),
                                       ),
                                     ),
@@ -1088,7 +1166,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                   'Name',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -1108,8 +1187,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleSmall!
-                                                  .fontSize,
+                                                  .labelMedium!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                         ),
                                         textAlign: TextAlign.end,
                                         decoration: InputDecoration(
@@ -1121,8 +1203,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleSmall!
-                                                    .fontSize,
+                                                    .labelMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                             color: Color(0xFF000000),
                                           ),
@@ -1159,8 +1244,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                                 fontSize:
                                                     Get
                                                         .textTheme
-                                                        .titleSmall!
-                                                        .fontSize,
+                                                        .labelMedium!
+                                                        .fontSize! *
+                                                    MediaQuery.of(
+                                                      context,
+                                                    ).textScaleFactor,
                                                 fontWeight: FontWeight.normal,
                                                 color: Color(0xFF007AFF),
                                               ),
@@ -1194,7 +1282,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Email address',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
+                                          Get.textTheme.titleSmall!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                     ),
                                   ),
@@ -1202,7 +1293,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                     userEmail,
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleSmall!.fontSize,
+                                          Get.textTheme.labelMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                     ),
                                   ),
@@ -1217,7 +1311,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                   'Password',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -1236,8 +1331,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleSmall!
-                                                  .fontSize,
+                                                  .labelMedium!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                         ),
                                         textAlign: TextAlign.end,
                                         decoration: InputDecoration(
@@ -1246,8 +1344,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleSmall!
-                                                    .fontSize,
+                                                    .labelMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                             color: Colors.black,
                                           ),
@@ -1285,8 +1386,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                                 fontSize:
                                                     Get
                                                         .textTheme
-                                                        .titleSmall!
-                                                        .fontSize,
+                                                        .labelMedium!
+                                                        .fontSize! *
+                                                    MediaQuery.of(
+                                                      context,
+                                                    ).textScaleFactor,
                                                 fontWeight: FontWeight.normal,
                                                 color: Color(0xFF007AFF),
                                               ),
@@ -1315,7 +1419,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               Text(
                                 textNotification,
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.red,
                                 ),
@@ -1344,8 +1450,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
+                                                  .titleSmall!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.red,
                                         ),
@@ -1402,7 +1511,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required String profile,
   }) async {
     var res = await http.put(
-      Uri.parse("$url/user/updateprofile"),
+      Uri.parse("$url/user/profile"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Authorization": "Bearer ${box.read('accessToken')}",
@@ -1415,11 +1524,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
+
     if (res.statusCode == 403) {
-      loadingDialog();
       await loadNewRefreshToken();
       res = await http.put(
-        Uri.parse("$url/user/updateprofile"),
+        Uri.parse("$url/user/profile"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -1432,7 +1541,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       );
-      Get.back();
     }
     return res;
   }
@@ -1473,6 +1581,8 @@ class _SettingsPageState extends State<SettingsPage> {
         currentUserProfile['name'] = name;
         // เขียนกลับไปที่ box
         box.write('userProfile', currentUserProfile);
+      } else {
+        Get.back();
       }
     }
 
@@ -1497,6 +1607,8 @@ class _SettingsPageState extends State<SettingsPage> {
         box.write('password', editPasswordCtl.text);
         hasSuccess = true;
         editPasswordCtl.clear();
+      } else {
+        Get.back();
       }
     }
 
@@ -1538,6 +1650,8 @@ class _SettingsPageState extends State<SettingsPage> {
         currentUserProfile['profile'] = downloadUrl;
         // เขียนกลับไปที่ box
         box.write('userProfile', currentUserProfile);
+      } else {
+        Get.back();
       }
     }
 
@@ -1572,7 +1686,9 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleLarge!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -1580,7 +1696,9 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Update your profile successfully',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1604,7 +1722,9 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text(
                 'Ok',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleMedium!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.white,
                 ),
               ),
@@ -1686,12 +1806,14 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     try {
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      await box.erase();
-
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+      box.remove('userDataAll');
+      box.remove('userLogin');
+      box.remove('userProfile');
+      box.remove('accessToken');
     } catch (e) {
       Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }
@@ -1738,7 +1860,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     'Delete this account?',
                     style: TextStyle(
-                      fontSize: Get.textTheme.headlineSmall!.fontSize,
+                      fontSize:
+                          Get.textTheme.titleLarge!.fontSize! *
+                          MediaQuery.of(context).textScaleFactor,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF007AFF),
                     ),
@@ -1747,7 +1871,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     textAlign: TextAlign.center,
                     text: TextSpan(
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.labelMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.black,
                       ),
                       children: [
@@ -1777,13 +1903,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     keyboardType: TextInputType.text,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      fontSize:
+                          Get.textTheme.titleSmall!.fontSize! *
+                          MediaQuery.of(context).textScaleFactor,
                     ),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       hintText: 'Confirm',
                       hintStyle: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleSmall!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
@@ -1805,7 +1935,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     Text(
                       'Invalid password',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleSmall!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.red,
                       ),
                       textAlign: TextAlign.center,
@@ -1893,12 +2025,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Delete',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  SizedBox(height: height * 0.01),
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
@@ -1927,7 +2060,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Cancel',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Color(0xFF007AFF),
                       ),
                     ),
@@ -1955,7 +2090,8 @@ class _SettingsPageState extends State<SettingsPage> {
     if (loadtoketnew.statusCode == 200) {
       var reponse = jsonDecode(loadtoketnew.body);
       box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
+    } else if (loadtoketnew.statusCode == 403 ||
+        loadtoketnew.statusCode == 401) {
       Get.defaultDialog(
         title: '',
         titlePadding: EdgeInsets.zero,
@@ -1978,15 +2114,19 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
+                  fontSize:
+                      Get.textTheme.headlineSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
                 ),
               ),
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -2004,12 +2144,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(
@@ -2025,7 +2167,9 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 color: Colors.white,
               ),
             ),

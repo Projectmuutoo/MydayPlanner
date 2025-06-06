@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -8,7 +9,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
-import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AdminhomePage extends StatefulWidget {
@@ -61,7 +60,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
   Future<http.Response> loadAllUser() async {
     url = await loadAPIEndpoint();
     var responseAllUser = await http.get(
-      Uri.parse("$url/user/ReadAllUser"),
+      Uri.parse("$url/user/alluser"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Authorization": "Bearer ${box.read('accessToken')}",
@@ -130,10 +129,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                 color: Colors.grey,
                 onRefresh: loadDataAsync,
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    right: width * 0.05,
-                    left: width * 0.05,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.05),
                   child: Column(
                     children: [
                       Row(
@@ -142,7 +138,9 @@ class _AdminhomePageState extends State<AdminhomePage> {
                           Text(
                             'Mydayplanner',
                             style: TextStyle(
-                              fontSize: Get.textTheme.displaySmall!.fontSize,
+                              fontSize:
+                                  Get.textTheme.headlineMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF007AFF),
                             ),
@@ -178,7 +176,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                       highlightColor: Colors.grey[300]!,
                                       child: Container(
                                         width: width * 0.44,
-                                        height: height * 0.12,
+                                        height: height * 0.135,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           borderRadius: BorderRadius.circular(
@@ -217,7 +215,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                       Get
                                                           .textTheme
                                                           .headlineMedium!
-                                                          .fontSize,
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black38,
                                                 ),
@@ -232,8 +233,11 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                   fontSize:
                                                       Get
                                                           .textTheme
-                                                          .titleLarge!
-                                                          .fontSize,
+                                                          .titleMedium!
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black54,
                                                 ),
@@ -249,7 +253,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                       highlightColor: Colors.grey[300]!,
                                       child: Container(
                                         width: width * 0.44,
-                                        height: height * 0.12,
+                                        height: height * 0.135,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           borderRadius: BorderRadius.circular(
@@ -290,7 +294,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                       Get
                                                           .textTheme
                                                           .headlineMedium!
-                                                          .fontSize,
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black38,
                                                 ),
@@ -305,8 +312,11 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                   fontSize:
                                                       Get
                                                           .textTheme
-                                                          .titleLarge!
-                                                          .fontSize,
+                                                          .titleMedium!
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black54,
                                                 ),
@@ -328,7 +338,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                       highlightColor: Colors.grey[300]!,
                                       child: Container(
                                         width: width * 0.44,
-                                        height: height * 0.12,
+                                        height: height * 0.135,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           borderRadius: BorderRadius.circular(
@@ -367,7 +377,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                       Get
                                                           .textTheme
                                                           .headlineMedium!
-                                                          .fontSize,
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black38,
                                                 ),
@@ -388,8 +401,11 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                   fontSize:
                                                       Get
                                                           .textTheme
-                                                          .titleLarge!
-                                                          .fontSize,
+                                                          .titleMedium!
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color: Colors.black54,
                                                 ),
@@ -399,65 +415,81 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                         ],
                                       ),
                                     ),
-                                Container(
-                                  width: width * 0.44,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.03,
-                                    vertical: height * 0.015,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFF2F2F6),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Opacity(
-                                    opacity: 0,
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                isLoadings || showShimmer
+                                    ? Container(
+                                      width: width * 0.44,
+                                      height: height * 0.135,
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFF2F2F6),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    )
+                                    : Container(
+                                      width: width * 0.44,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: width * 0.03,
+                                        vertical: height * 0.015,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFF2F2F6),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Opacity(
+                                        opacity: 0,
+                                        child: Column(
                                           children: [
-                                            SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m20 8-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM9 19H7v-9h2v9zm4 0h-2v-6h2v6zm4 0h-2v-3h2v3zM14 9h-1V4l5 5h-4z"></path></svg>',
-                                              width: width * 0.04,
-                                              height: height * 0.04,
-                                              fit: BoxFit.contain,
-                                              color: Colors.red,
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m20 8-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM9 19H7v-9h2v9zm4 0h-2v-6h2v6zm4 0h-2v-3h2v3zM14 9h-1V4l5 5h-4z"></path></svg>',
+                                                  width: width * 0.04,
+                                                  height: height * 0.04,
+                                                  fit: BoxFit.contain,
+                                                  color: Colors.red,
+                                                ),
+                                                Text(
+                                                  totalReportCount.toString(),
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        Get
+                                                            .textTheme
+                                                            .headlineMedium!
+                                                            .fontSize! *
+                                                        MediaQuery.of(
+                                                          context,
+                                                        ).textScaleFactor,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black38,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              totalReportCount.toString(),
-                                              style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .headlineMedium!
-                                                        .fontSize,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.black38,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "Report",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        Get
+                                                            .textTheme
+                                                            .titleMedium!
+                                                            .fontSize! *
+                                                        MediaQuery.of(
+                                                          context,
+                                                        ).textScaleFactor,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Report",
-                                              style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleLarge!
-                                                        .fontSize,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                ),
                               ],
                             ),
                             SizedBox(height: height * 0.02),
@@ -1446,12 +1478,11 @@ class _AdminhomePageState extends State<AdminhomePage> {
     }
 
     try {
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
       await box.erase();
-
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     } catch (e) {
       Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }
@@ -1529,15 +1560,19 @@ class _AdminhomePageState extends State<AdminhomePage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
+                  fontSize:
+                      Get.textTheme.headlineSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
                 ),
               ),
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1555,12 +1590,14 @@ class _AdminhomePageState extends State<AdminhomePage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
-              Get.offAll(() => SplashPage());
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
             },
             style: ElevatedButton.styleFrom(
               fixedSize: Size(
@@ -1576,7 +1613,9 @@ class _AdminhomePageState extends State<AdminhomePage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 color: Colors.white,
               ),
             ),

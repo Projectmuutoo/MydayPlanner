@@ -14,7 +14,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
-import 'package:mydayplanner/main.dart';
 import 'package:mydayplanner/models/request/createAdminPostRequest.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
@@ -88,7 +87,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
   Future<http.Response> loadAllUser() async {
     url = await loadAPIEndpoint();
     var responseAllUser = await http.get(
-      Uri.parse("$url/user/ReadAllUser"),
+      Uri.parse("$url/user/alluser"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Authorization": "Bearer ${box.read('accessToken')}",
@@ -202,7 +201,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                 title: Text(
                   'Manage Users',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize:
+                        Get.textTheme.titleMedium!.fontSize! *
+                        MediaQuery.of(context).textScaleFactor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -283,7 +284,10 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                   Get
                                                                       .textTheme
                                                                       .titleMedium!
-                                                                      .fontSize,
+                                                                      .fontSize! *
+                                                                  MediaQuery.of(
+                                                                    context,
+                                                                  ).textScaleFactor,
                                                               color:
                                                                   Colors.grey,
                                                             ),
@@ -337,8 +341,8 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                               user.name,
                                                                               user.email,
                                                                               user.role,
-                                                                              user.createdAt,
-                                                                              user.isVerify,
+                                                                              user.createAt,
+                                                                              user.isVerify.toString(),
                                                                               user.isActive,
                                                                             );
                                                                           }
@@ -518,7 +522,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                                         SizedBox(
                                                                                           height:
                                                                                               height *
-                                                                                              0.022,
+                                                                                              0.03,
                                                                                           width:
                                                                                               width *
                                                                                               0.6,
@@ -530,7 +534,10 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                                                         '${user.email} ${box.read('userProfile')['email'] == user.email ? '(You)' : ''}',
                                                                                                     style: TextStyle(
                                                                                                       fontSize:
-                                                                                                          Get.textTheme.titleMedium!.fontSize,
+                                                                                                          Get.textTheme.titleSmall!.fontSize! *
+                                                                                                          MediaQuery.of(
+                                                                                                            context,
+                                                                                                          ).textScaleFactor,
                                                                                                       fontWeight:
                                                                                                           FontWeight.w500,
                                                                                                       color:
@@ -570,7 +577,10 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                                                     '${user.email} ${box.read('userProfile')['email'] == user.email ? '(You)' : ''}',
                                                                                                     style: TextStyle(
                                                                                                       fontSize:
-                                                                                                          Get.textTheme.titleMedium!.fontSize,
+                                                                                                          Get.textTheme.titleSmall!.fontSize! *
+                                                                                                          MediaQuery.of(
+                                                                                                            context,
+                                                                                                          ).textScaleFactor,
                                                                                                       fontWeight:
                                                                                                           FontWeight.w500,
                                                                                                       color:
@@ -593,10 +603,13 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                                                               0.01,
                                                                                         ),
                                                                                         Text(
-                                                                                          'a ${user.role == 'admin' ? 'admin' : 'member'} on ${timeAgo(user.createdAt.toString())}',
+                                                                                          'a ${user.role == 'admin' ? 'admin' : 'member'} on ${timeAgo(user.createAt.toString())}',
                                                                                           style: TextStyle(
                                                                                             fontSize:
-                                                                                                Get.textTheme.titleSmall!.fontSize,
+                                                                                                Get.textTheme.labelMedium!.fontSize! *
+                                                                                                MediaQuery.of(
+                                                                                                  context,
+                                                                                                ).textScaleFactor,
                                                                                             fontWeight:
                                                                                                 FontWeight.normal,
                                                                                           ),
@@ -671,13 +684,17 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                   cursorColor: Colors.black,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: isTyping ? '' : 'Search',
                                     hintStyle: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleMedium!.fontSize,
+                                          Get.textTheme.titleSmall!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.grey,
                                     ),
@@ -774,8 +791,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleLarge!
-                                                              .fontSize,
+                                                              .titleMedium!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -845,8 +865,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -857,8 +880,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -902,8 +928,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -914,8 +943,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -959,8 +991,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -971,8 +1006,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleLarge!
-                                                                .fontSize,
+                                                                .titleMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.normal,
                                                       ),
@@ -1058,7 +1096,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               Text(
                                 'Profile',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1146,8 +1186,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1157,8 +1200,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                           ),
                                         ),
@@ -1173,8 +1219,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1184,8 +1233,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                           ),
                                         ),
@@ -1220,8 +1272,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                           ),
                                         ),
@@ -1238,8 +1293,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize,
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.normal,
                                           ),
                                         ),
@@ -1300,7 +1358,13 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                           : 'Active',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                         color:
                                             isActive == '1'
@@ -1342,7 +1406,13 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                       'Delete user',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.red,
                                       ),
@@ -1388,15 +1458,19 @@ class _ManageuserPageState extends State<ManageuserPage> {
           Text(
             'Delete?',
             style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
-              fontWeight: FontWeight.w500,
+              fontSize:
+                  Get.textTheme.titleLarge!.fontSize! *
+                  MediaQuery.of(context).textScaleFactor,
+              fontWeight: FontWeight.w600,
               color: Colors.red,
             ),
           ),
           Text(
             'You confirm to delete this user email',
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize:
+                  Get.textTheme.titleSmall!.fontSize! *
+                  MediaQuery.of(context).textScaleFactor,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
@@ -1404,7 +1478,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
           Text(
             email,
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize:
+                  Get.textTheme.titleSmall!.fontSize! *
+                  MediaQuery.of(context).textScaleFactor,
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
@@ -1465,7 +1541,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'Successfully!!',
                       style: TextStyle(
-                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleLarge!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         fontWeight: FontWeight.w500,
                         color: ui.Color(0xFF007AFF),
                       ),
@@ -1473,7 +1551,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'You delete email',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleSmall!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
@@ -1481,7 +1561,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       email,
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleSmall!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
@@ -1490,7 +1572,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'successfully',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleSmall!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
@@ -1516,7 +1600,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     child: Text(
                       'Ok',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontSize:
+                            Get.textTheme.titleMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
                         color: Colors.white,
                       ),
                     ),
@@ -1546,7 +1632,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
           child: Text(
             'Confirm',
             style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
+              fontSize:
+                  Get.textTheme.titleMedium!.fontSize! *
+                  MediaQuery.of(context).textScaleFactor,
               color: Colors.white,
             ),
           ),
@@ -1569,7 +1657,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
           child: Text(
             'Cancel',
             style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
+              fontSize:
+                  Get.textTheme.titleMedium!.fontSize! *
+                  MediaQuery.of(context).textScaleFactor,
               color: Colors.white,
             ),
           ),
@@ -1603,6 +1693,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
+      showDragHandle: true,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -1617,9 +1708,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
               child: SizedBox(
-                height: height * 0.4,
+                height: height * 0.35,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       children: [
@@ -1629,7 +1720,8 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               'Add Admin',
                               style: TextStyle(
                                 fontSize:
-                                    Get.textTheme.headlineMedium!.fontSize,
+                                    Get.textTheme.headlineSmall!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1642,7 +1734,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               child: Text(
                                 'Email',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -1654,13 +1748,17 @@ class _ManageuserPageState extends State<ManageuserPage> {
                           keyboardType: TextInputType.emailAddress,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 isTyping ? '' : 'Enter your email address…',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -1695,7 +1793,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               child: Text(
                                 'Password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -1708,12 +1808,16 @@ class _ManageuserPageState extends State<ManageuserPage> {
                           obscureText: !isCheckedPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -1759,7 +1863,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                           Text(
                             textNotification,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: Colors.red, // สีสำหรับแจ้งเตือน
                             ),
@@ -1808,7 +1914,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                           },
                           style: ElevatedButton.styleFrom(
                             fixedSize: Size(width, height * 0.05),
-                            backgroundColor: Colors.black,
+                            backgroundColor: Color(0xFF007AFF),
                             elevation: 1,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1817,7 +1923,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
                           child: Text(
                             'Continue',
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),
@@ -2588,8 +2696,10 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();

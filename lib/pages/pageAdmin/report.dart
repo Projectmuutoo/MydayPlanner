@@ -168,7 +168,9 @@ class _ReportPageState extends State<ReportPage> {
                           Text(
                             'Report',
                             style: TextStyle(
-                              fontSize: Get.textTheme.displaySmall!.fontSize,
+                              fontSize:
+                                  Get.textTheme.headlineMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF007AFF),
                             ),
@@ -198,7 +200,7 @@ class _ReportPageState extends State<ReportPage> {
                                                     index,
                                                   ) {
                                                     return PieChartSectionData(
-                                                      radius: 80,
+                                                      radius: 65,
                                                       color: Colors.grey,
                                                     );
                                                   }),
@@ -221,8 +223,11 @@ class _ReportPageState extends State<ReportPage> {
                                                         fontSize:
                                                             Get
                                                                 .textTheme
-                                                                .titleMedium!
-                                                                .fontSize,
+                                                                .titleSmall!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
                                                         fontWeight:
                                                             FontWeight.w500,
                                                       ),
@@ -277,7 +282,10 @@ class _ReportPageState extends State<ReportPage> {
                                                                             data['Category'],
                                                                             style: TextStyle(
                                                                               fontSize:
-                                                                                  20,
+                                                                                  Get.textTheme.titleSmall!.fontSize! *
+                                                                                  MediaQuery.of(
+                                                                                    context,
+                                                                                  ).textScaleFactor,
                                                                               fontWeight:
                                                                                   FontWeight.bold,
                                                                               color:
@@ -290,7 +298,10 @@ class _ReportPageState extends State<ReportPage> {
                                                                             '${data['percentage']}%',
                                                                             style: TextStyle(
                                                                               fontSize:
-                                                                                  16,
+                                                                                  Get.textTheme.titleSmall!.fontSize! *
+                                                                                  MediaQuery.of(
+                                                                                    context,
+                                                                                  ).textScaleFactor,
                                                                               fontWeight:
                                                                                   FontWeight.w600,
                                                                               color:
@@ -307,8 +318,14 @@ class _ReportPageState extends State<ReportPage> {
                                                               titleStyle: TextStyle(
                                                                 fontSize:
                                                                     isTouched
-                                                                        ? 20
-                                                                        : 16,
+                                                                        ? Get.textTheme.titleMedium!.fontSize! *
+                                                                            MediaQuery.of(
+                                                                              context,
+                                                                            ).textScaleFactor
+                                                                        : Get.textTheme.titleSmall!.fontSize! *
+                                                                            MediaQuery.of(
+                                                                              context,
+                                                                            ).textScaleFactor,
                                                                 fontWeight:
                                                                     isTouched
                                                                         ? FontWeight
@@ -324,8 +341,8 @@ class _ReportPageState extends State<ReportPage> {
                                                               ),
                                                               radius:
                                                                   isTouched
-                                                                      ? 90
-                                                                      : 80,
+                                                                      ? 80
+                                                                      : 65,
                                                               color: hexToColor(
                                                                 data['Color'],
                                                               ),
@@ -376,7 +393,10 @@ class _ReportPageState extends State<ReportPage> {
                                     'Latest Reports',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.headlineSmall!.fontSize,
+                                          Get.textTheme.titleLarge!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.w500,
                                       color: Colors.black,
                                     ),
@@ -457,8 +477,11 @@ class _ReportPageState extends State<ReportPage> {
                                                             fontSize:
                                                                 Get
                                                                     .textTheme
-                                                                    .titleMedium!
-                                                                    .fontSize,
+                                                                    .titleSmall!
+                                                                    .fontSize! *
+                                                                MediaQuery.of(
+                                                                  context,
+                                                                ).textScaleFactor,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .normal,
@@ -477,8 +500,11 @@ class _ReportPageState extends State<ReportPage> {
                                                                 fontSize:
                                                                     Get
                                                                         .textTheme
-                                                                        .titleMedium!
-                                                                        .fontSize,
+                                                                        .labelMedium!
+                                                                        .fontSize! *
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).textScaleFactor,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .normal,
@@ -511,7 +537,10 @@ class _ReportPageState extends State<ReportPage> {
                                     'Subject',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.headlineSmall!.fontSize,
+                                          Get.textTheme.titleLarge!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.w500,
                                       color: Colors.black,
                                     ),
@@ -607,8 +636,11 @@ class _ReportPageState extends State<ReportPage> {
                                                           fontSize:
                                                               Get
                                                                   .textTheme
-                                                                  .titleMedium!
-                                                                  .fontSize,
+                                                                  .titleSmall!
+                                                                  .fontSize! *
+                                                              MediaQuery.of(
+                                                                context,
+                                                              ).textScaleFactor,
                                                           fontWeight:
                                                               FontWeight.w500,
                                                           color: hexToColor(
@@ -691,7 +723,9 @@ class _ReportPageState extends State<ReportPage> {
                           Text(
                             subject,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -724,7 +758,9 @@ class _ReportPageState extends State<ReportPage> {
                             child: Text(
                               'Send by',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -752,7 +788,13 @@ class _ReportPageState extends State<ReportPage> {
                                       'Name: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -760,7 +802,13 @@ class _ReportPageState extends State<ReportPage> {
                                       name,
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -773,7 +821,13 @@ class _ReportPageState extends State<ReportPage> {
                                       'Email: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -781,7 +835,13 @@ class _ReportPageState extends State<ReportPage> {
                                       email,
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -800,7 +860,9 @@ class _ReportPageState extends State<ReportPage> {
                             child: Text(
                               'Detail',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize,
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -822,7 +884,9 @@ class _ReportPageState extends State<ReportPage> {
                           child: Text(
                             detail,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                             ),
                             softWrap: true,
@@ -836,7 +900,9 @@ class _ReportPageState extends State<ReportPage> {
                           Text(
                             formatFullDateTime(timestamp),
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.labelMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -999,15 +1065,19 @@ class _ReportPageState extends State<ReportPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
+                  fontSize:
+                      Get.textTheme.headlineSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
                 ),
               ),
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1025,8 +1095,10 @@ class _ReportPageState extends State<ReportPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
@@ -1046,7 +1118,9 @@ class _ReportPageState extends State<ReportPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 color: Colors.white,
               ),
             ),

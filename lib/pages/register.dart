@@ -216,10 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.only(
-                  right: width * 0.05,
-                  left: width * 0.05,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -244,7 +241,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                       'back',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Color(0x99000000),
                                       ),
@@ -275,7 +278,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                     'Register',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.displaySmall!.fontSize,
+                                          Get
+                                              .textTheme
+                                              .headlineMedium!
+                                              .fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -288,7 +297,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   'Please register to login.',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
+                                        Get.textTheme.titleMedium!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -308,7 +318,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Name',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -324,13 +336,17 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.text,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             counterText: '',
                             hintText: isTyping ? '' : 'Enter your name',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: colorAlearName,
                             ),
@@ -372,7 +388,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearName,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearName,
                                   ),
@@ -387,7 +404,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Email',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -403,13 +422,17 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.emailAddress,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 isTyping ? '' : 'Enter your email address',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: colorAlearEmail,
                             ),
@@ -464,7 +487,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearEmail,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearEmail,
                                   ),
@@ -479,7 +503,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -493,12 +519,16 @@ class _RegisterPageState extends State<RegisterPage> {
                           obscureText: !isCheckedPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: colorAlearPassword,
                             ),
@@ -555,7 +585,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearPassword,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearPassword,
                                   ),
@@ -570,7 +601,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Confirm password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -584,13 +617,17 @@ class _RegisterPageState extends State<RegisterPage> {
                           obscureText: !isCheckedConfirmPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 isTyping ? '' : 'Enter your confirm password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleSmall!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: colorAlearConfirmPassword,
                             ),
@@ -652,7 +689,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearConfirmPassword,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearConfirmPassword,
                                   ),
@@ -706,7 +744,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                           : "Verification Required",
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.bodyMedium!.fontSize,
+                                            Get.textTheme.bodySmall!.fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         color:
                                             isCaptchaVerified
                                                 ? Colors.green
@@ -756,8 +797,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .bodyMedium!
-                                                    .fontSize,
+                                                    .bodySmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             color: Colors.grey,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -774,7 +818,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           Text(
                             alearRecaptcha,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize:
+                                  Get.textTheme.labelMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                               color: coloralearRecaptcha,
                             ),
@@ -793,18 +839,22 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Text(
                             'Sign up',
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleLarge!.fontSize,
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
                               fontWeight: FontWeight.normal,
                             ),
                           ),
                         ),
-                        SizedBox(height: height * 0.02),
+                        SizedBox(height: height * 0.01),
                         Text(
                           'Already have an account?',
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize:
+                                Get.textTheme.titleSmall!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
                             fontWeight: FontWeight.normal,
-                            color: Color(0x99000000),
+                            color: Colors.grey,
                           ),
                         ),
                         InkWell(
@@ -816,7 +866,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             child: Text(
                               'Sign in.',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize:
+                                    Get.textTheme.titleSmall!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.black,
                               ),

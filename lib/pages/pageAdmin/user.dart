@@ -83,7 +83,7 @@ class _UserPageState extends State<UserPage> {
   Future<http.Response> loadAllUser() async {
     url = await loadAPIEndpoint();
     var responseAllUser = await http.get(
-      Uri.parse("$url/user/ReadAllUser"),
+      Uri.parse("$url/user/alluser"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Authorization": "Bearer ${box.read('accessToken')}",
@@ -156,7 +156,8 @@ class _UserPageState extends State<UserPage> {
                                 'Users',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.displaySmall!.fontSize,
+                                      Get.textTheme.headlineMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF007AFF),
                                 ),
@@ -169,7 +170,8 @@ class _UserPageState extends State<UserPage> {
                                 'Latest login now: $loginCount',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.headlineSmall!.fontSize,
+                                      Get.textTheme.titleLarge!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
                                 ),
@@ -267,8 +269,11 @@ class _UserPageState extends State<UserPage> {
                                                                   fontSize:
                                                                       Get
                                                                           .textTheme
-                                                                          .titleMedium!
-                                                                          .fontSize,
+                                                                          .titleSmall!
+                                                                          .fontSize! *
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).textScaleFactor,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .normal,
@@ -308,8 +313,11 @@ class _UserPageState extends State<UserPage> {
                                                                 fontSize:
                                                                     Get
                                                                         .textTheme
-                                                                        .titleMedium!
-                                                                        .fontSize,
+                                                                        .titleSmall!
+                                                                        .fontSize! *
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).textScaleFactor,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .normal,
@@ -325,8 +333,11 @@ class _UserPageState extends State<UserPage> {
                                                                 fontSize:
                                                                     Get
                                                                         .textTheme
-                                                                        .titleMedium!
-                                                                        .fontSize,
+                                                                        .labelMedium!
+                                                                        .fontSize! *
+                                                                    MediaQuery.of(
+                                                                      context,
+                                                                    ).textScaleFactor,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .normal,
@@ -355,7 +366,8 @@ class _UserPageState extends State<UserPage> {
                                 'Manage users',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.headlineSmall!.fontSize,
+                                      Get.textTheme.titleLarge!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
                                 ),
@@ -395,7 +407,10 @@ class _UserPageState extends State<UserPage> {
                                                 Get
                                                     .textTheme
                                                     .headlineMedium!
-                                                    .fontSize,
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black38,
                                           ),
@@ -410,8 +425,11 @@ class _UserPageState extends State<UserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleLarge!
-                                                    .fontSize,
+                                                    .titleMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54,
                                           ),
@@ -451,7 +469,10 @@ class _UserPageState extends State<UserPage> {
                                                 Get
                                                     .textTheme
                                                     .headlineMedium!
-                                                    .fontSize,
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black38,
                                           ),
@@ -466,8 +487,11 @@ class _UserPageState extends State<UserPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleLarge!
-                                                    .fontSize,
+                                                    .titleMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54,
                                           ),
@@ -506,7 +530,8 @@ class _UserPageState extends State<UserPage> {
                                   'Manage',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleLarge!.fontSize,
+                                        Get.textTheme.titleMedium!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black,
                                   ),
@@ -697,15 +722,19 @@ class _UserPageState extends State<UserPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
+                  fontSize:
+                      Get.textTheme.headlineSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
                 ),
               ),
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -723,8 +752,10 @@ class _UserPageState extends State<UserPage> {
                     .doc(currentUserProfile['email'])
                     .update({'deviceName': FieldValue.delete()});
               }
-              await box.remove('userProfile');
-              await box.remove('userLogin');
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
@@ -744,7 +775,9 @@ class _UserPageState extends State<UserPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 color: Colors.white,
               ),
             ),

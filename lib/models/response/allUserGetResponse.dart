@@ -13,50 +13,46 @@ String allUserGetResponseToJson(List<AllUserGetResponse> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class AllUserGetResponse {
-  int userId;
-  String name;
+  String createAt;
   String email;
-  String hashedPassword;
+  String isActive;
+  int isVerify;
+  String name;
   String profile;
   String role;
-  String isVerify;
-  String isActive;
-  String createdAt;
+  int userId;
 
   AllUserGetResponse({
-    required this.userId,
-    required this.name,
+    required this.createAt,
     required this.email,
-    required this.hashedPassword,
+    required this.isActive,
+    required this.isVerify,
+    required this.name,
     required this.profile,
     required this.role,
-    required this.isVerify,
-    required this.isActive,
-    required this.createdAt,
+    required this.userId,
   });
 
   factory AllUserGetResponse.fromJson(Map<String, dynamic> json) =>
       AllUserGetResponse(
-        userId: json["UserID"],
-        name: json["Name"],
-        email: json["Email"],
-        hashedPassword: json["HashedPassword"],
-        profile: json["Profile"],
-        role: json["Role"],
-        isVerify: json["IsVerify"],
-        isActive: json["IsActive"],
-        createdAt: json["CreatedAt"],
+        createAt: json["create_at"],
+        email: json["email"],
+        isActive: json["is_active"],
+        isVerify: json["is_verify"],
+        name: json["name"],
+        profile: json["profile"],
+        role: json["role"],
+        userId: json["user_id"],
       );
 
   Map<String, dynamic> toJson() => {
-    "UserID": userId,
-    "Name": name,
-    "Email": email,
-    "HashedPassword": hashedPassword,
-    "Profile": profile,
-    "Role": role,
-    "IsVerify": isVerify,
-    "IsActive": isActive,
-    "CreatedAt": createdAt,
+    "create_at": createAt,
+    "email": email,
+    "is_active": isActive,
+    "is_verify": isVerify,
+    "name": name,
+    "profile": profile,
+    "role": role,
+    "user_id": userId,
   };
 }

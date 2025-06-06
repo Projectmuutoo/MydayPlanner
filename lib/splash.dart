@@ -1,7 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mydayplanner/config/config.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/pages/login.dart';
 import 'package:mydayplanner/pages/pageAdmin/navBarAdmin.dart';
 import 'package:mydayplanner/pages/pageMember/navBar.dart';
@@ -9,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/shared/appData.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class SplashPage extends StatefulWidget {
@@ -22,7 +29,15 @@ class _SplashPageState extends State<SplashPage> {
   final box = GetStorage();
   StreamSubscription<DocumentSnapshot>? _subscription;
   bool _isFromLogout = false;
+  final storage = FlutterSecureStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn();
   bool _isNavigating = false;
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   @override
   void initState() {
@@ -111,7 +126,7 @@ class _SplashPageState extends State<SplashPage> {
         );
   }
 
-  void goToPage() {
+  void goToPage() async {
     if (_isNavigating) return;
     _isNavigating = true;
 
@@ -123,10 +138,11 @@ class _SplashPageState extends State<SplashPage> {
     var keepActiveUser = userLogin['keepActiveUser'];
     var keepRoleUser = userLogin['keepRoleUser'];
 
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 1), () async {
       if (keepRoleUser == "admin" && keepActiveUser == '1') {
         Get.offAll(() => NavbaradminPage());
       } else if (keepRoleUser == "user" && keepActiveUser == '1') {
+        fetchDataOnResume();
         Get.offAll(() => NavbarPage());
       } else {
         Get.offAll(() => LoginPage());
@@ -138,6 +154,74 @@ class _SplashPageState extends State<SplashPage> {
   void dispose() {
     _subscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> fetchDataOnResume() async {
+    url = await loadAPIEndpoint();
+    var oldUserProfile = box.read('userProfile');
+    var oldUserDataAllJson = box.read('userDataAll');
+    if (oldUserProfile == null || oldUserDataAllJson == null) {
+      return;
+    }
+
+    var oldUserDataAll = AllDataUserGetResponst.fromJson(oldUserDataAllJson);
+    final response = await http.get(
+      Uri.parse("$url/user/data"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final newDataJson = allDataUserGetResponstFromJson(response.body);
+
+      if (!deepEquals(oldUserDataAll, newDataJson)) {
+        box.write('userDataAll', newDataJson.toJson());
+      }
+    }
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      return fetchDataOnResume();
+    }
+  }
+
+  bool deepEquals(AllDataUserGetResponst a, AllDataUserGetResponst b) {
+    return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
+  }
+
+  Future<void> loadNewRefreshToken() async {
+    url = await loadAPIEndpoint();
+    var value = await storage.read(key: 'refreshToken');
+    var loadtoketnew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+
+    if (loadtoketnew.statusCode == 200) {
+      var reponse = jsonDecode(loadtoketnew.body);
+      box.write('accessToken', reponse['accessToken']);
+    } else if (loadtoketnew.statusCode == 403 ||
+        loadtoketnew.statusCode == 401) {
+      final currentUserProfile = box.read('userProfile');
+      if (currentUserProfile != null && currentUserProfile is Map) {
+        await FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(currentUserProfile['email'])
+            .update({'deviceName': FieldValue.delete()});
+      }
+      box.remove('userDataAll');
+      box.remove('userLogin');
+      box.remove('userProfile');
+      box.remove('accessToken');
+      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
+      await storage.deleteAll();
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+    }
   }
 
   @override
