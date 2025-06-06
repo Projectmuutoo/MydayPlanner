@@ -6,6 +6,7 @@ import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -485,6 +486,7 @@ class _LoginPageState extends State<LoginPage> {
                             ],
                           ),
                         ),
+                        SizedBox(height: 5.h),
                         ElevatedButton(
                           onPressed: () {
                             setState(() {

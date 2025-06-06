@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/firebase_options.dart';
 import 'package:mydayplanner/shared/appData.dart';
@@ -40,16 +43,25 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: [Locale('en', 'US'), Locale('th', 'TH')],
-      title: 'MyDayPlanner',
-      theme: ThemeData(
-        useMaterial3: false,
-        fontFamily: 'baloo',
-        scaffoldBackgroundColor: Colors.white,
+    return ScreenUtilInit(
+      designSize: Size(
+        MediaQuery.of(context).size.width,
+        MediaQuery.of(context).size.height,
       ),
-      home: const SplashPage(),
+      minTextAdapt: true,
+      builder: (_, child) {
+        return GetMaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: [Locale('en', 'US'), Locale('th', 'TH')],
+          title: 'MyDayPlanner',
+          theme: ThemeData(
+            useMaterial3: false,
+            fontFamily: 'baloo',
+            scaffoldBackgroundColor: Colors.white,
+          ),
+          home: const SplashPage(),
+        );
+      },
     );
   }
 }

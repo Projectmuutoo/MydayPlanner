@@ -48,7 +48,7 @@ class HomePageState extends State<HomePage> {
   // 🧠 Late Variables
   late Future<void> loadData;
   late String url;
-
+  OverlayEntry? MenuEntryShowMenuBoard;
   // 📊 Integer Variables
   int itemCount = 1;
   int? loadingBoardId;
@@ -541,7 +541,7 @@ class HomePageState extends State<HomePage> {
                                                             fontSize:
                                                                 Get
                                                                     .textTheme
-                                                                    .labelSmall!
+                                                                    .labelMedium!
                                                                     .fontSize! *
                                                                 MediaQuery.of(
                                                                   context,
@@ -565,7 +565,7 @@ class HomePageState extends State<HomePage> {
                                                     fontSize:
                                                         Get
                                                             .textTheme
-                                                            .labelSmall!
+                                                            .labelMedium!
                                                             .fontSize! *
                                                         MediaQuery.of(
                                                           context,
@@ -840,7 +840,7 @@ class HomePageState extends State<HomePage> {
                                         right: 0,
                                         child: Container(
                                           width: width,
-                                          height: height * 0.56,
+                                          height: height,
                                           padding: EdgeInsets.symmetric(
                                             horizontal: width * 0.01,
                                             vertical: height * 0.01,
@@ -1237,15 +1237,16 @@ class HomePageState extends State<HomePage> {
                                         right: 0,
                                         child: Container(
                                           width: width,
-                                          height: height * 0.56,
+                                          height: height,
                                           padding: EdgeInsets.symmetric(
                                             horizontal: width * 0.01,
                                             vertical: height * 0.01,
                                           ),
                                           decoration: BoxDecoration(
                                             color: Color(0xFFF2F2F6),
-                                            borderRadius: BorderRadius.circular(
-                                              18,
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(18),
+                                              topRight: Radius.circular(18),
                                             ),
                                           ),
                                           child: SingleChildScrollView(
@@ -2107,6 +2108,40 @@ class HomePageState extends State<HomePage> {
     return parts.isNotEmpty ? parts.first : '';
   }
 
+  Widget buildPopupItem(
+    BuildContext context, {
+    required String title,
+    Widget? trailing,
+    required VoidCallback onTap,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+        width: width * 0.4,
+        height: height * 0.045,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize:
+                    Get.textTheme.titleSmall!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
   showInfoMenuBoard(
     BuildContext context,
     int boardId,
@@ -2121,201 +2156,182 @@ class HomePageState extends State<HomePage> {
         boardInfoKeys[keyId]!.currentContext!.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
-    final double menuWidth = width * 0.3;
-    final double menuHeight = height * 0.048 * 3;
+
+    const double itemHeightFactor = 0.045;
+    const double menuWidthFactor = 0.4;
+    final double menuWidth = width * menuWidthFactor;
+    final double menuHeight = height * itemHeightFactor * 3.2;
+
     final isPrivateMode = privateFontWeight == FontWeight.w600;
     final currentSelected =
         isPrivateMode ? selectedPrivateBoards : selectedGroupBoards;
 
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx + (size.width / 2) - (menuWidth / 2),
-        offset.dy - menuHeight,
-        offset.dx + (size.width / 2) + (menuWidth / 2),
-        offset.dy,
-      ),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      menuPadding: EdgeInsets.zero,
-      color: Color(0xFFF2F2F6),
-      items: [
-        PopupMenuItem(
-          padding: EdgeInsets.zero,
-          height: height * 0.045,
-          value: 'Info',
-          child: SizedBox(
-            width: width * 0.3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: width * 0.02),
-                  child: Text(
-                    'Show info',
-                    style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(right: width * 0.02),
-                  child: SvgPicture.string(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M11 11h2v6h-2zm0-4h2v2h-2z"></path></svg>',
-                    height: height * 0.02,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        PopupMenuItem(
-          padding: EdgeInsets.zero,
-          height: height * 0.045,
-          value: 'Select',
-          child: SizedBox(
-            width: width * 0.3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: width * 0.02),
-                  child: Text(
-                    'Select board',
-                    style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(right: width * 0.02),
-                  child: SvgPicture.string(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>',
-                    height: height * 0.02,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        PopupMenuItem(
-          padding: EdgeInsets.zero,
-          height: height * 0.045,
-          value: 'Delete',
-          child: SizedBox(
-            width: width * 0.3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: width * 0.02),
-                  child: Text(
-                    'Delete List',
-                    style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(right: width * 0.02),
-                  child: SvgPicture.string(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
-                    height: height * 0.02,
-                    fit: BoxFit.contain,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ).then((value) async {
-      url = await loadAPIEndpoint();
-      if (focusedBoardId != null) {
-        setState(() {
-          focusedBoardId = null;
-        });
-      }
-
-      if (value == 'Info') {
-        showEditInfo(boardName, keyId);
-      } else if (value == 'Select') {
-        setState(() {
-          isSelectBoard = !isSelectBoard;
-          if (currentSelected.contains(boardId.toString())) {
-            currentSelected.remove(boardId.toString());
-          } else {
-            currentSelected.add(boardId.toString());
-          }
-        });
-      } else if (value == 'Delete') {
-        if (isDeleteBoard) {
-          Get.snackbar(
-            'Delete Failed!',
-            'Something went wrong, please try again.',
-            snackPosition: SnackPosition.TOP,
-          );
-          return;
-        }
-
-        setState(() {
-          isDeleteBoard = true;
-        });
-        try {
-          final appData = Provider.of<Appdata>(context, listen: false);
-          var existingData = AllDataUserGetResponst.fromJson(
-            box.read('userDataAll'),
-          );
-          if (privateFontWeight == FontWeight.w600) {
-            appData.showMyBoards.removeCreatedBoardById(boardId);
-            existingData.board.removeWhere((b) => b.boardId == boardId);
-          } else if (groupFontWeight == FontWeight.w600) {
-            appData.showMyBoards.removeMemberBoardById(boardId);
-            existingData.boardgroup.removeWhere((b) => b.boardId == boardId);
-          }
-          box.write('userDataAll', existingData.toJson());
-
-          var response = await http.delete(
-            Uri.parse("$url/board"),
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Authorization": "Bearer ${box.read('accessToken')}",
-            },
-            body: jsonEncode({
-              "board_id": [boardId.toString()],
-            }),
-          );
-          if (response.statusCode == 403) {
-            await loadNewRefreshToken();
-            await http.delete(
-              Uri.parse("$url/board"),
-              headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "Bearer ${box.read('accessToken')}",
+    MenuEntryShowMenuBoard = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            GestureDetector(
+              onTap: () {
+                MenuEntryShowMenuBoard?.remove();
+                MenuEntryShowMenuBoard = null;
+                if (focusedBoardId != null) {
+                  setState(() {
+                    focusedBoardId = null;
+                  });
+                }
               },
-              body: jsonEncode({
-                "board_id": [boardId.toString()],
-              }),
-            );
-          }
-        } finally {
-          isDeleteBoard = false;
-        }
-      }
-    });
+              behavior: HitTestBehavior.translucent,
+              child: Container(color: Colors.transparent),
+            ),
+            Positioned(
+              left: offset.dx + (size.width / 2) - (menuWidth / 2),
+              top: offset.dy - menuHeight,
+              child: Material(
+                elevation: 1,
+                borderRadius: BorderRadius.circular(8),
+                color: Color(0xFFF2F2F6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    buildPopupItem(
+                      context,
+                      title: 'Show info',
+                      trailing: SvgPicture.string(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M11 11h2v6h-2zm0-4h2v2h-2z"></path></svg>',
+                        height: height * 0.02,
+                        fit: BoxFit.contain,
+                      ),
+                      onTap: () {
+                        MenuEntryShowMenuBoard?.remove();
+                        MenuEntryShowMenuBoard = null;
+                        if (focusedBoardId != null) {
+                          setState(() {
+                            focusedBoardId = null;
+                          });
+                        }
+                        showEditInfo(boardName, keyId);
+                      },
+                    ),
+                    buildPopupItem(
+                      context,
+                      title: 'Select board',
+                      trailing: SvgPicture.string(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>',
+                        height: height * 0.02,
+                        fit: BoxFit.contain,
+                      ),
+                      onTap: () {
+                        MenuEntryShowMenuBoard?.remove();
+                        MenuEntryShowMenuBoard = null;
+                        if (focusedBoardId != null) {
+                          setState(() {
+                            focusedBoardId = null;
+                          });
+                        }
+                        setState(() {
+                          isSelectBoard = !isSelectBoard;
+                          if (currentSelected.contains(boardId.toString())) {
+                            currentSelected.remove(boardId.toString());
+                          } else {
+                            currentSelected.add(boardId.toString());
+                          }
+                        });
+                      },
+                    ),
+                    buildPopupItem(
+                      context,
+                      title: 'Delete List',
+                      trailing: SvgPicture.string(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                        height: height * 0.02,
+                        fit: BoxFit.contain,
+                        color: Colors.red,
+                      ),
+                      onTap: () async {
+                        MenuEntryShowMenuBoard?.remove();
+                        MenuEntryShowMenuBoard = null;
+                        if (focusedBoardId != null) {
+                          setState(() {
+                            focusedBoardId = null;
+                          });
+                        }
+                        url = await loadAPIEndpoint();
+                        if (isDeleteBoard) {
+                          Get.snackbar(
+                            'Delete Failed!',
+                            'Something went wrong, please try again.',
+                            snackPosition: SnackPosition.TOP,
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          isDeleteBoard = true;
+                        });
+                        try {
+                          final appData = Provider.of<Appdata>(
+                            context,
+                            listen: false,
+                          );
+                          var existingData = AllDataUserGetResponst.fromJson(
+                            box.read('userDataAll'),
+                          );
+                          if (privateFontWeight == FontWeight.w600) {
+                            appData.showMyBoards.removeCreatedBoardById(
+                              boardId,
+                            );
+                            existingData.board.removeWhere(
+                              (b) => b.boardId == boardId,
+                            );
+                          } else if (groupFontWeight == FontWeight.w600) {
+                            appData.showMyBoards.removeMemberBoardById(boardId);
+                            existingData.boardgroup.removeWhere(
+                              (b) => b.boardId == boardId,
+                            );
+                          }
+                          box.write('userDataAll', existingData.toJson());
+
+                          var response = await http.delete(
+                            Uri.parse("$url/board"),
+                            headers: {
+                              "Content-Type": "application/json; charset=utf-8",
+                              "Authorization":
+                                  "Bearer ${box.read('accessToken')}",
+                            },
+                            body: jsonEncode({
+                              "board_id": [boardId.toString()],
+                            }),
+                          );
+                          if (response.statusCode == 403) {
+                            await loadNewRefreshToken();
+                            await http.delete(
+                              Uri.parse("$url/board"),
+                              headers: {
+                                "Content-Type":
+                                    "application/json; charset=utf-8",
+                                "Authorization":
+                                    "Bearer ${box.read('accessToken')}",
+                              },
+                              body: jsonEncode({
+                                "board_id": [boardId.toString()],
+                              }),
+                            );
+                          }
+                        } finally {
+                          isDeleteBoard = false;
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    Overlay.of(context).insert(MenuEntryShowMenuBoard!);
   }
 
   showEditInfo(String boardname, String keyId) {
