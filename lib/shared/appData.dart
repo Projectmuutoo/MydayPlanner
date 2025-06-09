@@ -108,10 +108,24 @@ class KeepSubjectReportPageAdmin {
 //use page homeuser
 class KeepIdBoard extends ChangeNotifier {
   String _idBoard = '';
+  String _boardName = '';
+  String _boardToken = '';
   String get idBoard => _idBoard;
+  String get boardName => _boardName;
+  String get boardToken => _boardToken;
 
   void setIdBoard(String newIdBoard) {
     _idBoard = newIdBoard;
+    notifyListeners();
+  }
+
+  void setBoardName(String newBoardName) {
+    _boardName = newBoardName;
+    notifyListeners();
+  }
+
+  void setBoardToken(String newBoardToken) {
+    _boardToken = newBoardToken;
     notifyListeners();
   }
 }

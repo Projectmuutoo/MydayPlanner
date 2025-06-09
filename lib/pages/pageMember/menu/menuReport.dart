@@ -101,7 +101,9 @@ class _MenureportPageState extends State<MenureportPage> {
             title: Text(
               'Send Report',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -119,7 +121,9 @@ class _MenureportPageState extends State<MenureportPage> {
                 child: Text(
                   'Submit',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize:
+                        Get.textTheme.titleMedium!.fontSize! *
+                        MediaQuery.of(context).textScaleFactor,
                     fontWeight: FontWeight.w500,
                     color:
                         selectedSubject != null && detailsCtl.text.isNotEmpty
@@ -157,8 +161,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                             fontSize:
                                                 Get
                                                     .textTheme
-                                                    .titleLarge!
-                                                    .fontSize,
+                                                    .titleMedium!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -215,8 +222,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                   fontSize:
                                                       Get
                                                           .textTheme
-                                                          .titleLarge!
-                                                          .fontSize,
+                                                          .titleMedium!
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
                                                   color:
                                                       selectedSubject == null
@@ -247,7 +257,13 @@ class _MenureportPageState extends State<MenureportPage> {
                                       'Details',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -272,7 +288,13 @@ class _MenureportPageState extends State<MenureportPage> {
                                       cursorColor: Color(0xFF4790EB),
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleMedium!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                       ),
                                       decoration: InputDecoration(
                                         hintText: 'Describe your issue...',
@@ -280,8 +302,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleMedium!
-                                                  .fontSize,
+                                                  .titleSmall!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
                                           fontWeight: FontWeight.normal,
                                           color:
                                               detailsCtl.text.isNotEmpty
@@ -301,7 +326,13 @@ class _MenureportPageState extends State<MenureportPage> {
                                       'When you send us feedback, we collect it and we do not reply to feedback, but read all feedback.',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleSmall!.fontSize,
+                                            Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize! *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor,
                                         fontWeight: FontWeight.normal,
                                         color: Colors.grey,
                                       ),
@@ -359,8 +390,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -404,8 +438,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -449,8 +486,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -494,8 +534,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -539,8 +582,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -584,8 +630,11 @@ class _MenureportPageState extends State<MenureportPage> {
                                                       fontSize:
                                                           Get
                                                               .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                              .titleSmall!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -721,7 +770,9 @@ class _MenureportPageState extends State<MenureportPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleLarge!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -729,7 +780,9 @@ class _MenureportPageState extends State<MenureportPage> {
               Text(
                 'Thank you for sending feedback',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize:
+                      Get.textTheme.titleSmall!.fontSize! *
+                      MediaQuery.of(context).textScaleFactor,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -756,7 +809,9 @@ class _MenureportPageState extends State<MenureportPage> {
             child: Text(
               'Ok!',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize:
+                    Get.textTheme.titleMedium!.fontSize! *
+                    MediaQuery.of(context).textScaleFactor,
                 color: Colors.white,
               ),
             ),

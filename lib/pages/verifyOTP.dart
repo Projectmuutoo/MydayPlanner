@@ -1048,22 +1048,16 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
             'profile': response.user.profile,
             'role': response.user.role,
           });
-          var docSnapshot =
-              await FirebaseFirestore.instance
-                  .collection('usersLogin')
-                  .doc(response.user.email)
-                  .get();
-          final result = docSnapshot.data();
-          if (result != null) {
-            String deviceName = await getDeviceName();
-            Map<String, dynamic> currentData = box.read('userLogin') ?? {};
-            currentData['deviceName'] = deviceName;
-            await box.write('userLogin', currentData);
-            await FirebaseFirestore.instance
-                .collection('usersLogin')
-                .doc(response.user.email)
-                .update({'deviceName': deviceName});
-          }
+
+          String deviceName = await getDeviceName();
+          Map<String, dynamic> currentData = box.read('userLogin') ?? {};
+          currentData['deviceName'] = deviceName;
+          await box.write('userLogin', currentData);
+          await FirebaseFirestore.instance
+              .collection('usersLogin')
+              .doc(response.user.email)
+              .update({'deviceName': deviceName});
+
           if (response.user.role != "admin") {
             await box.write('userDataAll', response.toJson());
           }

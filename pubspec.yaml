@@ -38,6 +38,8 @@ dependencies:
   device_info_plus: ^11.4.0
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
+  app_links: ^6.4.0
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

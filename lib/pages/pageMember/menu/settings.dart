@@ -1775,10 +1775,8 @@ class _SettingsPageState extends State<SettingsPage> {
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
       );
-      Get.back();
 
       if (responseLogout.statusCode == 403) {
-        loadingDialog();
         await loadNewRefreshToken();
         responseLogout = await http.post(
           Uri.parse("$url/auth/signout"),
@@ -1787,7 +1785,6 @@ class _SettingsPageState extends State<SettingsPage> {
             "Authorization": "Bearer ${box.read('accessToken')}",
           },
         );
-        Get.back();
       }
 
       await _performCleanup();
@@ -1806,14 +1803,15 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     try {
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      box.remove('userDataAll');
-      box.remove('userLogin');
-      box.remove('userProfile');
-      box.remove('accessToken');
+      await box.remove('userDataAll');
+      await box.remove('userLogin');
+      await box.remove('userProfile');
+      await box.remove('accessToken');
+      Get.back();
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     } catch (e) {
       Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }

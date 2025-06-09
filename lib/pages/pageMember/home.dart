@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:math' show Random;
 import 'dart:ui';
 
+import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +16,7 @@ import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/createBoardListsPostRequest.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/pages/pageMember/menu/menuReport.dart';
-import 'package:mydayplanner/pages/pageMember/myTasksLists/boradLists.dart';
+import 'package:mydayplanner/pages/pageMember/myTasksPrivate/boradPrivate.dart';
 import 'package:mydayplanner/pages/pageMember/menu/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -103,6 +104,7 @@ class HomePageState extends State<HomePage> {
   List<String> messagesRandom = [];
   List<String> selectedPrivateBoards = [];
   List<String> selectedGroupBoards = [];
+  StreamSubscription<Uri>? sub;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -142,7 +144,8 @@ class HomePageState extends State<HomePage> {
 
   Future<void> loadDataAsync() async {
     loadDisplays();
-    checkExpiresRefreshToken();
+    await checkExpiresRefreshToken();
+    checkJoinBoard();
   }
 
   @override
@@ -150,6 +153,7 @@ class HomePageState extends State<HomePage> {
     searchCtl.dispose();
     searchFocusNode.dispose();
     _timer?.cancel();
+    sub?.cancel();
     super.dispose();
   }
 
@@ -238,14 +242,20 @@ class HomePageState extends State<HomePage> {
                                                 ],
                                               ),
                                             )
-                                            : Image.network(
-                                              context
-                                                  .watch<Appdata>()
-                                                  .changeMyProfileProvider
-                                                  .profile,
-                                              width: height * 0.07,
-                                              height: height * 0.07,
-                                              fit: BoxFit.cover,
+                                            : Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black12,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Image.network(
+                                                context
+                                                    .watch<Appdata>()
+                                                    .changeMyProfileProvider
+                                                    .profile,
+                                                width: height * 0.07,
+                                                height: height * 0.07,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                   ),
                                   SizedBox(width: width * 0.01),
@@ -594,7 +604,19 @@ class HomePageState extends State<HomePage> {
                                             onTap: () {
                                               setState(() {
                                                 if (currentSelected.length ==
-                                                    currentBoards.length) {
+                                                    currentBoards
+                                                        .where(
+                                                          (b) =>
+                                                              b.createdBy
+                                                                  .toString() ==
+                                                              box
+                                                                  .read(
+                                                                    'userProfile',
+                                                                  )['userid']
+                                                                  .toString(),
+                                                        )
+                                                        .toList()
+                                                        .length) {
                                                   isPrivateMode
                                                       ? selectedPrivateBoards
                                                           .clear()
@@ -603,6 +625,16 @@ class HomePageState extends State<HomePage> {
                                                 } else {
                                                   final newIds =
                                                       currentBoards
+                                                          .where(
+                                                            (b) =>
+                                                                b.createdBy
+                                                                    .toString() ==
+                                                                box
+                                                                    .read(
+                                                                      'userProfile',
+                                                                    )['userid']
+                                                                    .toString(),
+                                                          )
                                                           .map(
                                                             (board) =>
                                                                 board.boardId
@@ -621,14 +653,38 @@ class HomePageState extends State<HomePage> {
                                             },
                                             child: SvgPicture.string(
                                               currentSelected.length ==
-                                                      currentBoards.length
+                                                      currentBoards
+                                                          .where(
+                                                            (b) =>
+                                                                b.createdBy
+                                                                    .toString() ==
+                                                                box
+                                                                    .read(
+                                                                      'userProfile',
+                                                                    )['userid']
+                                                                    .toString(),
+                                                          )
+                                                          .toList()
+                                                          .length
                                                   ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
                                                   : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
                                               height: height * 0.04,
                                               fit: BoxFit.contain,
                                               color:
                                                   currentSelected.length ==
-                                                          currentBoards.length
+                                                          currentBoards
+                                                              .where(
+                                                                (b) =>
+                                                                    b.createdBy
+                                                                        .toString() ==
+                                                                    box
+                                                                        .read(
+                                                                          'userProfile',
+                                                                        )['userid']
+                                                                        .toString(),
+                                                              )
+                                                              .toList()
+                                                              .length
                                                       ? Color(0xFF007AFF)
                                                       : Colors.grey,
                                             ),
@@ -974,7 +1030,7 @@ class HomePageState extends State<HomePage> {
                                                                               .w500,
                                                                       color: Color(
                                                                         0x66007AFF,
-                                                                      ), // จางลง
+                                                                      ),
                                                                       shadows: [
                                                                         Shadow(
                                                                           blurRadius:
@@ -1050,6 +1106,17 @@ class HomePageState extends State<HomePage> {
                                                                     ? Color(
                                                                       0xFFF2F2F6,
                                                                     )
+                                                                    : isSelectBoard &&
+                                                                        board.createdBy
+                                                                                .toString() !=
+                                                                            box
+                                                                                .read(
+                                                                                  'userProfile',
+                                                                                )['userid']
+                                                                                .toString()
+                                                                    ? Color(
+                                                                      0x9FFFFFFF,
+                                                                    )
                                                                     : Colors
                                                                         .white,
                                                             borderRadius:
@@ -1085,12 +1152,29 @@ class HomePageState extends State<HomePage> {
                                                                                   0xFF979595,
                                                                                 ),
                                                                         blurRadius:
-                                                                            3,
-                                                                        offset:
-                                                                            Offset(
-                                                                              0,
-                                                                              1,
-                                                                            ),
+                                                                            isSelectBoard &&
+                                                                                    board.createdBy
+                                                                                            .toString() !=
+                                                                                        box
+                                                                                            .read(
+                                                                                              'userProfile',
+                                                                                            )['userid']
+                                                                                            .toString()
+                                                                                ? 0
+                                                                                : 3,
+                                                                        offset: Offset(
+                                                                          0,
+                                                                          isSelectBoard &&
+                                                                                  board.createdBy
+                                                                                          .toString() !=
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? 0
+                                                                              : 1,
+                                                                        ),
                                                                         spreadRadius:
                                                                             0.1,
                                                                       ),
@@ -1109,29 +1193,51 @@ class HomePageState extends State<HomePage> {
                                                                       ),
                                                                   onTap:
                                                                       !loadWaitNewBoard
-                                                                          ? () {
-                                                                            if (isSelectBoard) {
-                                                                              setState(
-                                                                                () {
-                                                                                  if (currentSelected.contains(
-                                                                                    board.boardId.toString(),
-                                                                                  )) {
-                                                                                    currentSelected.remove(
+                                                                          ? isSelectBoard &&
+                                                                                  board.createdBy
+                                                                                          .toString() ==
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? () {
+                                                                                setState(
+                                                                                  () {
+                                                                                    if (currentSelected.contains(
                                                                                       board.boardId.toString(),
-                                                                                    );
-                                                                                  } else {
-                                                                                    currentSelected.add(
-                                                                                      board.boardId.toString(),
-                                                                                    );
-                                                                                  }
-                                                                                },
-                                                                              );
-                                                                            } else {
-                                                                              goToMyList(
-                                                                                board.boardId.toString(),
-                                                                              );
-                                                                            }
-                                                                          }
+                                                                                    )) {
+                                                                                      currentSelected.remove(
+                                                                                        board.boardId.toString(),
+                                                                                      );
+                                                                                    } else {
+                                                                                      currentSelected.add(
+                                                                                        board.boardId.toString(),
+                                                                                      );
+                                                                                    }
+                                                                                  },
+                                                                                );
+                                                                              }
+                                                                              : !isSelectBoard ||
+                                                                                  board.createdBy
+                                                                                          .toString() ==
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? () {
+                                                                                goToMyList(
+                                                                                  board.boardId.toString(),
+                                                                                  board.boardName,
+                                                                                  tokenBoard:
+                                                                                      groupFontWeight ==
+                                                                                              FontWeight.w600
+                                                                                          ? board.token
+                                                                                          : null,
+                                                                                );
+                                                                              }
+                                                                              : null
                                                                           : null,
                                                                   onLongPress:
                                                                       isSelectBoard
@@ -1151,6 +1257,7 @@ class HomePageState extends State<HomePage> {
                                                                               context,
                                                                               board.boardId,
                                                                               board.boardName,
+                                                                              board.createdBy,
                                                                               keyId:
                                                                                   keyId,
                                                                             );
@@ -1201,7 +1308,14 @@ class HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                               // checkbox สำหรับ select mode
-                                                              if (isSelectBoard)
+                                                              if (isSelectBoard &&
+                                                                  board.createdBy
+                                                                          .toString() ==
+                                                                      box
+                                                                          .read(
+                                                                            'userProfile',
+                                                                          )['userid']
+                                                                          .toString())
                                                                 Positioned(
                                                                   left: 2,
                                                                   top: 2,
@@ -1229,6 +1343,92 @@ class HomePageState extends State<HomePage> {
                                                                             : Colors.grey,
                                                                   ),
                                                                 ),
+                                                              if (groupFontWeight ==
+                                                                  FontWeight
+                                                                      .w600)
+                                                                if (board
+                                                                        .createdBy
+                                                                        .toString() !=
+                                                                    box
+                                                                        .read(
+                                                                          'userProfile',
+                                                                        )['userid']
+                                                                        .toString())
+                                                                  Positioned(
+                                                                    right: 2,
+                                                                    top: 2,
+                                                                    child: ClipOval(
+                                                                      child:
+                                                                          board.createdByUser.profile ==
+                                                                                  'none-url'
+                                                                              ? Container(
+                                                                                width:
+                                                                                    height *
+                                                                                    0.035,
+                                                                                height:
+                                                                                    height *
+                                                                                    0.035,
+                                                                                decoration: BoxDecoration(
+                                                                                  shape:
+                                                                                      BoxShape.circle,
+                                                                                ),
+                                                                                child: Stack(
+                                                                                  children: [
+                                                                                    Container(
+                                                                                      height:
+                                                                                          height *
+                                                                                          0.1,
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: Color(
+                                                                                          0xFFF2F2F6,
+                                                                                        ),
+                                                                                        shape:
+                                                                                            BoxShape.circle,
+                                                                                      ),
+                                                                                    ),
+                                                                                    Positioned(
+                                                                                      left:
+                                                                                          0,
+                                                                                      right:
+                                                                                          0,
+                                                                                      bottom:
+                                                                                          0,
+                                                                                      child: SvgPicture.string(
+                                                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                                        height:
+                                                                                            height *
+                                                                                            0.025,
+                                                                                        fit:
+                                                                                            BoxFit.contain,
+                                                                                        color: Color(
+                                                                                          0xFF979595,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              )
+                                                                              : Container(
+                                                                                decoration: BoxDecoration(
+                                                                                  color:
+                                                                                      Colors.black12,
+                                                                                  shape:
+                                                                                      BoxShape.circle,
+                                                                                ),
+                                                                                child: Image.network(
+                                                                                  board.createdByUser.profile,
+                                                                                  width:
+                                                                                      height *
+                                                                                      0.035,
+                                                                                  height:
+                                                                                      height *
+                                                                                      0.035,
+                                                                                  fit:
+                                                                                      BoxFit.cover,
+                                                                                ),
+                                                                              ),
+                                                                    ),
+                                                                  ),
                                                               // blur effect เมื่อมี focus
                                                               if (focusedBoardId !=
                                                                       null &&
@@ -1338,6 +1538,17 @@ class HomePageState extends State<HomePage> {
                                                                     ? Color(
                                                                       0xFFF2F2F6,
                                                                     )
+                                                                    : isSelectBoard &&
+                                                                        board.createdBy
+                                                                                .toString() !=
+                                                                            box
+                                                                                .read(
+                                                                                  'userProfile',
+                                                                                )['userid']
+                                                                                .toString()
+                                                                    ? Color(
+                                                                      0x9FFFFFFF,
+                                                                    )
                                                                     : Colors
                                                                         .white,
                                                             borderRadius:
@@ -1373,12 +1584,29 @@ class HomePageState extends State<HomePage> {
                                                                                   0xFF979595,
                                                                                 ),
                                                                         blurRadius:
-                                                                            3,
-                                                                        offset:
-                                                                            Offset(
-                                                                              0,
-                                                                              1,
-                                                                            ),
+                                                                            isSelectBoard &&
+                                                                                    board.createdBy
+                                                                                            .toString() !=
+                                                                                        box
+                                                                                            .read(
+                                                                                              'userProfile',
+                                                                                            )['userid']
+                                                                                            .toString()
+                                                                                ? 0
+                                                                                : 3,
+                                                                        offset: Offset(
+                                                                          0,
+                                                                          isSelectBoard &&
+                                                                                  board.createdBy
+                                                                                          .toString() !=
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? 0
+                                                                              : 1,
+                                                                        ),
                                                                         spreadRadius:
                                                                             0.1,
                                                                       ),
@@ -1397,29 +1625,51 @@ class HomePageState extends State<HomePage> {
                                                                       ),
                                                                   onTap:
                                                                       !loadWaitNewBoard
-                                                                          ? () {
-                                                                            if (isSelectBoard) {
-                                                                              setState(
-                                                                                () {
-                                                                                  if (currentSelected.contains(
-                                                                                    board.boardId.toString(),
-                                                                                  )) {
-                                                                                    currentSelected.remove(
+                                                                          ? isSelectBoard &&
+                                                                                  board.createdBy
+                                                                                          .toString() ==
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? () {
+                                                                                setState(
+                                                                                  () {
+                                                                                    if (currentSelected.contains(
                                                                                       board.boardId.toString(),
-                                                                                    );
-                                                                                  } else {
-                                                                                    currentSelected.add(
-                                                                                      board.boardId.toString(),
-                                                                                    );
-                                                                                  }
-                                                                                },
-                                                                              );
-                                                                            } else {
-                                                                              goToMyList(
-                                                                                board.boardId.toString(),
-                                                                              );
-                                                                            }
-                                                                          }
+                                                                                    )) {
+                                                                                      currentSelected.remove(
+                                                                                        board.boardId.toString(),
+                                                                                      );
+                                                                                    } else {
+                                                                                      currentSelected.add(
+                                                                                        board.boardId.toString(),
+                                                                                      );
+                                                                                    }
+                                                                                  },
+                                                                                );
+                                                                              }
+                                                                              : !isSelectBoard ||
+                                                                                  board.createdBy
+                                                                                          .toString() ==
+                                                                                      box
+                                                                                          .read(
+                                                                                            'userProfile',
+                                                                                          )['userid']
+                                                                                          .toString()
+                                                                              ? () {
+                                                                                goToMyList(
+                                                                                  board.boardId.toString(),
+                                                                                  board.boardName,
+                                                                                  tokenBoard:
+                                                                                      groupFontWeight ==
+                                                                                              FontWeight.w600
+                                                                                          ? board.token
+                                                                                          : null,
+                                                                                );
+                                                                              }
+                                                                              : null
                                                                           : null,
                                                                   onLongPress:
                                                                       currentSelected
@@ -1440,6 +1690,7 @@ class HomePageState extends State<HomePage> {
                                                                               context,
                                                                               board.boardId,
                                                                               board.boardName,
+                                                                              board.createdBy,
                                                                               keyId:
                                                                                   keyId,
                                                                             );
@@ -1483,7 +1734,14 @@ class HomePageState extends State<HomePage> {
                                                                   ),
                                                                 ),
                                                               ),
-                                                              if (isSelectBoard)
+                                                              if (isSelectBoard &&
+                                                                  board.createdBy
+                                                                          .toString() ==
+                                                                      box
+                                                                          .read(
+                                                                            'userProfile',
+                                                                          )['userid']
+                                                                          .toString())
                                                                 Positioned(
                                                                   left: 2,
                                                                   top: 2,
@@ -1511,6 +1769,92 @@ class HomePageState extends State<HomePage> {
                                                                             : Colors.grey,
                                                                   ),
                                                                 ),
+                                                              if (groupFontWeight ==
+                                                                  FontWeight
+                                                                      .w600)
+                                                                if (board
+                                                                        .createdBy
+                                                                        .toString() !=
+                                                                    box
+                                                                        .read(
+                                                                          'userProfile',
+                                                                        )['userid']
+                                                                        .toString())
+                                                                  Positioned(
+                                                                    right: 2,
+                                                                    top: 2,
+                                                                    child: ClipOval(
+                                                                      child:
+                                                                          board.createdByUser.profile ==
+                                                                                  'none-url'
+                                                                              ? Container(
+                                                                                width:
+                                                                                    height *
+                                                                                    0.035,
+                                                                                height:
+                                                                                    height *
+                                                                                    0.035,
+                                                                                decoration: BoxDecoration(
+                                                                                  shape:
+                                                                                      BoxShape.circle,
+                                                                                ),
+                                                                                child: Stack(
+                                                                                  children: [
+                                                                                    Container(
+                                                                                      height:
+                                                                                          height *
+                                                                                          0.1,
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: Color(
+                                                                                          0xFFF2F2F6,
+                                                                                        ),
+                                                                                        shape:
+                                                                                            BoxShape.circle,
+                                                                                      ),
+                                                                                    ),
+                                                                                    Positioned(
+                                                                                      left:
+                                                                                          0,
+                                                                                      right:
+                                                                                          0,
+                                                                                      bottom:
+                                                                                          0,
+                                                                                      child: SvgPicture.string(
+                                                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                                                        height:
+                                                                                            height *
+                                                                                            0.025,
+                                                                                        fit:
+                                                                                            BoxFit.contain,
+                                                                                        color: Color(
+                                                                                          0xFF979595,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              )
+                                                                              : Container(
+                                                                                decoration: BoxDecoration(
+                                                                                  color:
+                                                                                      Colors.black12,
+                                                                                  shape:
+                                                                                      BoxShape.circle,
+                                                                                ),
+                                                                                child: Image.network(
+                                                                                  board.createdByUser.profile,
+                                                                                  width:
+                                                                                      height *
+                                                                                      0.035,
+                                                                                  height:
+                                                                                      height *
+                                                                                      0.035,
+                                                                                  fit:
+                                                                                      BoxFit.cover,
+                                                                                ),
+                                                                              ),
+                                                                    ),
+                                                                  ),
                                                               if (focusedBoardId !=
                                                                       null &&
                                                                   !isSelected)
@@ -1906,7 +2250,30 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  deleteBoardBySelected(List<String> allSelectedBoards) async {
+  void checkJoinBoard() {
+    sub = AppLinks().uriLinkStream.listen((Uri uri) {
+      log('ลิงก์ที่ได้รับ: $uri');
+      if (uri.host == 'mydayplanner-app' && uri.path == '/source') {
+        final encoded = uri.queryParameters['join'];
+        if (encoded != null) {
+          final decoded = utf8.decode(base64.decode(encoded));
+          final params = Uri.splitQueryString(decoded);
+          final boardId = params['boardId'];
+          final expire = params['expire'];
+
+          log('รับ boardId จากลิงก์: $boardId');
+          log('วันหมดอายุ: $expire');
+
+          if (boardId != null) {
+            // Get.to(() => BoradprivatePage());
+            log("message");
+          }
+        }
+      }
+    });
+  }
+
+  void deleteBoardBySelected(List<String> allSelectedBoards) async {
     final appData = Provider.of<Appdata>(context, listen: false);
     var existingData = AllDataUserGetResponst.fromJson(box.read('userDataAll'));
     for (var boardId in allSelectedBoards) {
@@ -2175,6 +2542,7 @@ class HomePageState extends State<HomePage> {
                     Get.textTheme.labelMedium!.fontSize! *
                     MediaQuery.of(context).textScaleFactor,
                 fontWeight: FontWeight.w500,
+                color: title == 'Delete List' ? Colors.red : Colors.black,
               ),
             ),
             if (trailing != null) trailing,
@@ -2187,7 +2555,8 @@ class HomePageState extends State<HomePage> {
   showInfoMenuBoard(
     BuildContext context,
     int boardId,
-    String boardName, {
+    String boardName,
+    int createdBy, {
     required String keyId,
   }) {
     //horizontal left right
@@ -2202,7 +2571,11 @@ class HomePageState extends State<HomePage> {
     const double itemHeightFactor = 0.045;
     const double menuWidthFactor = 0.4;
     final double menuWidth = width * menuWidthFactor;
-    final double menuHeight = height * itemHeightFactor * 3.2;
+    final double menuHeight =
+        (height * itemHeightFactor) *
+        (createdBy.toString() == box.read('userProfile')['userid'].toString()
+            ? 3.2
+            : 1.2);
 
     final isPrivateMode = privateFontWeight == FontWeight.w600;
     final currentSelected =
@@ -2254,99 +2627,92 @@ class HomePageState extends State<HomePage> {
                         showEditInfo(boardName, keyId);
                       },
                     ),
-                    buildPopupItem(
-                      context,
-                      title: 'Select board',
-                      trailing: SvgPicture.string(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>',
-                        height: height * 0.02,
-                        fit: BoxFit.contain,
-                      ),
-                      onTap: () {
-                        MenuEntryShowMenuBoard?.remove();
-                        MenuEntryShowMenuBoard = null;
-                        if (focusedBoardId != null) {
-                          setState(() {
-                            focusedBoardId = null;
-                          });
-                        }
-                        setState(() {
-                          isSelectBoard = !isSelectBoard;
-                          if (currentSelected.contains(boardId.toString())) {
-                            currentSelected.remove(boardId.toString());
-                          } else {
-                            currentSelected.add(boardId.toString());
+                    if (createdBy.toString() ==
+                        box.read('userProfile')['userid'].toString())
+                      buildPopupItem(
+                        context,
+                        title: 'Select board',
+                        trailing: SvgPicture.string(
+                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>',
+                          height: height * 0.02,
+                          fit: BoxFit.contain,
+                        ),
+                        onTap: () {
+                          MenuEntryShowMenuBoard?.remove();
+                          MenuEntryShowMenuBoard = null;
+                          if (focusedBoardId != null) {
+                            setState(() {
+                              focusedBoardId = null;
+                            });
                           }
-                        });
-                      },
-                    ),
-                    buildPopupItem(
-                      context,
-                      title: 'Delete List',
-                      trailing: SvgPicture.string(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
-                        height: height * 0.02,
-                        fit: BoxFit.contain,
-                        color: Colors.red,
-                      ),
-                      onTap: () async {
-                        MenuEntryShowMenuBoard?.remove();
-                        MenuEntryShowMenuBoard = null;
-                        if (focusedBoardId != null) {
                           setState(() {
-                            focusedBoardId = null;
+                            isSelectBoard = !isSelectBoard;
+                            if (currentSelected.contains(boardId.toString())) {
+                              currentSelected.remove(boardId.toString());
+                            } else {
+                              currentSelected.add(boardId.toString());
+                            }
                           });
-                        }
-                        url = await loadAPIEndpoint();
-                        if (isDeleteBoard) {
-                          Get.snackbar(
-                            'Delete Failed!',
-                            'Something went wrong, please try again.',
-                            snackPosition: SnackPosition.TOP,
-                          );
-                          return;
-                        }
-
-                        setState(() {
-                          isDeleteBoard = true;
-                        });
-                        try {
-                          final appData = Provider.of<Appdata>(
-                            context,
-                            listen: false,
-                          );
-                          var existingData = AllDataUserGetResponst.fromJson(
-                            box.read('userDataAll'),
-                          );
-                          if (privateFontWeight == FontWeight.w600) {
-                            appData.showMyBoards.removeCreatedBoardById(
-                              boardId,
-                            );
-                            existingData.board.removeWhere(
-                              (b) => b.boardId == boardId,
-                            );
-                          } else if (groupFontWeight == FontWeight.w600) {
-                            appData.showMyBoards.removeMemberBoardById(boardId);
-                            existingData.boardgroup.removeWhere(
-                              (b) => b.boardId == boardId,
-                            );
+                        },
+                      ),
+                    if (createdBy.toString() ==
+                        box.read('userProfile')['userid'].toString())
+                      buildPopupItem(
+                        context,
+                        title: 'Delete List',
+                        trailing: SvgPicture.string(
+                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                          height: height * 0.02,
+                          fit: BoxFit.contain,
+                          color: Colors.red,
+                        ),
+                        onTap: () async {
+                          MenuEntryShowMenuBoard?.remove();
+                          MenuEntryShowMenuBoard = null;
+                          if (focusedBoardId != null) {
+                            setState(() {
+                              focusedBoardId = null;
+                            });
                           }
-                          box.write('userDataAll', existingData.toJson());
+                          url = await loadAPIEndpoint();
+                          if (isDeleteBoard) {
+                            Get.snackbar(
+                              'Delete Failed!',
+                              'Something went wrong, please try again.',
+                              snackPosition: SnackPosition.TOP,
+                            );
+                            return;
+                          }
 
-                          var response = await http.delete(
-                            Uri.parse("$url/board"),
-                            headers: {
-                              "Content-Type": "application/json; charset=utf-8",
-                              "Authorization":
-                                  "Bearer ${box.read('accessToken')}",
-                            },
-                            body: jsonEncode({
-                              "board_id": [boardId.toString()],
-                            }),
-                          );
-                          if (response.statusCode == 403) {
-                            await loadNewRefreshToken();
-                            await http.delete(
+                          setState(() {
+                            isDeleteBoard = true;
+                          });
+                          try {
+                            final appData = Provider.of<Appdata>(
+                              context,
+                              listen: false,
+                            );
+                            var existingData = AllDataUserGetResponst.fromJson(
+                              box.read('userDataAll'),
+                            );
+                            if (privateFontWeight == FontWeight.w600) {
+                              appData.showMyBoards.removeCreatedBoardById(
+                                boardId,
+                              );
+                              existingData.board.removeWhere(
+                                (b) => b.boardId == boardId,
+                              );
+                            } else if (groupFontWeight == FontWeight.w600) {
+                              appData.showMyBoards.removeMemberBoardById(
+                                boardId,
+                              );
+                              existingData.boardgroup.removeWhere(
+                                (b) => b.boardId == boardId,
+                              );
+                            }
+                            box.write('userDataAll', existingData.toJson());
+
+                            var response = await http.delete(
                               Uri.parse("$url/board"),
                               headers: {
                                 "Content-Type":
@@ -2358,12 +2724,26 @@ class HomePageState extends State<HomePage> {
                                 "board_id": [boardId.toString()],
                               }),
                             );
+                            if (response.statusCode == 403) {
+                              await loadNewRefreshToken();
+                              await http.delete(
+                                Uri.parse("$url/board"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8",
+                                  "Authorization":
+                                      "Bearer ${box.read('accessToken')}",
+                                },
+                                body: jsonEncode({
+                                  "board_id": [boardId.toString()],
+                                }),
+                              );
+                            }
+                          } finally {
+                            isDeleteBoard = false;
                           }
-                        } finally {
-                          isDeleteBoard = false;
-                        }
-                      },
-                    ),
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -2733,7 +3113,6 @@ class HomePageState extends State<HomePage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
-      showDragHandle: true,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -2742,6 +3121,7 @@ class HomePageState extends State<HomePage> {
 
             return Padding(
               padding: EdgeInsets.only(
+                top: height * 0.02,
                 left: width * 0.05,
                 right: width * 0.05,
                 bottom:
@@ -2834,14 +3214,25 @@ class HomePageState extends State<HomePage> {
                               boardName: boardName,
                               createdAt: DateTime.now().toIso8601String(),
                               createdBy: box.read('userProfile')['userid'],
-                              tasks: [],
+                              createdByUser: CreatedByUser(
+                                email: box.read('userProfile')['email'],
+                                name: box.read('userProfile')['name'],
+                                profile: box.read('userProfile')['profile'],
+                                userId: box.read('userProfile')['userid'],
+                              ),
                             );
                             Boardgroup tempBoardGroup = Boardgroup(
                               boardId: tempId,
                               boardName: boardName,
                               createdAt: DateTime.now().toIso8601String(),
                               createdBy: box.read('userProfile')['userid'],
-                              tasks: [],
+                              token: '',
+                              createdByUser: CreatedByUser(
+                                email: box.read('userProfile')['email'],
+                                name: box.read('userProfile')['name'],
+                                profile: box.read('userProfile')['profile'],
+                                userId: box.read('userProfile')['userid'],
+                              ),
                             );
 
                             final appData = Provider.of<Appdata>(
@@ -2909,7 +3300,13 @@ class HomePageState extends State<HomePage> {
                                     createdAt: DateTime.now().toIso8601String(),
                                     createdBy:
                                         box.read('userProfile')['userid'],
-                                    tasks: [],
+                                    createdByUser: CreatedByUser(
+                                      email: box.read('userProfile')['email'],
+                                      name: box.read('userProfile')['name'],
+                                      profile:
+                                          box.read('userProfile')['profile'],
+                                      userId: box.read('userProfile')['userid'],
+                                    ),
                                   );
                                   await completeLoading();
                                   appData.showMyBoards.addCreatedBoard(
@@ -2992,7 +3389,14 @@ class HomePageState extends State<HomePage> {
                                     createdAt: DateTime.now().toIso8601String(),
                                     createdBy:
                                         box.read('userProfile')['userid'],
-                                    tasks: [],
+                                    token: data['deep_link'],
+                                    createdByUser: CreatedByUser(
+                                      email: box.read('userProfile')['email'],
+                                      name: box.read('userProfile')['name'],
+                                      profile:
+                                          box.read('userProfile')['profile'],
+                                      userId: box.read('userProfile')['userid'],
+                                    ),
                                   );
                                   await completeLoading();
                                   appData.showMyBoards.addMemberBoard(
@@ -3053,7 +3457,7 @@ class HomePageState extends State<HomePage> {
     });
   }
 
-  void goToMyList(String idBoard) {
+  void goToMyList(String idBoard, String boardName, {String? tokenBoard}) {
     if (focusedBoardId != null) {
       setState(() {
         focusedBoardId = null;
@@ -3061,7 +3465,13 @@ class HomePageState extends State<HomePage> {
     }
     final appData = Provider.of<Appdata>(context, listen: false);
     appData.idBoard.setIdBoard(idBoard);
-    Get.to(() => BoradlistsPage());
+    appData.idBoard.setBoardName(boardName);
+    if (tokenBoard != null) {
+      appData.idBoard.setBoardToken(tokenBoard);
+    } else {
+      appData.idBoard.setBoardToken('');
+    }
+    Get.to(() => BoradprivatePage());
   }
 
   // ฟังก์ชันเพื่อเลื่อน slider
@@ -3207,7 +3617,7 @@ class HomePageState extends State<HomePage> {
       box.write('accessToken', reponse['accessToken']);
 
       final responseAll = await http.get(
-        Uri.parse("$url/user/AlldataUser"),
+        Uri.parse("$url/user/data"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -3230,7 +3640,7 @@ class HomePageState extends State<HomePage> {
           });
         } else if (groupFontWeight == FontWeight.w600) {
           setState(() {
-            boards = boardData.boardgroup.cast<Board>();
+            boards = boardData.boardgroup;
           });
           WidgetsBinding.instance.addPostFrameCallback((_) {
             moveSliderToKey(groupKey);
