@@ -1056,7 +1056,11 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
           await FirebaseFirestore.instance
               .collection('usersLogin')
               .doc(response.user.email)
-              .update({'deviceName': deviceName});
+              .update({
+                'deviceName': deviceName,
+                'changePassword':
+                    response.user.role == "admin" ? FieldValue.delete() : true,
+              });
 
           if (response.user.role != "admin") {
             await box.write('userDataAll', response.toJson());

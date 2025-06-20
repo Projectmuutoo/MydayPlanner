@@ -11,34 +11,51 @@ String todayTasksCreatePostRequestToJson(TodayTasksCreatePostRequest data) =>
     json.encode(data.toJson());
 
 class TodayTasksCreatePostRequest {
-  String email;
   String taskName;
-  dynamic description;
-  String status;
+  String description;
   String priority;
+  Reminder reminder;
+  String status;
 
   TodayTasksCreatePostRequest({
-    required this.email,
     required this.taskName,
     required this.description,
-    required this.status,
     required this.priority,
+    required this.reminder,
+    required this.status,
   });
 
   factory TodayTasksCreatePostRequest.fromJson(Map<String, dynamic> json) =>
       TodayTasksCreatePostRequest(
-        email: json["email"],
         taskName: json["task_name"],
         description: json["description"],
-        status: json["status"],
         priority: json["priority"],
+        reminder: Reminder.fromJson(json["reminder"]),
+        status: json["status"],
       );
 
   Map<String, dynamic> toJson() => {
-    "email": email,
     "task_name": taskName,
     "description": description,
-    "status": status,
     "priority": priority,
+    "reminder": reminder.toJson(),
+    "status": status,
+  };
+}
+
+class Reminder {
+  String dueDate;
+  String recurringPattern;
+
+  Reminder({required this.dueDate, required this.recurringPattern});
+
+  factory Reminder.fromJson(Map<String, dynamic> json) => Reminder(
+    dueDate: json["due_date"],
+    recurringPattern: json["recurring_pattern"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "due_date": dueDate,
+    "recurring_pattern": recurringPattern,
   };
 }

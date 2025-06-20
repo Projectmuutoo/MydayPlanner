@@ -29,7 +29,7 @@ class _NotificationPageState extends State<NotificationPage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   final FlutterSecureStorage storage = FlutterSecureStorage();
   var box = GetStorage();
-  late Timer _timer;
+  late Timer timer;
 
   // 🧠 Late Variables
   late Future<void> loadData;
@@ -43,7 +43,7 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) setState(() {});
     });
     loadData = loadDataAsync();
@@ -144,6 +144,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         final isResponse =
                             data.containsKey('ResponderName') &&
                             data['Response'] == 'Accept';
+
                         if (isInvite || isResponse) {
                           return TweenAnimationBuilder(
                             tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -365,31 +366,45 @@ class _NotificationPageState extends State<NotificationPage> {
                                               maxLines: 4,
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                            Text(
-                                              isInvite
-                                                  ? formatToDayAndTime(
-                                                    data['Invitation time']
-                                                        .toDate(),
-                                                  )
-                                                  : formatToDayAndTime(
-                                                    data['Response time']
-                                                        .toDate(),
-                                                  ),
-                                              style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
                                             if (isInvite)
                                               Row(
                                                 children: [
+                                                  ElevatedButton(
+                                                    onPressed:
+                                                        () => _handleAccept(
+                                                          doc.id,
+                                                          data,
+                                                        ),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Color(
+                                                        0xFF007AFF,
+                                                      ),
+                                                      elevation: 0,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      'Accept',
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            Get
+                                                                .textTheme
+                                                                .labelMedium!
+                                                                .fontSize! *
+                                                            MediaQuery.of(
+                                                              context,
+                                                            ).textScaleFactor,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: width * 0.02),
                                                   ElevatedButton(
                                                     onPressed:
                                                         () => _handleDecline(
@@ -425,42 +440,6 @@ class _NotificationPageState extends State<NotificationPage> {
                                                         fontWeight:
                                                             FontWeight.w500,
                                                         color: Colors.black,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: width * 0.02),
-                                                  ElevatedButton(
-                                                    onPressed:
-                                                        () => _handleAccept(
-                                                          doc.id,
-                                                          data,
-                                                        ),
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: Color(
-                                                        0xFF007AFF,
-                                                      ),
-                                                      elevation: 0,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      'Accept',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            Get
-                                                                .textTheme
-                                                                .labelMedium!
-                                                                .fontSize! *
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).textScaleFactor,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: Colors.white,
                                                       ),
                                                     ),
                                                   ),

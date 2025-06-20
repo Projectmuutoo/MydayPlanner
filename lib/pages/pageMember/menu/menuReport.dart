@@ -362,7 +362,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {
@@ -409,7 +409,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {
@@ -457,7 +457,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {
@@ -505,7 +505,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {
@@ -553,7 +553,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {
@@ -601,7 +601,7 @@ class _MenureportPageState extends State<MenureportPage> {
                                           color: Colors.transparent,
                                           child: InkWell(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              8,
                                             ),
                                             onTap: () {
                                               setState(() {

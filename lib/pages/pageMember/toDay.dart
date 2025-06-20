@@ -4,6 +4,7 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,7 +14,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/todayTasksCreatePostRequest.dart';
-import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
+import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
+    as model;
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +37,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   // 🧠 Late Variables
   late Future<void> loadData;
   late String url;
+  String? selectedReminder;
+  DateTime? customReminderDateTime;
 
   OverlayEntry? mainMenuEntry;
   OverlayEntry? sortMenuEntry;
@@ -63,17 +67,20 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   bool showArchived = false;
   bool isFinishing = false;
   bool isCreatingTask = false;
+  bool isShowMenuRemind = false;
+  bool isShowMenuPriority = false;
+  bool isCustomReminderApplied = false;
 
   // 🔢 Integer Variables
   int itemCount = 1;
+  int? selectedPriority;
 
   // 🕒 Timer
   Timer? _timer;
   Timer? debounceTimer;
 
   // 📋 Lists
-  List<Todaytask> tasks = [];
-  List<Todaytask> filteredTasks = [];
+  List<model.Task> tasks = [];
   List<String> selectedTaskIds = [];
   List<String> selectedIsArchived = [];
   Map<String, bool> creatingTasks = {};
@@ -87,7 +94,13 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   void resetVariables() {
     setState(() {
+      isShowMenuRemind = false;
+      isShowMenuPriority = false;
+      selectedPriority = null;
+      selectedReminder = null;
+      customReminderDateTime = null;
       hideMenu = false;
+      addToday = false;
       selectedTaskIds.clear();
       selectedIsArchived.clear();
     });
@@ -103,7 +116,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     addTasknameFocusNode.addListener(() {
       if (addTasknameFocusNode.hasFocus && addToday) {
-        _scrollToAddForm();
+        Future.delayed(Duration(milliseconds: 200), () {
+          _scrollToAddForm();
+        });
       }
     });
 
@@ -116,17 +131,34 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   Future<void> loadDataAsync() async {
     if (!mounted) return;
+
     final rawData = box.read('userDataAll');
-    final tasksData = AllDataUserGetResponst.fromJson(rawData);
+    final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
     final appData = Provider.of<Appdata>(context, listen: false);
 
-    filteredTasks =
-        showArchived
-            ? List.from(tasksData.todaytasks)
-            : tasksData.todaytasks
-                .where((task) => task.archived == false)
-                .toList();
+    List<model.Task> filteredTasks =
+        tasksData.tasks
+            .where((task) => task.boardId == "Today")
+            .where(
+              (task) =>
+                  showArchived
+                      ? (task.status == '0' || task.status == '2')
+                      : task.status == '0',
+            )
+            .where((task) {
+              final now = DateTime.now();
+              final todayStart =
+                  DateTime(now.year, now.month, now.day).toLocal();
+              final todayEnd = todayStart.add(const Duration(days: 1));
 
+              final dueDate =
+                  DateTime.parse(task.notifications.first.dueDate).toLocal();
+
+              return dueDate.isBefore(todayEnd) && todayEnd.isAfter(todayStart);
+            })
+            .toList();
+
+    filteredTasks = sortTasks(filteredTasks);
     appData.showMyTasks.setTasks(filteredTasks);
 
     if (!mounted) return;
@@ -139,6 +171,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   void didChangeMetrics() {
     final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
     final newKeyboardVisible = bottomInset > 0;
+
     if (newKeyboardVisible != isKeyboardVisible) {
       setState(() {
         isKeyboardVisible = newKeyboardVisible;
@@ -149,10 +182,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       if (!newKeyboardVisible && wasKeyboardOpen) {
         wasKeyboardOpen = false;
 
-        setState(() {
-          addToday = false;
-        });
         _saveData(addTasknameCtl.text, addDescriptionCtl.text);
+        resetVariables();
       }
     }
   }
@@ -208,108 +239,169 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
             setState(() {
               addToday = !addToday;
             });
-            addTasknameFocusNode.requestFocus();
+            Future.delayed(Duration(milliseconds: 200), () {
+              addTasknameFocusNode.requestFocus();
+            });
             _saveData(addTasknameCtl.text, addDescriptionCtl.text);
           },
           child: Scaffold(
             body: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: width * 0.05,
-                  left: width * 0.05,
-                  bottom:
-                      addToday
-                          ? MediaQuery.of(context).viewInsets.bottom +
-                              height * 0.06
-                          : height * 0.005,
-                ),
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          addToday = false;
-                        });
-                        _saveData(addTasknameCtl.text, addDescriptionCtl.text);
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                !hideMenu
-                                    ? Text(
-                                      'Today',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .headlineMedium!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.w500,
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        addToday = false;
+                      });
+                      _saveData(addTasknameCtl.text, addDescriptionCtl.text);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                      color: Colors.transparent,
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              !hideMenu
+                                  ? Text(
+                                    'Today',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get
+                                              .textTheme
+                                              .headlineMedium!
+                                              .fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )
+                                  : Text(
+                                    selectedTaskIds.isNotEmpty
+                                        ? '${selectedTaskIds.length} Selected'
+                                        : 'Select Task',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get
+                                              .textTheme
+                                              .headlineMedium!
+                                              .fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                              !hideMenu
+                                  ? InkWell(
+                                    key: iconKey,
+                                    onTap: () {
+                                      showPopupMenuOverlay(context);
+                                      setState(() {
+                                        addToday = false;
+                                      });
+                                      _saveData(
+                                        addTasknameCtl.text,
+                                        addDescriptionCtl.text,
+                                      );
+                                    },
+                                    child: SvgPicture.string(
+                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
+                                      height: height * 0.035,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                  : InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedTaskIds.clear();
+                                        hideMenu = false;
+                                      });
+
+                                      if (showArchived) {
+                                        setState(() {
+                                          showArchived = true;
+                                        });
+                                        loadDataAsync();
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: width * 0.01,
+                                        vertical: height * 0.005,
                                       ),
-                                    )
-                                    : Text(
-                                      selectedTaskIds.isNotEmpty
-                                          ? '${selectedTaskIds.length} Selected'
-                                          : 'Select Task',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .headlineMedium!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.w500,
+                                      child: Text(
+                                        "Save",
+                                        style: TextStyle(
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleMedium!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF007AFF),
+                                        ),
                                       ),
                                     ),
-                                !hideMenu
-                                    ? InkWell(
-                                      key: iconKey,
-                                      onTap: () {
-                                        showPopupMenuOverlay(context);
-                                        setState(() {
-                                          addToday = false;
-                                        });
-                                        _saveData(
-                                          addTasknameCtl.text,
-                                          addDescriptionCtl.text,
-                                        );
-                                      },
-                                      child: SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
-                                        height: height * 0.035,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    )
-                                    : InkWell(
-                                      onTap: () {
-                                        setState(() {
+                                  ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              !hideMenu
+                                  ? Text(
+                                    getCurrentDayAndDate(),
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )
+                                  : selectedTaskIds.isNotEmpty ||
+                                      tasks.isNotEmpty
+                                  ? InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (selectedTaskIds.length ==
+                                            tasks.length) {
                                           selectedTaskIds.clear();
-                                          hideMenu = false;
-                                        });
-
-                                        if (showArchived) {
-                                          setState(() {
-                                            showArchived = true;
-                                          });
-                                          loadDataAsync();
+                                        } else {
+                                          selectedTaskIds =
+                                              tasks
+                                                  .map(
+                                                    (task) =>
+                                                        task.taskId.toString(),
+                                                  )
+                                                  .toList();
                                         }
-                                      },
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.01,
-                                          vertical: height * 0.005,
+                                      });
+                                    },
+                                    child: Row(
+                                      children: [
+                                        SvgPicture.string(
+                                          selectedTaskIds.length == tasks.length
+                                              ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                              : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                          height: height * 0.04,
+                                          fit: BoxFit.contain,
+                                          color:
+                                              selectedTaskIds.length ==
+                                                      tasks.length
+                                                  ? Color(0xFF007AFF)
+                                                  : Colors.grey,
                                         ),
-                                        child: Text(
-                                          "Save",
+                                        SizedBox(width: width * 0.01),
+                                        Text(
+                                          'Select All',
                                           style: TextStyle(
                                             fontSize:
                                                 Get
@@ -320,519 +412,813 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                   context,
                                                 ).textScaleFactor,
                                             fontWeight: FontWeight.w500,
-                                            color: Color(0xFF007AFF),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                  : SizedBox.shrink(),
+                              Text(
+                                !showArchived
+                                    ? '${tasks.length} tasks'
+                                    : '${tasks.length} tasks, ${tasks.where((t) => t.boardId == "Today").where((task) => task.status == "2").length} Completed',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleSmall!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: height * 0.01),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Column(
+                        children: [
+                          if (tasks.isEmpty && !addToday)
+                            Container(
+                              width: width,
+                              height: height * 0.6,
+                              alignment: Alignment.center,
+                              child: Text(
+                                'No tasks for today',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          if (tasks.isNotEmpty)
+                            ...sortTasks(tasks).map((data) {
+                              return InkWell(
+                                onTap:
+                                    hideMenu
+                                        ? () {
+                                          if (selectedTaskIds.contains(
+                                            data.taskId.toString(),
+                                          )) {
+                                            selectedTaskIds.remove(
+                                              data.taskId.toString(),
+                                            );
+                                          } else {
+                                            selectedTaskIds.add(
+                                              data.taskId.toString(),
+                                            );
+                                          }
+                                        }
+                                        : null,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.05,
+                                  ),
+                                  color: Colors.transparent,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Dismissible(
+                                        key: ValueKey(data.taskId),
+                                        direction:
+                                            hideMenu ||
+                                                    creatingTasks[data.taskId
+                                                            .toString()] ==
+                                                        true
+                                                ? DismissDirection.none
+                                                : DismissDirection.endToStart,
+                                        background: Container(
+                                          alignment: Alignment.centerRight,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          color: Colors.red,
+                                          child: Icon(
+                                            Icons.delete,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        confirmDismiss: (direction) async {
+                                          return true;
+                                        },
+                                        onDismissed: (direction) {
+                                          setState(() {
+                                            tasks.removeWhere(
+                                              (t) => t.taskId == data.taskId,
+                                            );
+                                          });
+                                          deleteTaskById(
+                                            data.taskId.toString(),
+                                            false,
+                                          );
+                                        },
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              !hideMenu
+                                                  ? CrossAxisAlignment.start
+                                                  : CrossAxisAlignment.center,
+                                          children: [
+                                            GestureDetector(
+                                              onTap:
+                                                  !hideMenu
+                                                      ? () =>
+                                                          handleTaskTap(data)
+                                                      : null,
+                                              child:
+                                                  !hideMenu
+                                                      ? SvgPicture.string(
+                                                        selectedIsArchived
+                                                                .contains(
+                                                                  data.taskId
+                                                                      .toString(),
+                                                                )
+                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                            : data.status == "2"
+                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                            : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                        height: height * 0.04,
+                                                        fit: BoxFit.contain,
+                                                        color:
+                                                            creatingTasks[data
+                                                                        .taskId
+                                                                        .toString()] ==
+                                                                    true
+                                                                ? Colors
+                                                                    .grey[300]
+                                                                : selectedIsArchived
+                                                                    .contains(
+                                                                      data.taskId
+                                                                          .toString(),
+                                                                    )
+                                                                ? Color(
+                                                                  0xFF007AFF,
+                                                                )
+                                                                : data.status ==
+                                                                    "2"
+                                                                ? Color(
+                                                                  0xFF007AFF,
+                                                                )
+                                                                : Colors.grey,
+                                                      )
+                                                      : SvgPicture.string(
+                                                        selectedTaskIds.contains(
+                                                              data.taskId
+                                                                  .toString(),
+                                                            )
+                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                                            : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                        height: height * 0.04,
+                                                        fit: BoxFit.contain,
+                                                        color:
+                                                            selectedTaskIds.contains(
+                                                                  data.taskId
+                                                                      .toString(),
+                                                                )
+                                                                ? Color(
+                                                                  0xFF007AFF,
+                                                                )
+                                                                : Colors.grey,
+                                                      ),
+                                            ),
+                                            SizedBox(width: width * 0.01),
+                                            Expanded(
+                                              child: Column(
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          vertical:
+                                                              height * 0.005,
+                                                        ),
+                                                    child: InkWell(
+                                                      onTap:
+                                                          !hideMenu
+                                                              ? creatingTasks[data
+                                                                          .taskId
+                                                                          .toString()] ==
+                                                                      true
+                                                                  ? () {
+                                                                    log(
+                                                                      "สร้างยังไม่เสร็จ",
+                                                                    );
+                                                                  }
+                                                                  : () {
+                                                                    if (!hideMenu) {
+                                                                      setState(() {
+                                                                        hideMenu =
+                                                                            false;
+                                                                        addToday =
+                                                                            false;
+                                                                      });
+                                                                    }
+                                                                    log(
+                                                                      "เรียบร้อยกับยูเซอร์น่าโง่",
+                                                                    );
+                                                                  }
+                                                              : null,
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Text(
+                                                                        data.taskName,
+                                                                        style: TextStyle(
+                                                                          fontSize:
+                                                                              Get.textTheme.titleMedium!.fontSize! *
+                                                                              MediaQuery.of(
+                                                                                context,
+                                                                              ).textScaleFactor,
+                                                                          color:
+                                                                              creatingTasks[data.taskId.toString()] ==
+                                                                                      true
+                                                                                  ? Colors.grey
+                                                                                  : selectedIsArchived.contains(
+                                                                                        data.taskId.toString(),
+                                                                                      ) ||
+                                                                                      data.status ==
+                                                                                          "2"
+                                                                                  ? Colors.grey
+                                                                                  : Colors.black,
+                                                                        ),
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                      ),
+                                                                    ),
+                                                                    data.priority.isEmpty
+                                                                        ? SizedBox.shrink()
+                                                                        : Padding(
+                                                                          padding: EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                width *
+                                                                                0.01,
+                                                                          ),
+                                                                          child: Container(
+                                                                            width:
+                                                                                width *
+                                                                                0.03,
+                                                                            height:
+                                                                                height *
+                                                                                0.03,
+                                                                            decoration: BoxDecoration(
+                                                                              shape:
+                                                                                  BoxShape.circle,
+                                                                              color:
+                                                                                  data.priority ==
+                                                                                          '3'
+                                                                                      ? Colors.red
+                                                                                      : data.priority ==
+                                                                                          '2'
+                                                                                      ? Colors.orange
+                                                                                      : Colors.green,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                  ],
+                                                                ),
+                                                                data
+                                                                        .description
+                                                                        .isEmpty
+                                                                    ? SizedBox.shrink()
+                                                                    : Text(
+                                                                      data.description,
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            Get.textTheme.labelMedium!.fontSize! *
+                                                                            MediaQuery.of(
+                                                                              context,
+                                                                            ).textScaleFactor,
+                                                                        color:
+                                                                            Colors.grey,
+                                                                      ),
+                                                                      maxLines:
+                                                                          6,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                    ),
+                                                                formatDateDisplay(
+                                                                      data.notifications,
+                                                                    ).isEmpty
+                                                                    ? SizedBox.shrink()
+                                                                    : Text(
+                                                                      formatDateDisplay(
+                                                                        data.notifications,
+                                                                      ),
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            Get.textTheme.labelMedium!.fontSize! *
+                                                                            MediaQuery.of(
+                                                                              context,
+                                                                            ).textScaleFactor,
+                                                                        color:
+                                                                            Colors.red,
+                                                                      ),
+                                                                    ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    width: width,
+                                                    height: 0.5,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          if (addToday)
+                            Container(
+                              key: addFormKey,
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.only(
+                                          left: width * 0.12,
+                                          right: width * 0.05,
+                                        ),
+                                        width: width,
+                                        child: TextField(
+                                          controller: addTasknameCtl,
+                                          focusNode: addTasknameFocusNode,
+                                          keyboardType: TextInputType.text,
+                                          cursorColor: Color(0xFF007AFF),
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                isTyping ? '' : 'Add title',
+                                            hintStyle: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleSmall!
+                                                      .fontSize! *
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).textScaleFactor,
+                                              fontWeight: FontWeight.normal,
+                                              color: Colors.grey,
+                                            ),
+                                            constraints: BoxConstraints(
+                                              maxHeight: height * 0.04,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: width * 0.02,
+                                                ),
+                                            border: InputBorder.none,
                                           ),
                                         ),
                                       ),
-                                    ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                !hideMenu
-                                    ? Text(
-                                      getCurrentDayAndDate(),
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleMedium!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )
-                                    : selectedTaskIds.isNotEmpty ||
-                                        tasks.isNotEmpty
-                                    ? InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          if (selectedTaskIds.length ==
-                                              tasks.length) {
-                                            selectedTaskIds.clear();
-                                          } else {
-                                            selectedTaskIds =
-                                                tasks
-                                                    .map((task) => task.taskId)
-                                                    .toList();
-                                          }
-                                        });
-                                      },
-                                      child: Row(
-                                        children: [
-                                          SvgPicture.string(
-                                            selectedTaskIds.length ==
-                                                    tasks.length
-                                                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
-                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                            height: height * 0.04,
-                                            fit: BoxFit.contain,
-                                            color:
-                                                selectedTaskIds.length ==
-                                                        tasks.length
-                                                    ? Color(0xFF007AFF)
-                                                    : Colors.grey,
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.only(
+                                          left: width * 0.12,
+                                          right: width * 0.05,
+                                        ),
+                                        width: width,
+                                        child: TextField(
+                                          controller: addDescriptionCtl,
+                                          focusNode: addDescriptionFocusNode,
+                                          keyboardType: TextInputType.text,
+                                          cursorColor: Color(0xFF007AFF),
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                           ),
-                                          SizedBox(width: width * 0.01),
-                                          Text(
-                                            'Select All',
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                isTyping
+                                                    ? ''
+                                                    : 'Add Description',
+                                            hintStyle: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleSmall!
+                                                      .fontSize! *
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).textScaleFactor,
+                                              fontWeight: FontWeight.normal,
+                                              color: Colors.grey,
+                                            ),
+                                            constraints: BoxConstraints(
+                                              maxHeight: height * 0.04,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: width * 0.02,
+                                                ),
+                                            border: InputBorder.none,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      top: height * 0.005,
+                                      left: width * 0.14,
+                                      right: width * 0.05,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          selectedReminder != null
+                                              ? selectedReminder.toString()
+                                              : 'Today',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
+                                            fontWeight: FontWeight.normal,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: height * 0.02),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (addToday)
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          addToday = true;
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          if (isShowMenuRemind)
+                            Container(
+                              width: width,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                                vertical: height * 0.01,
+                              ),
+                              color: Color(0xFFF2F2F6),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Wrap(
+                                  spacing: 6,
+                                  children: [
+                                    ...selectRemind().map((select) {
+                                      bool isSelected =
+                                          selectedReminder == select;
+                                      return InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            selectedReminder =
+                                                isSelected ? null : select;
+                                            customReminderDateTime = null;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                            vertical: height * 0.005,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                isSelected
+                                                    ? Color(0xFF007AFF)
+                                                    : Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            select,
                                             style: TextStyle(
                                               fontSize:
                                                   Get
                                                       .textTheme
-                                                      .titleMedium!
+                                                      .titleSmall!
                                                       .fontSize! *
                                                   MediaQuery.of(
                                                     context,
                                                   ).textScaleFactor,
                                               fontWeight: FontWeight.w500,
+                                              color:
+                                                  isSelected
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    InkWell(
+                                      onTap: () {
+                                        _showCustomDateTimePicker(context);
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                          vertical: height * 0.005,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              customReminderDateTime != null
+                                                  ? Color(0xFF007AFF)
+                                                  : Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          (selectedReminder != null &&
+                                                  selectedReminder!.startsWith(
+                                                    'Custom:',
+                                                  ) &&
+                                                  customReminderDateTime !=
+                                                      null)
+                                              ? showTimeCustom(
+                                                customReminderDateTime!,
+                                              )
+                                              : 'Custom',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Get
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .fontSize! *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
+                                            fontWeight: FontWeight.w500,
+                                            color:
+                                                (selectedReminder != null &&
+                                                        selectedReminder!
+                                                            .startsWith(
+                                                              'Custom:',
+                                                            ))
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          if (isShowMenuPriority)
+                            Container(
+                              width: width,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                                vertical: height * 0.01,
+                              ),
+                              color: Color(0xFFF2F2F6),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children:
+                                    selectPriority().map((select) {
+                                      bool isSelected =
+                                          selectedPriority == select;
+                                      return InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            selectedPriority =
+                                                isSelected ? null : select;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                            vertical: height * 0.005,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                select == 1 && isSelected
+                                                    ? Colors.green
+                                                    : select == 2 && isSelected
+                                                    ? Colors.orange
+                                                    : select == 3 && isSelected
+                                                    ? Colors.red
+                                                    : Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            select == 1
+                                                ? 'Low'
+                                                : select == 2
+                                                ? 'Medium'
+                                                : 'High',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .titleSmall!
+                                                      .fontSize! *
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).textScaleFactor,
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  isSelected
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
+                          Divider(thickness: 1, height: 0),
+                          Container(
+                            width: width,
+                            color: Color(0xFFF2F2F6),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        isShowMenuRemind = !isShowMenuRemind;
+                                        isShowMenuPriority = false;
+                                        _scrollToAddForm();
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: width * 0.02,
+                                        vertical: height * 0.002,
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M8 15h3v3h2v-3h3v-2h-3v-3h-2v3H8z"></path><path d="M19 4h-2V2h-2v2H9V2H7v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm.002 16H5V8h14l.002 12z"></path></svg>',
+                                            height: height * 0.03,
+                                            fit: BoxFit.contain,
+                                            color:
+                                                selectedReminder != null ||
+                                                        isShowMenuRemind
+                                                    ? Color(0xFF007AFF)
+                                                    : Colors.grey,
+                                          ),
+                                          Text(
+                                            'Remind',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  Get
+                                                      .textTheme
+                                                      .labelMedium!
+                                                      .fontSize! *
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).textScaleFactor,
+                                              fontWeight: FontWeight.normal,
+                                              color: Colors.black,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    )
-                                    : SizedBox.shrink(),
-                                Text(
-                                  !showArchived
-                                      ? '${tasks.length} tasks'
-                                      : '${tasks.length} tasks, ${tasks.where((t) => t.archived).length} Completed',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
-                                    fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: height * 0.01),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        child: Column(
-                          children: [
-                            if (tasks.isEmpty && !addToday)
-                              Container(
-                                width: width,
-                                height: height * 0.6,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'No tasks for today',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            if (tasks.isNotEmpty)
-                              ...sortTasks(tasks).map((data) {
-                                return InkWell(
-                                  onTap:
-                                      hideMenu
-                                          ? () {
-                                            if (selectedTaskIds.contains(
-                                              data.taskId,
-                                            )) {
-                                              selectedTaskIds.remove(
-                                                data.taskId,
-                                              );
-                                            } else {
-                                              selectedTaskIds.add(data.taskId);
-                                            }
-                                          }
-                                          : null,
-                                  child: Container(
-                                    color: Colors.transparent,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Dismissible(
-                                          key: ValueKey(data.taskId),
-                                          direction:
-                                              hideMenu ||
-                                                      creatingTasks[data
-                                                              .taskId] ==
-                                                          true
-                                                  ? DismissDirection.none
-                                                  : DismissDirection.endToStart,
-                                          background: Container(
-                                            alignment: Alignment.centerRight,
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: width * 0.02,
-                                            ),
-                                            color: Colors.red,
-                                            child: Icon(
-                                              Icons.delete,
-                                              color: Colors.white,
-                                            ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            isShowMenuPriority =
+                                                !isShowMenuPriority;
+                                            isShowMenuRemind = false;
+                                            _scrollToAddForm();
+                                          });
+                                        },
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                            vertical: height * 0.002,
                                           ),
-                                          confirmDismiss: (direction) async {
-                                            return true;
-                                          },
-                                          onDismissed: (direction) {
-                                            setState(() {
-                                              tasks.removeWhere(
-                                                (t) => t.taskId == data.taskId,
-                                              );
-                                            });
-                                            deleteTaskById(data.taskId, false);
-                                          },
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                !hideMenu
-                                                    ? CrossAxisAlignment.start
-                                                    : CrossAxisAlignment.center,
+                                          child: Column(
                                             children: [
-                                              GestureDetector(
-                                                onTap:
-                                                    !hideMenu
-                                                        ? () =>
-                                                            handleTaskTap(data)
-                                                        : null,
-                                                child:
-                                                    !hideMenu
-                                                        ? SvgPicture.string(
-                                                          selectedIsArchived
-                                                                  .contains(
-                                                                    data.taskId,
-                                                                  )
-                                                              ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                              : data.archived
-                                                              ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                              : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                          height: height * 0.04,
-                                                          fit: BoxFit.contain,
-                                                          color:
-                                                              creatingTasks[data
-                                                                          .taskId] ==
-                                                                      true
-                                                                  ? Colors
-                                                                      .grey[300]
-                                                                  : selectedIsArchived
-                                                                      .contains(
-                                                                        data.taskId,
-                                                                      )
-                                                                  ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                  : data
-                                                                      .archived
-                                                                  ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                  : Colors.grey,
-                                                        )
-                                                        : SvgPicture.string(
-                                                          selectedTaskIds
-                                                                  .contains(
-                                                                    data.taskId,
-                                                                  )
-                                                              ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
-                                                              : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                          height: height * 0.04,
-                                                          fit: BoxFit.contain,
-                                                          color:
-                                                              selectedTaskIds
-                                                                      .contains(
-                                                                        data.taskId,
-                                                                      )
-                                                                  ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                  : Colors.grey,
-                                                        ),
+                                              SvgPicture.string(
+                                                '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h168q13-36 43.5-58t68.5-22q38 0 68.5 22t43.5 58h168q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm280-590q13 0 21.5-8.5T510-820q0-13-8.5-21.5T480-850q-13 0-21.5 8.5T450-820q0 13 8.5 21.5T480-790ZM200-200v-560 560Z"/></svg>',
+                                                height: height * 0.03,
+                                                fit: BoxFit.contain,
+                                                color:
+                                                    selectedPriority == 1
+                                                        ? Colors.green
+                                                        : selectedPriority == 2
+                                                        ? Colors.orange
+                                                        : selectedPriority == 3
+                                                        ? Colors.red
+                                                        : isShowMenuPriority
+                                                        ? Color(0xFF007AFF)
+                                                        : Colors.grey,
                                               ),
-                                              SizedBox(width: width * 0.01),
-                                              Expanded(
-                                                child: Column(
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            vertical:
-                                                                height * 0.005,
-                                                          ),
-                                                      child: InkWell(
-                                                        onTap:
-                                                            !hideMenu
-                                                                ? creatingTasks[data
-                                                                            .taskId] ==
-                                                                        true
-                                                                    ? () {
-                                                                      log(
-                                                                        "สร้างยังไม่เสร็จ",
-                                                                      );
-                                                                    }
-                                                                    : () {
-                                                                      if (!hideMenu) {
-                                                                        setState(() {
-                                                                          hideMenu =
-                                                                              false;
-                                                                          addToday =
-                                                                              false;
-                                                                        });
-                                                                      }
-                                                                      log(
-                                                                        "เรียบร้อยกับยูเซอร์น่าโง่",
-                                                                      );
-                                                                    }
-                                                                : null,
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Expanded(
-                                                              child: Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  Row(
-                                                                    children: [
-                                                                      Expanded(
-                                                                        child: Text(
-                                                                          data.taskName,
-                                                                          style: TextStyle(
-                                                                            fontSize:
-                                                                                Get.textTheme.titleMedium!.fontSize! *
-                                                                                MediaQuery.of(
-                                                                                  context,
-                                                                                ).textScaleFactor,
-                                                                            color:
-                                                                                creatingTasks[data.taskId] ==
-                                                                                        true
-                                                                                    ? Colors.grey
-                                                                                    : selectedIsArchived.contains(
-                                                                                          data.taskId,
-                                                                                        ) ||
-                                                                                        data.archived
-                                                                                    ? Colors.grey
-                                                                                    : Colors.black,
-                                                                          ),
-                                                                          overflow:
-                                                                              TextOverflow.ellipsis,
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  data
-                                                                          .description
-                                                                          .isEmpty
-                                                                      ? SizedBox.shrink()
-                                                                      : Text(
-                                                                        data.description,
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              Get.textTheme.labelMedium!.fontSize! *
-                                                                              MediaQuery.of(
-                                                                                context,
-                                                                              ).textScaleFactor,
-                                                                          color:
-                                                                              Colors.grey,
-                                                                        ),
-                                                                        maxLines:
-                                                                            6,
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                      ),
-                                                                  formatDateDisplay(
-                                                                        data.createdAt,
-                                                                      ).isEmpty
-                                                                      ? SizedBox.shrink()
-                                                                      : Text(
-                                                                        formatDateDisplay(
-                                                                          data.createdAt,
-                                                                        ),
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              Get.textTheme.labelMedium!.fontSize! *
-                                                                              MediaQuery.of(
-                                                                                context,
-                                                                              ).textScaleFactor,
-                                                                          color:
-                                                                              Colors.red,
-                                                                        ),
-                                                                      ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                            data
-                                                                    .priority
-                                                                    .isEmpty
-                                                                ? SizedBox.shrink()
-                                                                : Padding(
-                                                                  padding: EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        width *
-                                                                        0.01,
-                                                                  ),
-                                                                  child: Container(
-                                                                    width:
-                                                                        width *
-                                                                        0.03,
-                                                                    height:
-                                                                        height *
-                                                                        0.03,
-                                                                    decoration: BoxDecoration(
-                                                                      shape:
-                                                                          BoxShape
-                                                                              .circle,
-                                                                      color:
-                                                                          data.priority ==
-                                                                                  '3'
-                                                                              ? Colors.red
-                                                                              : data.priority ==
-                                                                                  '2'
-                                                                              ? Colors.orange
-                                                                              : Colors.green,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      width: width,
-                                                      height: 0.5,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ],
+                                              Text(
+                                                'Priority',
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      Get
+                                                          .textTheme
+                                                          .labelMedium!
+                                                          .fontSize! *
+                                                      MediaQuery.of(
+                                                        context,
+                                                      ).textScaleFactor,
+                                                  fontWeight: FontWeight.normal,
+                                                  color: Colors.black,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }),
-                            if (addToday)
-                              Container(
-                                key: addFormKey,
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        SizedBox(
-                                          width: width * 0.8,
-                                          child: TextField(
-                                            controller: addTasknameCtl,
-                                            focusNode: addTasknameFocusNode,
-                                            keyboardType: TextInputType.text,
-                                            cursorColor: Color(0xFF007AFF),
-                                            style: TextStyle(
-                                              fontSize:
-                                                  Get
-                                                      .textTheme
-                                                      .titleSmall!
-                                                      .fontSize! *
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).textScaleFactor,
-                                            ),
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  isTyping ? '' : 'Add title',
-                                              hintStyle: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleSmall!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
-                                                fontWeight: FontWeight.normal,
-                                                color: Colors.grey,
-                                              ),
-                                              constraints: BoxConstraints(
-                                                maxHeight: height * 0.04,
-                                              ),
-                                              contentPadding:
-                                                  EdgeInsets.symmetric(
-                                                    horizontal: width * 0.02,
-                                                  ),
-                                              border: InputBorder.none,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        SizedBox(
-                                          width: width * 0.8,
-                                          child: TextField(
-                                            controller: addDescriptionCtl,
-                                            focusNode: addDescriptionFocusNode,
-                                            keyboardType: TextInputType.text,
-                                            cursorColor: Color(0xFF007AFF),
-                                            style: TextStyle(
-                                              fontSize:
-                                                  Get
-                                                      .textTheme
-                                                      .titleSmall!
-                                                      .fontSize! *
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).textScaleFactor,
-                                            ),
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  isTyping
-                                                      ? ''
-                                                      : 'Add Description',
-                                              hintStyle: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleSmall!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
-                                                fontWeight: FontWeight.normal,
-                                                color: Colors.grey,
-                                              ),
-                                              constraints: BoxConstraints(
-                                                maxHeight: height * 0.04,
-                                              ),
-                                              contentPadding:
-                                                  EdgeInsets.symmetric(
-                                                    horizontal: width * 0.02,
-                                                  ),
-                                              border: InputBorder.none,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                          ],
-                        ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (!addToday || !hideMenu) SizedBox(height: height * 0.02),
-                    if (!addToday && !hideMenu)
-                      Row(
+                  if (!addToday && !hideMenu)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: height * 0.02,
+                        right: width * 0.05,
+                        bottom: height * 0.02,
+                      ),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           GestureDetector(
@@ -877,8 +1263,11 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ),
                         ],
                       ),
-                    if (hideMenu)
-                      Row(
+                    ),
+                  if (hideMenu)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
@@ -923,8 +1312,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                           ),
                         ],
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -933,22 +1322,247 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
   }
 
-  void handleTaskTap(Todaytask data) async {
+  void _showCustomDateTimePicker(BuildContext context) {
+    DateTime now = DateTime.now();
+    DateTime tempSelectedDate = now;
+    TimeOfDay tempSelectedTime = TimeOfDay.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState1) {
+            double height = MediaQuery.of(context).size.height;
+            double width = MediaQuery.of(context).size.width;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                top: height * 0.01,
+                left: width * 0.05,
+                right: width * 0.05,
+              ),
+              child: SizedBox(
+                height: height * 0.94,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            setState(() {
+                              addToday = true;
+                            });
+                            addTasknameFocusNode.requestFocus();
+                            Future.delayed(Duration(microseconds: 300), () {
+                              _scrollToAddForm();
+                            });
+                          },
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          "Custom Date & Time",
+                          style: TextStyle(
+                            fontSize:
+                                Get.textTheme.titleMedium!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            final selectedDateTime = DateTime(
+                              tempSelectedDate.year,
+                              tempSelectedDate.month,
+                              tempSelectedDate.day,
+                              tempSelectedTime.hour,
+                              tempSelectedTime.minute,
+                            );
+
+                            setState(() {
+                              selectedReminder =
+                                  'Custom: ${DateFormat('MMM dd, yyyy HH:mm').format(selectedDateTime)}';
+                              customReminderDateTime = selectedDateTime;
+                              isCustomReminderApplied = true;
+                              isShowMenuRemind = true;
+                              addToday = true;
+                            });
+                            addTasknameFocusNode.requestFocus();
+                            Future.delayed(Duration(microseconds: 300), () {
+                              _scrollToAddForm();
+                            });
+                            Get.back();
+                          },
+                          child: Text(
+                            'Apply',
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF4790EB),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: width * 0.02),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Date:",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: Color(0xFF4790EB),
+                        ),
+                        textTheme: TextTheme(
+                          bodySmall: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      child: Container(
+                        height: height * 0.35,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Material(
+                            color: Colors.black12,
+                            child: CalendarDatePicker(
+                              initialDate: tempSelectedDate,
+                              firstDate: DateTime.now().subtract(
+                                Duration(days: 365),
+                              ),
+                              lastDate: DateTime.now().add(
+                                Duration(days: 365 * 5),
+                              ),
+                              onDateChanged: (date) {
+                                setState1(() {
+                                  tempSelectedDate = date;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: height * 0.02,
+                        left: width * 0.02,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            "Time:",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      height: height * 0.2,
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: CupertinoDatePicker(
+                        mode: CupertinoDatePickerMode.time,
+                        initialDateTime: DateTime(
+                          tempSelectedDate.year,
+                          tempSelectedDate.month,
+                          tempSelectedDate.day,
+                          tempSelectedTime.hour,
+                          tempSelectedTime.minute,
+                        ),
+                        use24hFormat: true,
+                        onDateTimeChanged: (DateTime dateTime) {
+                          setState1(() {
+                            tempSelectedTime = TimeOfDay.fromDateTime(dateTime);
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  DateTime convertReminderToDateTime(String reminder) {
+    final now = DateTime.now();
+
+    switch (reminder) {
+      case '3 hours later':
+        return now.add(Duration(hours: 3));
+      case 'This evening':
+        return DateTime(now.year, now.month, now.day, 18, 0);
+      case 'Tomorrow':
+        return now.add(Duration(days: 1));
+      default:
+        return now;
+    }
+  }
+
+  List<String> selectRemind() {
+    return ['3 hours later', 'This evening', 'Tomorrow'];
+  }
+
+  List<int> selectPriority() {
+    return [1, 2, 3];
+  }
+
+  void handleTaskTap(model.Task data) async {
     final taskId = data.taskId;
     setState(() => hideMenu = false);
 
-    if (data.archived) {
-      await showArchiveTask(taskId);
+    if (data.status == "2") {
+      await showArchiveTask(taskId.toString());
       return;
     }
 
-    if (selectedIsArchived.contains(taskId)) {
-      selectedIsArchived.remove(taskId);
+    if (selectedIsArchived.contains(taskId.toString())) {
+      selectedIsArchived.remove(taskId.toString());
     } else {
-      selectedIsArchived.add(taskId);
+      selectedIsArchived.add(taskId.toString());
     }
 
-    if (showArchived && !data.archived) {
+    if (showArchived && data.boardId != "Today") {
       await finishAllSelectedTasks();
       selectedIsArchived.clear();
       return;
@@ -967,7 +1581,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     });
   }
 
-  List<Todaytask> sortTasks(List<Todaytask> tasks, [SortType? newSortType]) {
+  List<model.Task> sortTasks(List<model.Task> tasks, [SortType? newSortType]) {
+    if (tasks.isEmpty) return tasks;
+
     Map<String, dynamic> currentData = Map<String, dynamic>.from(
       box.read('showDisplays2') ?? {},
     );
@@ -994,16 +1610,44 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     const priorityMap = {'3': 3, '2': 2, '1': 1};
 
-    tasks.sort((a, b) {
-      if (showArchived && a.archived != b.archived) {
-        return a.archived ? 1 : -1;
+    List<model.Task> sortedTasks = List.from(tasks);
+
+    sortedTasks.sort((a, b) {
+      bool aIsCreating = creatingTasks.containsKey(a.taskId.toString());
+      bool bIsCreating = creatingTasks.containsKey(b.taskId.toString());
+
+      int statusOrderA = a.status == '0' ? 0 : 1;
+      int statusOrderB = b.status == '0' ? 0 : 1;
+
+      if (statusOrderA != statusOrderB) {
+        return statusOrderA.compareTo(statusOrderB);
+      }
+
+      if (statusOrderA == 0) {
+        if (aIsCreating && !bIsCreating) {
+          return 1;
+        } else if (!aIsCreating && bIsCreating) {
+          return -1;
+        }
       }
 
       switch (sortType) {
         case SortType.dateEarliestFirst:
-          return a.createdAt.compareTo(b.createdAt);
+          try {
+            final dateA = DateTime.parse(a.createdAt);
+            final dateB = DateTime.parse(b.createdAt);
+            return dateA.compareTo(dateB);
+          } catch (e) {
+            return a.createdAt.compareTo(b.createdAt);
+          }
         case SortType.dateLatestFirst:
-          return b.createdAt.compareTo(a.createdAt);
+          try {
+            final dateA = DateTime.parse(a.createdAt);
+            final dateB = DateTime.parse(b.createdAt);
+            return dateB.compareTo(dateA);
+          } catch (e) {
+            return b.createdAt.compareTo(a.createdAt);
+          }
         case SortType.titleAZ:
           return a.taskName.toLowerCase().compareTo(b.taskName.toLowerCase());
         case SortType.titleZA:
@@ -1019,10 +1663,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       }
     });
 
-    return tasks;
+    return sortedTasks;
   }
 
   Future<void> finishAllSelectedTasks() async {
+    if (selectedIsArchived.isEmpty) return;
+
     List<Future<void>> finishTasks = [];
 
     for (var taskId in selectedIsArchived) {
@@ -1039,53 +1685,44 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     final userDataJson = box.read('userDataAll');
     if (userDataJson == null) return;
 
-    var existingData = AllDataUserGetResponst.fromJson(userDataJson);
+    var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
     final appData = Provider.of<Appdata>(context, listen: false);
 
-    final index = existingData.todaytasks.indexWhere((t) => t.taskId == id);
+    final index = existingData.tasks.indexWhere(
+      (t) => t.taskId.toString() == id,
+    );
     if (index == -1) return;
 
-    existingData.todaytasks[index].archived = true;
+    existingData.tasks[index].status = '2';
     box.write('userDataAll', existingData.toJson());
 
     if (!showArchived) {
       appData.showMyTasks.removeTaskById(id);
-      tasks.removeWhere((t) => t.taskId == id);
+      tasks.removeWhere((t) => t.taskId.toString() == id);
     } else {
-      tasks = List.from(existingData.todaytasks);
-      tasks.sort((a, b) {
-        if (a.archived != b.archived) {
-          return a.archived ? 1 : -1;
-        }
-        final dateA = DateTime.parse(a.createdAt);
-        final dateB = DateTime.parse(b.createdAt);
-        return dateA.compareTo(dateB);
-      });
-
-      appData.showMyTasks.setTasks(tasks);
+      await loadDataAsync();
     }
 
     if (mounted) setState(() {});
 
     url = await loadAPIEndpoint();
+
     var response = await http.put(
-      Uri.parse("$url/todaytasks/finish"),
+      Uri.parse("$url/taskfinish/$id"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Authorization": "Bearer ${box.read('accessToken')}",
       },
-      body: jsonEncode({"task_id": id}),
     );
 
     if (response.statusCode == 403) {
       await loadNewRefreshToken();
       response = await http.put(
-        Uri.parse("$url/todaytasks/finish"),
+        Uri.parse("$url/taskfinish/$id"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
-        body: jsonEncode({"task_id": id}),
       );
     }
   }
@@ -1096,40 +1733,42 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     final userDataJson = box.read('userDataAll');
     if (userDataJson == null) return;
 
-    var existingData = AllDataUserGetResponst.fromJson(userDataJson);
-    final appData = Provider.of<Appdata>(context, listen: false);
+    var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
 
-    final index = existingData.todaytasks.indexWhere((t) => t.taskId == id);
+    final index = existingData.tasks.indexWhere(
+      (t) => t.taskId.toString() == id,
+    );
     if (index == -1) return;
 
-    existingData.todaytasks[index].archived = false;
+    existingData.tasks[index].status = '0';
     box.write('userDataAll', existingData.toJson());
 
-    if (!showArchived) {
-      tasks = existingData.todaytasks.where((t) => !t.archived).toList();
-      appData.showMyTasks.setTasks(tasks);
-    } else {
-      tasks = List.from(existingData.todaytasks);
-      tasks.sort((a, b) {
-        if (a.archived != b.archived) {
-          return a.archived ? 1 : -1;
-        }
-        final dateA = DateTime.parse(a.createdAt);
-        final dateB = DateTime.parse(b.createdAt);
-        return dateA.compareTo(dateB);
-      });
-
-      appData.showMyTasks.setTasks(tasks);
-    }
+    await loadDataAsync();
 
     if (mounted) setState(() {});
 
-    await FirebaseFirestore.instance
-        .collection('TodayTasks')
-        .doc(box.read('userProfile')['email'])
-        .collection('tasks')
-        .doc(id)
-        .update({'Archived': false});
+    url = await loadAPIEndpoint();
+
+    var response = await http.put(
+      Uri.parse("$url/updatestatus/$id"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+      body: jsonEncode({"status": "0"}),
+    );
+
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      response = await http.put(
+        Uri.parse("$url/updatestatus/$id"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+        body: jsonEncode({"status": "0"}),
+      );
+    }
   }
 
   void deleteTaskById(dynamic ids, bool select) async {
@@ -1140,7 +1779,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     final userDataJson = box.read('userDataAll');
     if (userDataJson == null) return;
 
-    var existingData = AllDataUserGetResponst.fromJson(userDataJson);
+    var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
     final appData = Provider.of<Appdata>(context, listen: false);
 
     if (ids is String) {
@@ -1155,43 +1794,54 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     for (var id in idList) {
       appData.showMyTasks.removeTaskById(id);
-      existingData.todaytasks.removeWhere((t) => t.taskId == id);
-      tasks.removeWhere((t) => t.taskId == id);
+      existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
+      tasks.removeWhere((t) => t.taskId.toString() == id);
     }
     box.write('userDataAll', existingData.toJson());
 
     if (mounted) setState(() {});
 
-    final endpoint = select ? "todaytasks/deltoday" : "todaytasks/delidtoday";
-    await deleteWithRetry(endpoint, {"task_id": taskIdPayload});
+    final endpoint = select ? "deltask" : "deltask/$taskIdPayload";
+    final requestBody = select ? {"task_id": taskIdPayload} : null;
+    await deleteWithRetry(endpoint, requestBody);
   }
 
   Future<http.Response> deleteWithRetry(
     String endpoint,
-    Map<String, dynamic> body,
+    Map<String, dynamic>? body,
   ) async {
     url = await loadAPIEndpoint();
+
     final token = box.read('accessToken');
-    var response = await http.delete(
-      Uri.parse("$url/$endpoint"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(body),
-    );
+    Uri uri = Uri.parse("$url/$endpoint");
+
+    Future<http.Response> sendRequest(String token) {
+      return body == null
+          ? http.delete(
+            uri,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Bearer $token",
+            },
+          )
+          : http.delete(
+            uri,
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Bearer $token",
+            },
+            body: jsonEncode(body),
+          );
+    }
+
+    var response = await sendRequest(token);
 
     if (response.statusCode == 403) {
       await loadNewRefreshToken();
       final newToken = box.read('accessToken');
-      response = await http.delete(
-        Uri.parse("$url/$endpoint"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer $newToken",
-        },
-        body: jsonEncode(body),
-      );
+      if (newToken != null) {
+        response = await sendRequest(newToken);
+      }
     }
 
     return response;
@@ -1199,6 +1849,19 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   Future<void> _saveData(String value, String description) async {
     if (!mounted) return;
+
+    DateTime dueDate;
+    if (selectedReminder != null && selectedReminder!.isNotEmpty) {
+      if (selectedReminder!.startsWith('Custom:')) {
+        dueDate = customReminderDateTime!;
+      } else {
+        dueDate = convertReminderToDateTime(selectedReminder!);
+      }
+    } else {
+      dueDate = DateTime.now();
+    }
+
+    if (selectedReminder != null && !isCustomReminderApplied) return;
 
     final trimmedTitle = value.trim();
     final trimmedDescription = description.trim();
@@ -1209,31 +1872,36 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     final descriptionToSave = trimmedDescription;
 
     final userProfile = readMapSafely(box, 'userProfile');
-    if (userProfile == null) {
-      return;
-    }
+    if (userProfile == null) return;
 
     final userId = userProfile['userid'];
     final userEmail = userProfile['email']?.toString();
 
-    if (userId == null || userEmail == null) {
-      return;
-    }
+    if (userId == null || userEmail == null) return;
 
-    url = await loadAPIEndpoint();
-
-    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-    final tempTask = Todaytask(
+    final tempId = DateTime.now().millisecondsSinceEpoch;
+    final tempTask = model.Task(
       taskName: titleToSave,
       description: descriptionToSave,
-      archived: false,
       createdAt: DateTime.now().toIso8601String(),
-      priority: '',
+      priority: selectedPriority == null ? '' : selectedPriority.toString(),
       status: '0',
       attachments: [],
       checklists: [],
-      createdBy: userId,
+      createBy: userId,
       taskId: tempId,
+      assigned: [],
+      boardId: "Today",
+      notifications: [
+        model.Notification(
+          createdAt: DateTime.now().toIso8601String(),
+          dueDate: dueDate.toUtc().toIso8601String(),
+          isSend: false,
+          notificationId: tempId,
+          recurringPattern: "never",
+          taskId: tempId,
+        ),
+      ],
     );
 
     if (mounted) {
@@ -1242,39 +1910,47 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
       setState(() {
         addToday = false;
-        creatingTasks[tempId] = true;
+        creatingTasks[tempId.toString()] = true;
         isCreatingTask = true;
-        tasks =
-            showArchived
-                ? List.from(appData.showMyTasks.tasks)
-                : List.from(
-                  appData.showMyTasks.tasks
-                      .where((task) => task.archived == false)
-                      .toList(),
-                );
-
         addTasknameCtl.clear();
         addDescriptionCtl.clear();
       });
+
+      loadDataAsync();
     }
+
     await _updateLocalStorage(tempTask, isTemp: true);
 
     final success = await _createTaskAPI(
       titleToSave,
       descriptionToSave,
       userEmail,
+      dueDate,
     );
+
     if (success['success']) {
       final realTaskId = success['taskId'];
-      await _replaceWithRealTask(tempId, realTaskId, tempTask, userId);
+      final notificationID = success['notificationID'];
+      await _replaceWithRealTask(
+        tempId.toString(),
+        notificationID,
+        realTaskId,
+        tempTask,
+        userId,
+        dueDate,
+      );
     } else {
-      await _removeTempTask(tempId);
+      await _removeTempTask(tempId.toString());
     }
 
     if (mounted) {
       setState(() {
-        creatingTasks.remove(tempId);
+        creatingTasks.remove(tempId.toString());
         isCreatingTask = creatingTasks.isNotEmpty;
+        customReminderDateTime = null;
+        selectedReminder = null;
+        selectedPriority = null;
+        isCustomReminderApplied = false;
       });
     }
   }
@@ -1283,47 +1959,66 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     String title,
     String description,
     String email,
+    DateTime dueDate,
   ) async {
+    url = await loadAPIEndpoint();
+
+    final token = readStringSafely(box, 'accessToken');
+
     var responseCreate = await http.post(
       Uri.parse("$url/todaytasks/create"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${readStringSafely(box, 'accessToken')}",
+        "Authorization": "Bearer $token",
       },
       body: todayTasksCreatePostRequestToJson(
         TodayTasksCreatePostRequest(
-          email: email,
           taskName: title,
           description: description,
           status: '0',
-          priority: '',
+          priority: selectedPriority == null ? '' : selectedPriority.toString(),
+          reminder: Reminder(
+            dueDate: dueDate.toUtc().toIso8601String(),
+            recurringPattern: "never",
+          ),
         ),
       ),
     );
 
     if (responseCreate.statusCode == 403) {
       await loadNewRefreshToken();
-      responseCreate = await http.post(
-        Uri.parse("$url/todaytasks/create"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${readStringSafely(box, 'accessToken')}",
-        },
-        body: todayTasksCreatePostRequestToJson(
-          TodayTasksCreatePostRequest(
-            email: email,
-            taskName: title,
-            description: description,
-            status: '0',
-            priority: '',
+      final newToken = readStringSafely(box, 'accessToken');
+      if (newToken.isNotEmpty) {
+        responseCreate = await http.post(
+          Uri.parse("$url/todaytasks/create"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer $newToken",
+          },
+          body: todayTasksCreatePostRequestToJson(
+            TodayTasksCreatePostRequest(
+              taskName: title,
+              description: description,
+              status: '0',
+              priority:
+                  selectedPriority == null ? '' : selectedPriority.toString(),
+              reminder: Reminder(
+                dueDate: dueDate.toUtc().toIso8601String(),
+                recurringPattern: "never",
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
 
-    if (responseCreate.statusCode == 200) {
+    if (responseCreate.statusCode == 201) {
       final responseData = jsonDecode(responseCreate.body);
-      return {'success': true, 'taskId': responseData['taskID']};
+      return {
+        'success': true,
+        'taskId': responseData['taskID'],
+        'notificationID': responseData['notificationID'],
+      };
     } else {
       return {
         'success': false,
@@ -1334,23 +2029,36 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   Future<void> _replaceWithRealTask(
     String tempId,
-    String realId,
-    Todaytask tempTask,
+    int notificationID,
+    int realId,
+    model.Task tempTask,
     int userId,
+    DateTime dueDate,
   ) async {
     if (!mounted) return;
 
-    final realTask = Todaytask(
+    final realTask = model.Task(
       taskName: tempTask.taskName,
       description: tempTask.description,
-      archived: false,
       createdAt: DateTime.now().toIso8601String(),
       priority: tempTask.priority,
       status: '0',
       attachments: [],
       checklists: [],
-      createdBy: userId,
+      createBy: userId,
       taskId: realId,
+      assigned: [],
+      boardId: "Today",
+      notifications: [
+        model.Notification(
+          createdAt: DateTime.now().toIso8601String(),
+          dueDate: dueDate.toUtc().toIso8601String(),
+          isSend: false,
+          notificationId: notificationID,
+          recurringPattern: "never",
+          taskId: realId,
+        ),
+      ],
     );
 
     final appData = Provider.of<Appdata>(context, listen: false);
@@ -1360,16 +2068,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (mounted) {
       creatingTasks.remove(tempId);
       isCreatingTask = creatingTasks.isNotEmpty;
-      setState(() {
-        tasks =
-            showArchived
-                ? List.from(appData.showMyTasks.tasks)
-                : List.from(
-                  appData.showMyTasks.tasks
-                      .where((task) => task.archived == false)
-                      .toList(),
-                );
-      });
+
+      await loadDataAsync();
     }
 
     await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
@@ -1385,38 +2085,36 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       setState(() {
         creatingTasks.remove(tempId);
         isCreatingTask = creatingTasks.isNotEmpty;
-        tasks =
-            showArchived
-                ? List.from(appData.showMyTasks.tasks)
-                : List.from(
-                  appData.showMyTasks.tasks
-                      .where((task) => task.archived == false)
-                      .toList(),
-                );
       });
+
+      await loadDataAsync();
     }
 
-    final existingData = AllDataUserGetResponst.fromJson(
-      box.read('userDataAll'),
-    );
-    existingData.todaytasks.removeWhere((t) => t.taskId == tempId);
-    box.write('userDataAll', existingData.toJson());
+    final userDataJson = box.read('userDataAll');
+    if (userDataJson != null) {
+      final existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
+      existingData.tasks.removeWhere((t) => t.taskId.toString() == tempId);
+      box.write('userDataAll', existingData.toJson());
+    }
   }
 
   Future<void> _updateLocalStorage(
-    Todaytask task, {
+    model.Task task, {
     bool isTemp = false,
     String? tempIdToRemove,
   }) async {
-    final existingData = AllDataUserGetResponst.fromJson(
-      box.read('userDataAll'),
-    );
+    final userDataJson = box.read('userDataAll');
+    if (userDataJson == null) return;
+
+    final existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
 
     if (tempIdToRemove != null) {
-      existingData.todaytasks.removeWhere((t) => t.taskId == tempIdToRemove);
+      existingData.tasks.removeWhere(
+        (t) => t.taskId.toString() == tempIdToRemove,
+      );
     }
 
-    existingData.todaytasks.add(task);
+    existingData.tasks.add(task);
     box.write('userDataAll', existingData.toJson());
   }
 
@@ -1446,8 +2144,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   }
 
   void _scrollToAddForm() {
+    if (!mounted) return;
     Future.delayed(Duration(milliseconds: 500), () {
-      if (addFormKey.currentContext != null) {
+      if (mounted && addFormKey.currentContext != null) {
         Scrollable.ensureVisible(
           addFormKey.currentContext!,
           duration: Duration(milliseconds: 200),
@@ -1458,28 +2157,59 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     });
   }
 
-  String formatDateDisplay(String dateTimeString) {
-    final dateTime = DateTime.parse(dateTimeString).toLocal();
+  String formatDateDisplay(List<model.Notification> notifications) {
+    if (notifications.isEmpty) return '';
 
     final now = DateTime.now();
+    final dueDate = DateTime.parse(notifications.first.dueDate).toLocal();
     final today = DateTime(now.year, now.month, now.day);
-    final inputDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final dueDateDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+    final yesterday = today.subtract(const Duration(days: 1));
 
-    final difference = today.difference(inputDate).inDays;
-
-    if (difference == 0) {
+    if (dueDateDay.isAtSameMomentAs(today)) {
+      if (dueDate.isAfter(now)) {
+        final hour = dueDate.hour.toString().padLeft(2, '0');
+        final minute = dueDate.minute.toString().padLeft(2, '0');
+        return '$hour:$minute';
+      }
       return '';
-    } else if (difference == 1) {
-      return 'Yesterday';
-    } else {
-      return '${inputDate.day.toString().padLeft(2, '0')}/${inputDate.month.toString().padLeft(2, '0')}/${(inputDate.year % 100).toString().padLeft(2, '0')}';
     }
+
+    if (dueDateDay.isAtSameMomentAs(yesterday)) {
+      return 'Yesterday';
+    }
+
+    if (dueDateDay.isBefore(yesterday)) {
+      final day = dueDate.day.toString().padLeft(2, '0');
+      final month = dueDate.month.toString().padLeft(2, '0');
+      final year = (dueDate.year % 100).toString().padLeft(2, '0');
+      return '$day/$month/$year';
+    }
+
+    return '';
   }
 
   String getCurrentDayAndDate() {
     final now = DateTime.now();
     final formatter = DateFormat('EEEE - d MMMM');
     return formatter.format(now);
+  }
+
+  String showTimeCustom(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (dateOnly == today) {
+      final hour = dateTime.hour.toString().padLeft(2, '0');
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    } else {
+      final day = dateTime.day.toString().padLeft(2, '0');
+      final month = dateTime.month.toString().padLeft(2, '0');
+      final year = (dateTime.year % 100).toString().padLeft(2, '0');
+      return '$day/$month/$year';
+    }
   }
 
   Widget buildPopupItem(

@@ -1131,7 +1131,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     'Successfully!!',
                     style: TextStyle(
-                      fontSize: Get.textTheme.headlineSmall!.fontSize,
+                      fontSize: Get.textTheme.titleLarge!.fontSize,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF007AFF),
                     ),
@@ -1139,7 +1139,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     'You have successfully registered for a new membership',
                     style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      fontSize: Get.textTheme.titleSmall!.fontSize,
                       color: Colors.black,
                     ),
                     textAlign: TextAlign.center,
@@ -1167,7 +1167,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text(
                   'Login',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Colors.white,
                   ),
                 ),
@@ -1205,7 +1205,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text(
                   'Back',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Color(0xFF007AFF),
                   ),
                 ),
@@ -1232,7 +1232,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   'Confirm now?',
                   style: TextStyle(
-                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF007AFF),
                   ),
@@ -1240,7 +1240,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   'Your account must verify your email first',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    fontSize: Get.textTheme.titleSmall!.fontSize,
                     color: Colors.black,
                   ),
                   textAlign: TextAlign.center,
@@ -1270,7 +1270,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text(
                   'Confirm',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Colors.white,
                   ),
                 ),
@@ -1293,7 +1293,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Text(
                   'Back',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Color(0xFF007AFF),
                   ),
                 ),

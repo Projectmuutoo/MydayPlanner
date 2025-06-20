@@ -695,6 +695,11 @@ class _LoginPageState extends State<LoginPage> {
           'role': response.user.role,
         });
 
+        var result =
+            await FirebaseFirestore.instance
+                .collection('usersLogin')
+                .doc(response.user.email)
+                .get();
         String deviceName = await getDeviceName();
         Map<String, dynamic> currentData = box.read('userLogin') ?? {};
         currentData['deviceName'] = deviceName;
@@ -702,7 +707,16 @@ class _LoginPageState extends State<LoginPage> {
         await FirebaseFirestore.instance
             .collection('usersLogin')
             .doc(response.user.email)
-            .update({'deviceName': deviceName});
+            .update({
+              'deviceName': deviceName,
+              'loginWithGoogle': true,
+              'changePassword':
+                  response.user.role == "admin"
+                      ? FieldValue.delete()
+                      : result.data() != null
+                      ? (result.data()?['changePassword'] == true)
+                      : false,
+            });
 
         if (response.user.role != "admin") {
           await box.write('userDataAll', response.toJson());
@@ -916,7 +930,11 @@ class _LoginPageState extends State<LoginPage> {
       await FirebaseFirestore.instance
           .collection('usersLogin')
           .doc(response.user.email)
-          .update({'deviceName': deviceName});
+          .update({
+            'deviceName': deviceName,
+            'changePassword':
+                response.user.role == "admin" ? FieldValue.delete() : true,
+          });
 
       if (response.user.role != "admin") {
         await box.write('userDataAll', response.toJson());

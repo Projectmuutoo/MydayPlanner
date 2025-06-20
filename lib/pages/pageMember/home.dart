@@ -50,7 +50,7 @@ class HomePageState extends State<HomePage> {
   // 🧠 Late Variables
   late Future<void> loadData;
   late String url;
-  OverlayEntry? MenuEntryShowMenuBoard;
+  OverlayEntry? menuEntryShowMenuBoard;
   // 📊 Integer Variables
   int itemCount = 1;
   int? loadingBoardId;
@@ -100,7 +100,7 @@ class HomePageState extends State<HomePage> {
 
   // 📋 Lists
   List boards = [];
-  List<Todaytask> tasks = [];
+  List<Task> tasks = [];
   List<String> messagesRandom = [];
   List<String> selectedPrivateBoards = [];
   List<String> selectedGroupBoards = [];
@@ -214,8 +214,8 @@ class HomePageState extends State<HomePage> {
                                     child:
                                         userProfile == 'none-url'
                                             ? Container(
-                                              width: height * 0.07,
-                                              height: height * 0.07,
+                                              width: height * 0.06,
+                                              height: height * 0.06,
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
                                               ),
@@ -252,13 +252,13 @@ class HomePageState extends State<HomePage> {
                                                     .watch<Appdata>()
                                                     .changeMyProfileProvider
                                                     .profile,
-                                                width: height * 0.07,
-                                                height: height * 0.07,
+                                                width: height * 0.06,
+                                                height: height * 0.06,
                                                 fit: BoxFit.cover,
                                               ),
                                             ),
                                   ),
-                                  SizedBox(width: width * 0.01),
+                                  SizedBox(width: width * 0.015),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -269,7 +269,7 @@ class HomePageState extends State<HomePage> {
                                           fontSize:
                                               Get
                                                   .textTheme
-                                                  .titleSmall!
+                                                  .labelMedium!
                                                   .fontSize! *
                                               MediaQuery.of(
                                                 context,
@@ -447,14 +447,6 @@ class HomePageState extends State<HomePage> {
                                     decoration: BoxDecoration(
                                       color: Color(0xFFF2F2F6),
                                       borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          offset: Offset(0, 1),
-                                          blurRadius: 2,
-                                          color: Color(0xFF979595),
-                                          spreadRadius: 0.1,
-                                        ),
-                                      ],
                                     ),
                                     child: Padding(
                                       padding: EdgeInsets.symmetric(
@@ -1161,7 +1153,7 @@ class HomePageState extends State<HomePage> {
                                                                                             )['userid']
                                                                                             .toString()
                                                                                 ? 0
-                                                                                : 3,
+                                                                                : 1,
                                                                         offset: Offset(
                                                                           0,
                                                                           isSelectBoard &&
@@ -1593,7 +1585,7 @@ class HomePageState extends State<HomePage> {
                                                                                             )['userid']
                                                                                             .toString()
                                                                                 ? 0
-                                                                                : 3,
+                                                                                : 1,
                                                                         offset: Offset(
                                                                           0,
                                                                           isSelectBoard &&
@@ -2309,13 +2301,13 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  List<Todaytask> getUpcomingTasks(List<Todaytask> tasks) {
+  List<Task> getUpcomingTasks(List<Task> tasks) {
     final now = DateTime.now();
 
-    List<Todaytask> upcomingTasks =
+    List<Task> upcomingTasks =
         tasks.where((task) {
           final taskTime = DateTime.parse(task.createdAt).toLocal();
-          return !task.archived &&
+          return task.boardId == 'Today' &&
               taskTime.isAfter(now.subtract(const Duration(hours: 24)));
         }).toList();
 
@@ -2480,13 +2472,14 @@ class HomePageState extends State<HomePage> {
     final boardData = AllDataUserGetResponst.fromJson(boardDataRaw);
     final appData = Provider.of<Appdata>(context, listen: false);
     appData.showMyBoards.setBoards(boardData);
-    appData.showMyTasks.setTasks(boardData.todaytasks);
+    appData.showMyTasks.setTasks(boardData.tasks);
 
     final createdBoards = appData.showMyBoards.createdBoards;
     final memberBoards = appData.showMyBoards.memberBoards;
     final task =
         appData.showMyTasks.tasks
-            .where((task) => task.archived == false)
+            .where((task) => task.boardId == 'Today')
+            .where((task) => task.status == "0")
             .toList();
 
     // เตรียมค่าใหม่ทั้งหมด
@@ -2581,14 +2574,14 @@ class HomePageState extends State<HomePage> {
     final currentSelected =
         isPrivateMode ? selectedPrivateBoards : selectedGroupBoards;
 
-    MenuEntryShowMenuBoard = OverlayEntry(
+    menuEntryShowMenuBoard = OverlayEntry(
       builder: (context) {
         return Stack(
           children: [
             GestureDetector(
               onTap: () {
-                MenuEntryShowMenuBoard?.remove();
-                MenuEntryShowMenuBoard = null;
+                menuEntryShowMenuBoard?.remove();
+                menuEntryShowMenuBoard = null;
                 if (focusedBoardId != null) {
                   setState(() {
                     focusedBoardId = null;
@@ -2617,8 +2610,8 @@ class HomePageState extends State<HomePage> {
                         fit: BoxFit.contain,
                       ),
                       onTap: () {
-                        MenuEntryShowMenuBoard?.remove();
-                        MenuEntryShowMenuBoard = null;
+                        menuEntryShowMenuBoard?.remove();
+                        menuEntryShowMenuBoard = null;
                         if (focusedBoardId != null) {
                           setState(() {
                             focusedBoardId = null;
@@ -2638,8 +2631,8 @@ class HomePageState extends State<HomePage> {
                           fit: BoxFit.contain,
                         ),
                         onTap: () {
-                          MenuEntryShowMenuBoard?.remove();
-                          MenuEntryShowMenuBoard = null;
+                          menuEntryShowMenuBoard?.remove();
+                          menuEntryShowMenuBoard = null;
                           if (focusedBoardId != null) {
                             setState(() {
                               focusedBoardId = null;
@@ -2667,8 +2660,8 @@ class HomePageState extends State<HomePage> {
                           color: Colors.red,
                         ),
                         onTap: () async {
-                          MenuEntryShowMenuBoard?.remove();
-                          MenuEntryShowMenuBoard = null;
+                          menuEntryShowMenuBoard?.remove();
+                          menuEntryShowMenuBoard = null;
                           if (focusedBoardId != null) {
                             setState(() {
                               focusedBoardId = null;
@@ -2753,7 +2746,7 @@ class HomePageState extends State<HomePage> {
       },
     );
 
-    Overlay.of(context).insert(MenuEntryShowMenuBoard!);
+    Overlay.of(context).insert(menuEntryShowMenuBoard!);
   }
 
   showEditInfo(String boardname, String keyId) {

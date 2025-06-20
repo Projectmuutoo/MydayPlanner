@@ -217,6 +217,8 @@ class _NavbarPageState extends State<NavbarPage>
   int selectedIndex = 2;
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<TodayPageState> todayKey = GlobalKey<TodayPageState>();
+  final GlobalKey<CalendarPageState> calendarKey =
+      GlobalKey<CalendarPageState>();
   late final List<Widget> pageOptions;
   DateTime? createdAtDate;
   Timer? _timer;
@@ -232,7 +234,7 @@ class _NavbarPageState extends State<NavbarPage>
       TodayPage(key: todayKey),
       AlltasksPage(),
       HomePage(key: homeKey),
-      CalendarPage(),
+      CalendarPage(key: calendarKey),
       NotificationPage(),
     ];
     checkExpiresRefreshToken();

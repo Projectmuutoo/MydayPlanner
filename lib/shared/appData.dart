@@ -13,22 +13,22 @@ class Appdata with ChangeNotifier {
 
 //use page todayuser
 class ShowMyTasks extends ChangeNotifier {
-  List<Todaytask> _allTasks = [];
+  List<Task> _allTasks = [];
 
-  List<Todaytask> get tasks => _allTasks;
+  List<Task> get tasks => _allTasks;
 
-  void setTasks(List<Todaytask> tasksData) {
+  void setTasks(List<Task> tasksData) {
     _allTasks = tasksData;
     notifyListeners();
   }
 
-  void addTask(Todaytask task) {
+  void addTask(Task task) {
     _allTasks.add(task);
     notifyListeners();
   }
 
   void removeTaskById(String value) {
-    _allTasks.removeWhere((task) => task.taskId == value);
+    _allTasks.removeWhere((task) => task.taskId.toString() == value);
     notifyListeners();
   }
 }

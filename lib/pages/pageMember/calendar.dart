@@ -1,14 +1,30 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
   @override
-  State<CalendarPage> createState() => _CalendarPageState();
+  State<CalendarPage> createState() => CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage> {
+class CalendarPageState extends State<CalendarPage> {
+  var box = GetStorage();
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadDataAsync();
+  }
+
+  Future<void> loadDataAsync() async {
+    if (!mounted) return;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,9 +34,7 @@ class _CalendarPageState extends State<CalendarPage> {
           children: [
             Text(
               'Calendar',
-              style: TextStyle(
-                fontSize: Get.textTheme.displayMedium!.fontSize,
-              ),
+              style: TextStyle(fontSize: Get.textTheme.displayMedium!.fontSize),
             ),
           ],
         ),
