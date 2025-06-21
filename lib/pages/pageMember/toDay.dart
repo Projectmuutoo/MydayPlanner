@@ -96,6 +96,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     setState(() {
       isShowMenuRemind = false;
       isShowMenuPriority = false;
+      isCustomReminderApplied = false;
       selectedPriority = null;
       selectedReminder = null;
       customReminderDateTime = null;
@@ -970,6 +971,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                     }).toList(),
                                     InkWell(
                                       onTap: () {
+                                        setState(() {
+                                          isCustomReminderApplied = true;
+                                        });
                                         _showCustomDateTimePicker(context);
                                       },
                                       borderRadius: BorderRadius.circular(8),
@@ -1395,7 +1399,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               selectedReminder =
                                   'Custom: ${DateFormat('MMM dd, yyyy HH:mm').format(selectedDateTime)}';
                               customReminderDateTime = selectedDateTime;
-                              isCustomReminderApplied = true;
                               isShowMenuRemind = true;
                               addToday = true;
                             });
@@ -1850,6 +1853,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   Future<void> _saveData(String value, String description) async {
     if (!mounted) return;
 
+    if (isCustomReminderApplied) return;
+
     DateTime dueDate;
     if (selectedReminder != null && selectedReminder!.isNotEmpty) {
       if (selectedReminder!.startsWith('Custom:')) {
@@ -1860,8 +1865,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     } else {
       dueDate = DateTime.now();
     }
-
-    if (selectedReminder != null && !isCustomReminderApplied) return;
 
     final trimmedTitle = value.trim();
     final trimmedDescription = description.trim();
@@ -2068,11 +2071,10 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (mounted) {
       creatingTasks.remove(tempId);
       isCreatingTask = creatingTasks.isNotEmpty;
-
-      await loadDataAsync();
     }
 
     await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
+    await loadDataAsync();
   }
 
   Future<void> _removeTempTask(String tempId) async {

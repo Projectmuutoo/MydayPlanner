@@ -208,7 +208,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: Color(0xFFF2F2F6),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [

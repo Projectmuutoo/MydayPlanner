@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
+import 'package:mydayplanner/pages/pageMember/calendar.dart';
 
 class Appdata with ChangeNotifier {
   KeepIdBoard idBoard = KeepIdBoard();
@@ -9,7 +10,40 @@ class Appdata with ChangeNotifier {
       KeepEmailToUserPageVerifyOTP();
   ShowMyBoards showMyBoards = ShowMyBoards();
   ShowMyTasks showMyTasks = ShowMyTasks();
+  ShowMyTasksCalendar showMyTasksCalendar = ShowMyTasksCalendar();
 }
+
+//use page todayuser
+// ---------------------------------------------
+class UnifiedTask {
+  final String taskId;
+  final String taskName;
+  final String description;
+  final String priority;
+  final String status;
+  final String createdAt;
+
+  UnifiedTask({
+    required this.taskId,
+    required this.taskName,
+    required this.description,
+    required this.priority,
+    required this.status,
+    required this.createdAt,
+  });
+}
+
+class ShowMyTasksCalendar extends ChangeNotifier {
+  List<UnifiedTask> _allTasks = [];
+
+  List<UnifiedTask> get tasks => _allTasks;
+
+  void setTasks(List<UnifiedTask> tasksData) {
+    _allTasks = tasksData;
+    notifyListeners();
+  }
+}
+// ---------------------------------------------
 
 //use page todayuser
 class ShowMyTasks extends ChangeNotifier {
