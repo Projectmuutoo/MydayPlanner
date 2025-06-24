@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -110,7 +109,8 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
     if (loadtoketnew.statusCode == 200) {
       var reponse = jsonDecode(loadtoketnew.body);
       box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
+    } else if (loadtoketnew.statusCode == 403 ||
+        loadtoketnew.statusCode == 401) {
       Get.defaultDialog(
         title: '',
         titlePadding: EdgeInsets.zero,
@@ -467,12 +467,12 @@ class _NavbarPageState extends State<NavbarPage>
     var url = config['apiEndpoint'];
     var oldUserProfile = box.read('userProfile');
     var oldUserDataAllJson = box.read('userDataAll');
-    if (oldUserProfile == null || oldUserDataAllJson == null) {
-      return;
-    }
+    if (oldUserProfile == null || oldUserDataAllJson == null) return;
 
     var oldUserDataAll = AllDataUserGetResponst.fromJson(oldUserDataAllJson);
-    final response = await http.get(
+
+    http.Response response;
+    response = await http.get(
       Uri.parse("$url/user/data"),
       headers: {
         "Content-Type": "application/json; charset=utf-8",
@@ -480,16 +480,22 @@ class _NavbarPageState extends State<NavbarPage>
       },
     );
 
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      response = await http.get(
+        Uri.parse("$url/user/data"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
     if (response.statusCode == 200) {
       final newDataJson = allDataUserGetResponstFromJson(response.body);
 
       if (!deepEquals(oldUserDataAll, newDataJson)) {
         box.write('userDataAll', newDataJson.toJson());
       }
-    }
-    if (response.statusCode == 403) {
-      await loadNewRefreshToken();
-      return fetchDataOnResume();
     }
   }
 

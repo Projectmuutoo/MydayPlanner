@@ -1094,7 +1094,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                           ),
                                         ),
                                         child: Text(
-                                          'private',
+                                          'Private',
                                           style: TextStyle(
                                             fontSize:
                                                 Get
