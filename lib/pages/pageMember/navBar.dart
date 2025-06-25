@@ -219,6 +219,8 @@ class _NavbarPageState extends State<NavbarPage>
   final GlobalKey<TodayPageState> todayKey = GlobalKey<TodayPageState>();
   final GlobalKey<CalendarPageState> calendarKey =
       GlobalKey<CalendarPageState>();
+  final GlobalKey<AlltasksPageState> allTaskKey =
+      GlobalKey<AlltasksPageState>();
   late final List<Widget> pageOptions;
   DateTime? createdAtDate;
   Timer? _timer;
@@ -231,10 +233,10 @@ class _NavbarPageState extends State<NavbarPage>
     WidgetsBinding.instance.addObserver(this);
 
     pageOptions = [
-      TodayPage(key: todayKey),
+      TodayPage(),
       AlltasksPage(),
-      HomePage(key: homeKey),
-      CalendarPage(key: calendarKey),
+      HomePage(),
+      CalendarPage(),
       NotificationPage(),
     ];
     checkExpiresRefreshToken();
@@ -598,11 +600,6 @@ class _NavbarPageState extends State<NavbarPage>
         ],
         currentIndex: selectedIndex,
         onTap: (index) {
-          if (selectedIndex == 2 && index != 2) {
-            homeKey.currentState?.resetVariables();
-          } else if (selectedIndex == 0 && index != 0) {
-            todayKey.currentState?.resetVariables();
-          }
           setState(() {
             selectedIndex = index;
           });
@@ -618,7 +615,7 @@ class _NavbarPageState extends State<NavbarPage>
         unselectedItemColor: Color(0xFF979595),
         type: BottomNavigationBarType.fixed,
       ),
-      body: IndexedStack(index: selectedIndex, children: pageOptions),
+      body: pageOptions[selectedIndex],
     );
   }
 }

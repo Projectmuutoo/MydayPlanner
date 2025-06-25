@@ -16,7 +16,7 @@ import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/createBoardListsPostRequest.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/pages/pageMember/menu/menuReport.dart';
-import 'package:mydayplanner/pages/pageMember/myTasksPrivate/boradPrivate.dart';
+import 'package:mydayplanner/pages/pageMember/detailBoards/boardShowTasks.dart';
 import 'package:mydayplanner/pages/pageMember/menu/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -2997,6 +2997,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void showDisplays(String? show) {
+    if (!mounted) return;
     final userData = box.read('userDataAll');
     if (userData == null) return;
 
@@ -3067,9 +3068,11 @@ class HomePageState extends State<HomePage> {
 
     progressTimer = Timer.periodic(Duration(milliseconds: 20), (timer) {
       if (progressValue < 0.9) {
-        setState(() {
-          progressValue += 0.02;
-        });
+        if (mounted) {
+          setState(() {
+            progressValue += 0.02;
+          });
+        }
       } else {
         timer.cancel();
       }

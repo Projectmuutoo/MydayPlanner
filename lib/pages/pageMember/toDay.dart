@@ -92,22 +92,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     return config['apiEndpoint'];
   }
 
-  void resetVariables() {
-    setState(() {
-      isShowMenuRemind = false;
-      isShowMenuPriority = false;
-      isCustomReminderApplied = false;
-      selectedPriority = null;
-      selectedReminder = null;
-      customReminderDateTime = null;
-      hideMenu = false;
-      addToday = false;
-      selectedTaskIds.clear();
-      selectedIsArchived.clear();
-    });
-    loadDataAsync();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -188,8 +172,10 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       if (!newKeyboardVisible && wasKeyboardOpen) {
         wasKeyboardOpen = false;
 
+        setState(() {
+          addToday = false;
+        });
         _saveData(addTasknameCtl.text, addDescriptionCtl.text);
-        if (addToday || !hideMenu) resetVariables();
       }
     }
   }
@@ -585,10 +571,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                 log(
                                                                   "สร้างยังไม่เสร็จ",
                                                                 );
-                                                                Get.snackbar(
-                                                                  'บ่บ่บ่บ่บสร้างยังทันเสร็จห่วยย',
-                                                                  'ถ้าจักคาวแน่ api ช้า',
-                                                                );
                                                               }
                                                               : () {
                                                                 if (!hideMenu) {
@@ -601,10 +583,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                 }
                                                                 log(
                                                                   "เรียบร้อยกับยูเซอร์น่าโง่",
-                                                                );
-                                                                Get.snackbar(
-                                                                  'บ่บ่บ่บทันแล้ว',
-                                                                  'อย่าอย่าอย่าอย่า',
                                                                 );
                                                               }
                                                           : null,
@@ -1093,7 +1071,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                       _scrollToAddForm();
                                     });
                                   },
-                                  child: Container(
+                                  child: SizedBox(
                                     width: width,
                                     child: Padding(
                                       padding: EdgeInsets.symmetric(
@@ -1145,7 +1123,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                       _scrollToAddForm();
                                     });
                                   },
-                                  child: Container(
+                                  child: SizedBox(
                                     width: width,
                                     child: Padding(
                                       padding: EdgeInsets.symmetric(
@@ -1378,6 +1356,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               selectedReminder =
                                   'Custom: ${DateFormat('MMM dd, yyyy HH:mm').format(selectedDateTime)}';
                               customReminderDateTime = selectedDateTime;
+                              isCustomReminderApplied = false;
                               isShowMenuRemind = true;
                               addToday = true;
                             });
@@ -1916,8 +1895,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         addTasknameCtl.clear();
         addDescriptionCtl.clear();
       });
-
-      loadDataAsync();
     }
 
     //ฟังก์ชันอัพเดทลง storage
@@ -1955,6 +1932,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         customReminderDateTime = null;
         selectedReminder = null;
         selectedPriority = null;
+        isShowMenuPriority = false;
+        isShowMenuRemind = false;
         isCustomReminderApplied = false;
       });
     }
@@ -2434,6 +2413,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               : SortType.dateEarliestFirst;
                       sortTasks(tasks, newSort);
                       hideSortMenu();
+                      loadDataAsync();
                     },
                   ),
                   buildPopupItem(
@@ -2462,6 +2442,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               : SortType.titleAZ;
                       sortTasks(tasks, newSort);
                       hideSortMenu();
+                      loadDataAsync();
                     },
                   ),
                   buildPopupItem(
@@ -2488,6 +2469,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               : SortType.priorityHighToLow;
                       sortTasks(tasks, newSort);
                       hideSortMenu();
+                      loadDataAsync();
                     },
                   ),
                 ],
