@@ -223,6 +223,8 @@ class _NavbarPageState extends State<NavbarPage>
       GlobalKey<AlltasksPageState>();
   late final List<Widget> pageOptions;
   DateTime? createdAtDate;
+  Timer? timer;
+  Timer? timer2;
   Timer? _timer;
   Timer? _timer2;
   int? expiresIn;
@@ -242,6 +244,120 @@ class _NavbarPageState extends State<NavbarPage>
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
+
+    FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(box.read('userProfile')['email'])
+        .collection('Tasks')
+        .snapshots()
+        .listen((snapshot) {
+          for (var change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.added ||
+                change.type == DocumentChangeType.modified ||
+                change.type == DocumentChangeType.removed) {
+              fetchDataOnResume();
+              break;
+            }
+          }
+        });
+
+    FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(box.read('userProfile')['email'])
+        .collection('Tasks')
+        .snapshots()
+        .listen((snapshot) {
+          timer?.cancel();
+          timer = Timer.periodic(Duration(seconds: 1), (timer) {
+            final now = DateTime.now();
+            for (var doc in snapshot.docs) {
+              final dueDate = (doc['dueDate'] as Timestamp).toDate();
+              final isSend = doc['isSend'];
+              final notificationID = doc['notificationID'].toString();
+              if (dueDate.isBefore(now) && !isSend) {
+                final rawData = box.read('userDataAll');
+                final tasksData = AllDataUserGetResponst.fromJson(rawData);
+                final task =
+                    tasksData.tasks
+                        .where((t) => t.taskId == doc['taskID'])
+                        .toList();
+                if (selectedIndex != 4) {
+                  Get.snackbar(
+                    task.first.taskName,
+                    showDetailPrivateOrGroup(task.first).isEmpty
+                        ? "Today, ${formatDateDisplay(doc['dueDate'])}"
+                        : "${showDetailPrivateOrGroup(task.first)}, ${formatDateDisplay(doc['dueDate'])}",
+                    titleText:
+                        task.first.priority.isEmpty
+                            ? Text(
+                              task.first.taskName,
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF007AFF),
+                              ),
+                            )
+                            : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color:
+                                        task.first.priority == '3'
+                                            ? Colors.red
+                                            : task.first.priority == '2'
+                                            ? Colors.orange
+                                            : Colors.green,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  task.first.taskName,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF007AFF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                  );
+                }
+                FirebaseFirestore.instance
+                    .collection('Notifications')
+                    .doc(box.read('userProfile')['email'])
+                    .collection('Tasks')
+                    .doc(notificationID)
+                    .update({'isSend': true, 'isShow': true});
+              }
+            }
+          });
+        });
+  }
+
+  String formatDateDisplay(dynamic date) {
+    final hour = date.toDate().hour.toString().padLeft(2, '0');
+    final minute = date.toDate().minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  String showDetailPrivateOrGroup(Task task) {
+    final rawData = box.read('userDataAll');
+    final data = AllDataUserGetResponst.fromJson(rawData);
+
+    bool isPrivate = (data.board).any((b) => b.boardId == task.boardId);
+    bool isGroup = (data.boardgroup).any((b) => b.boardId == task.boardId);
+    if (isPrivate) return 'Private';
+    if (isGroup) return 'Group';
+
+    return '';
   }
 
   checkExpiresRefreshToken() async {

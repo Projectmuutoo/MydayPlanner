@@ -181,15 +181,6 @@ class _MenureportPageState extends State<MenureportPage> {
                                                 top: Radius.circular(12),
                                               )
                                               : BorderRadius.circular(12),
-                                      border:
-                                          openSubject
-                                              ? Border(
-                                                bottom: BorderSide(
-                                                  width: 2,
-                                                  color: Color(0xFFF2F2F6),
-                                                ),
-                                              )
-                                              : null,
                                     ),
                                     child: Material(
                                       color: Colors.transparent,

@@ -437,150 +437,142 @@ class HomePageState extends State<HomePage> {
                             Column(
                               children: [
                                 SizedBox(height: height * 0.01),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01,
+                                Container(
+                                  width: width,
+                                  height: height * 0.12,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFF2F2F6),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: Container(
-                                    width: width,
-                                    height: height * 0.12,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFF2F2F6),
-                                      borderRadius: BorderRadius.circular(20),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.06,
+                                      vertical: height * 0.005,
                                     ),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.06,
-                                        vertical: height * 0.005,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Row(
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'is comming!!',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize! *
+                                                    MediaQuery.of(
+                                                      context,
+                                                    ).textScaleFactor,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            Text(
+                                              'To day',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize! *
+                                                    MediaQuery.of(
+                                                      context,
+                                                    ).textScaleFactor,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF007AFF),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (getUpcomingTasks(tasks).isEmpty)
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                              top: height * 0.01,
+                                            ),
+                                            child: Text(
+                                              "No tasks for today",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Get
+                                                        .textTheme
+                                                        .titleSmall!
+                                                        .fontSize! *
+                                                    MediaQuery.of(
+                                                      context,
+                                                    ).textScaleFactor,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ...getUpcomingTasks(tasks).map((task) {
+                                          return Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Text(
-                                                'is comming!!',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
+                                              Expanded(
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.task,
+                                                      color: Colors.grey,
+                                                      size:
+                                                          Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize! *
+                                                          MediaQuery.of(
+                                                            context,
+                                                          ).textScaleFactor,
+                                                    ),
+                                                    SizedBox(
+                                                      width: width * 0.01,
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(
+                                                        task.taskName,
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              Get
+                                                                  .textTheme
+                                                                  .labelSmall!
+                                                                  .fontSize! *
+                                                              MediaQuery.of(
+                                                                context,
+                                                              ).textScaleFactor,
+                                                          fontFamily: 'mali',
+                                                        ),
+                                                        overflow:
+                                                            TextOverflow
+                                                                .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
+                                              SizedBox(width: width * 0.15),
                                               Text(
-                                                'To day',
+                                                timeUntilDetailed(
+                                                  task.createdAt,
+                                                ),
                                                 style: TextStyle(
                                                   fontSize:
                                                       Get
                                                           .textTheme
-                                                          .titleMedium!
+                                                          .labelSmall!
                                                           .fontSize! *
                                                       MediaQuery.of(
                                                         context,
                                                       ).textScaleFactor,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Color(0xFF007AFF),
                                                 ),
                                               ),
                                             ],
-                                          ),
-                                          if (getUpcomingTasks(tasks).isEmpty)
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                top: height * 0.01,
-                                              ),
-                                              child: Text(
-                                                "No tasks for today",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  color: Colors.grey,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ...getUpcomingTasks(tasks).map((
-                                            task,
-                                          ) {
-                                            return Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Expanded(
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.task,
-                                                        color: Colors.grey,
-                                                        size:
-                                                            Get
-                                                                .textTheme
-                                                                .labelMedium!
-                                                                .fontSize! *
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).textScaleFactor,
-                                                      ),
-                                                      SizedBox(
-                                                        width: width * 0.01,
-                                                      ),
-                                                      Expanded(
-                                                        child: Text(
-                                                          task.taskName,
-                                                          style: TextStyle(
-                                                            fontSize:
-                                                                Get
-                                                                    .textTheme
-                                                                    .labelSmall!
-                                                                    .fontSize! *
-                                                                MediaQuery.of(
-                                                                  context,
-                                                                ).textScaleFactor,
-                                                            fontFamily: 'mali',
-                                                          ),
-                                                          overflow:
-                                                              TextOverflow
-                                                                  .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                SizedBox(width: width * 0.15),
-                                                Text(
-                                                  timeUntilDetailed(
-                                                    task.createdAt,
-                                                  ),
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .labelSmall!
-                                                            .fontSize! *
-                                                        MediaQuery.of(
-                                                          context,
-                                                        ).textScaleFactor,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }),
-                                        ],
-                                      ),
+                                          );
+                                        }),
+                                      ],
                                     ),
                                   ),
                                 ),

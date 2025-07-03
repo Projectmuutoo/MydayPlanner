@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/config/config.dart';
 
@@ -41,7 +42,12 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
               Text('data'),
               Text('data'),
               Text('data'),
-              Text('data'),
+              InkWell(
+                onTap: () {
+                  Get.back();
+                },
+                child: Text('data'),
+              ),
             ],
           ),
         ),

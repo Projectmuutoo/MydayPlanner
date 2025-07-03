@@ -35,7 +35,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   var box = GetStorage();
 
   // 🧠 Late Variables
-  late Future<void> loadData;
   late String url;
   String? selectedReminder;
   DateTime? customReminderDateTime;
@@ -77,6 +76,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   // 🕒 Timer
   Timer? _timer;
+  Timer? _timer2;
   Timer? debounceTimer;
 
   // 📋 Lists
@@ -97,7 +97,10 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    loadData = loadDataAsync();
+    loadDataAsync();
+    _timer2 = Timer.periodic(Duration(seconds: 2), (timer) {
+      if (mounted) loadDataAsync();
+    });
 
     addTasknameFocusNode.addListener(() {
       if (addTasknameFocusNode.hasFocus && addToday) {
@@ -150,7 +153,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     filteredTasks = sortTasks(filteredTasks); //เอา filtertask ที่ได้ไป sort
     appData.showMyTasks.setTasks(filteredTasks); //บันทึกลง provider
 
-    if (!mounted) return;
     setState(() {
       tasks = filteredTasks; //แสดง ui
     });
@@ -345,7 +347,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                 ),
                               )
                               : selectedTaskIds.isNotEmpty || tasks.isNotEmpty
-                              ? InkWell(
+                              ? GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     if (selectedTaskIds.length ==
@@ -413,328 +415,426 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
               ),
               SizedBox(height: height * 0.01),
               Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  child: Column(
-                    children: [
-                      if (tasks.isEmpty && !addToday)
-                        Container(
-                          width: width,
-                          height: height * 0.6,
-                          alignment: Alignment.center,
-                          child: Text(
-                            'No tasks for today',
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
+                child: Container(
+                  color: Color(0xFFF2F2F6),
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Column(
+                      children: [
+                        if (tasks.isEmpty && !addToday)
+                          Container(
+                            width: width,
+                            height: height * 0.6,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'No tasks for today',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      if (tasks.isNotEmpty)
-                        ...sortTasks(tasks).map((data) {
-                          return InkWell(
-                            onTap:
-                                hideMenu
-                                    ? () {
-                                      if (selectedTaskIds.contains(
-                                        data.taskId.toString(),
-                                      )) {
-                                        selectedTaskIds.remove(
-                                          data.taskId.toString(),
-                                        );
-                                      } else {
-                                        selectedTaskIds.add(
-                                          data.taskId.toString(),
-                                        );
-                                      }
-                                    }
-                                    : null,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.05,
-                              ),
-                              color: Colors.transparent,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Dismissible(
-                                    key: ValueKey(data.taskId),
-                                    direction:
-                                        hideMenu ||
-                                                creatingTasks[data.taskId
-                                                        .toString()] ==
-                                                    true
-                                            ? DismissDirection.none
-                                            : DismissDirection.endToStart,
-                                    background: Container(
-                                      alignment: Alignment.centerRight,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.02,
-                                      ),
-                                      color: Colors.red,
-                                      child: Icon(
-                                        Icons.delete,
-                                        color: Colors.white,
-                                      ),
+                        if (tasks.isNotEmpty)
+                          ...sortTasks(tasks).map((data) {
+                            return TweenAnimationBuilder(
+                              tween: Tween<double>(begin: 0.0, end: 1.0),
+                              duration: Duration(milliseconds: 400),
+                              curve: Curves.easeOutCirc,
+                              builder: (context, value, child) {
+                                return Transform.translate(
+                                  offset: Offset(0, (1 - value) * -30),
+                                  child: Opacity(
+                                    opacity: value.clamp(0.0, 1.0),
+                                    child: Transform.scale(
+                                      scale: 0.8 + (value * 0.2),
+                                      child: child,
                                     ),
-                                    confirmDismiss: (direction) async {
-                                      return true;
-                                    },
-                                    onDismissed: (direction) {
-                                      setState(() {
-                                        tasks.removeWhere(
-                                          (t) => t.taskId == data.taskId,
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  left: width * 0.03,
+                                  right: width * 0.03,
+                                  top: height * 0.005,
+                                ),
+                                child: Material(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap:
+                                        hideMenu
+                                            ? () {
+                                              if (selectedTaskIds.contains(
+                                                data.taskId.toString(),
+                                              )) {
+                                                selectedTaskIds.remove(
+                                                  data.taskId.toString(),
+                                                );
+                                              } else {
+                                                selectedTaskIds.add(
+                                                  data.taskId.toString(),
+                                                );
+                                              }
+                                              setState(() {});
+                                            }
+                                            : null,
+                                    child: Dismissible(
+                                      key: ValueKey(data.taskId),
+                                      direction:
+                                          hideMenu ||
+                                                  creatingTasks[data.taskId
+                                                          .toString()] ==
+                                                      true
+                                              ? DismissDirection.none
+                                              : DismissDirection.endToStart,
+                                      background: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                        ),
+                                        child: Icon(
+                                          Icons.delete,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      confirmDismiss: (direction) async {
+                                        return true;
+                                      },
+                                      onDismissed: (direction) {
+                                        setState(() {
+                                          tasks.removeWhere(
+                                            (t) => t.taskId == data.taskId,
+                                          );
+                                        });
+                                        deleteTaskById(
+                                          data.taskId.toString(),
+                                          false,
                                         );
-                                      });
-                                      deleteTaskById(
-                                        data.taskId.toString(),
-                                        false,
-                                      );
-                                    },
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          !hideMenu
-                                              ? CrossAxisAlignment.start
-                                              : CrossAxisAlignment.center,
-                                      children: [
-                                        GestureDetector(
-                                          onTap:
-                                              !hideMenu
-                                                  ? () => handleTaskTap(data)
-                                                  : null,
-                                          child:
-                                              !hideMenu
-                                                  ? SvgPicture.string(
-                                                    selectedIsArchived.contains(
-                                                          data.taskId
-                                                              .toString(),
-                                                        )
-                                                        ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                        : data.status == "2"
-                                                        ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                        : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                    height: height * 0.04,
-                                                    fit: BoxFit.contain,
-                                                    color:
-                                                        creatingTasks[data
-                                                                    .taskId
-                                                                    .toString()] ==
-                                                                true
-                                                            ? Colors.grey[300]
-                                                            : selectedIsArchived
-                                                                .contains(
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.01,
+                                          vertical: height * 0.002,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              selectedTaskIds.contains(
+                                                    data.taskId.toString(),
+                                                  )
+                                                  ? Colors.black12
+                                                  : data.status == "2" &&
+                                                      hideMenu
+                                                  ? Colors.grey[100]
+                                                  : Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  !hideMenu
+                                                      ? CrossAxisAlignment.start
+                                                      : CrossAxisAlignment
+                                                          .center,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap:
+                                                      !hideMenu
+                                                          ? () => handleTaskTap(
+                                                            data,
+                                                          )
+                                                          : null,
+                                                  child:
+                                                      !hideMenu
+                                                          ? SvgPicture.string(
+                                                            selectedIsArchived
+                                                                    .contains(
+                                                                      data.taskId
+                                                                          .toString(),
+                                                                    )
+                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                                : data.status ==
+                                                                    "2"
+                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                            height:
+                                                                height * 0.04,
+                                                            fit: BoxFit.contain,
+                                                            color:
+                                                                creatingTasks[data
+                                                                            .taskId
+                                                                            .toString()] ==
+                                                                        true
+                                                                    ? Colors
+                                                                        .grey[300]
+                                                                    : selectedIsArchived.contains(
+                                                                      data.taskId
+                                                                          .toString(),
+                                                                    )
+                                                                    ? Color(
+                                                                      0xFF007AFF,
+                                                                    )
+                                                                    : data.status ==
+                                                                        "2"
+                                                                    ? Color(
+                                                                      0xFF007AFF,
+                                                                    )
+                                                                    : Colors
+                                                                        .grey,
+                                                          )
+                                                          : SvgPicture.string(
+                                                            selectedTaskIds.contains(
                                                                   data.taskId
                                                                       .toString(),
                                                                 )
-                                                            ? Color(0xFF007AFF)
-                                                            : data.status == "2"
-                                                            ? Color(0xFF007AFF)
-                                                            : Colors.grey,
-                                                  )
-                                                  : SvgPicture.string(
-                                                    selectedTaskIds.contains(
-                                                          data.taskId
-                                                              .toString(),
-                                                        )
-                                                        ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
-                                                        : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                    height: height * 0.04,
-                                                    fit: BoxFit.contain,
-                                                    color:
-                                                        selectedTaskIds.contains(
-                                                              data.taskId
-                                                                  .toString(),
-                                                            )
-                                                            ? Color(0xFF007AFF)
-                                                            : Colors.grey,
-                                                  ),
-                                        ),
-                                        SizedBox(width: width * 0.01),
-                                        Expanded(
-                                          child: Column(
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  vertical: height * 0.005,
+                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                            height:
+                                                                height * 0.04,
+                                                            fit: BoxFit.contain,
+                                                            color:
+                                                                selectedTaskIds.contains(
+                                                                      data.taskId
+                                                                          .toString(),
+                                                                    )
+                                                                    ? Color(
+                                                                      0xFF007AFF,
+                                                                    )
+                                                                    : Colors
+                                                                        .grey,
+                                                          ),
                                                 ),
-                                                child: InkWell(
-                                                  onTap:
-                                                      !hideMenu
-                                                          ? creatingTasks[data
-                                                                      .taskId
-                                                                      .toString()] ==
-                                                                  true
-                                                              ? () {
-                                                                log(
-                                                                  "สร้างยังไม่เสร็จ",
-                                                                );
-                                                              }
-                                                              : () {
-                                                                if (!hideMenu) {
-                                                                  setState(() {
-                                                                    hideMenu =
-                                                                        false;
-                                                                    addToday =
-                                                                        false;
-                                                                  });
-                                                                }
-                                                                log(
-                                                                  "เรียบร้อยกับยูเซอร์น่าโง่",
-                                                                );
-                                                              }
-                                                          : null,
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
+                                                SizedBox(width: width * 0.01),
+                                                Expanded(
+                                                  child: Column(
                                                     children: [
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Row(
-                                                              children: [
-                                                                Expanded(
-                                                                  child: Text(
-                                                                    data.taskName,
-                                                                    style: TextStyle(
-                                                                      fontSize:
-                                                                          Get
-                                                                              .textTheme
-                                                                              .titleMedium!
-                                                                              .fontSize! *
-                                                                          MediaQuery.of(
-                                                                            context,
-                                                                          ).textScaleFactor,
-                                                                      color:
-                                                                          creatingTasks[data.taskId.toString()] ==
-                                                                                  true
-                                                                              ? Colors.grey
-                                                                              : selectedIsArchived.contains(
-                                                                                    data.taskId.toString(),
-                                                                                  ) ||
-                                                                                  data.status ==
-                                                                                      "2"
-                                                                              ? Colors.grey
-                                                                              : Colors.black,
-                                                                    ),
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                  ),
-                                                                ),
-                                                                data
-                                                                        .priority
-                                                                        .isEmpty
-                                                                    ? SizedBox.shrink()
-                                                                    : Padding(
-                                                                      padding: EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            width *
-                                                                            0.01,
-                                                                      ),
-                                                                      child: Container(
-                                                                        width:
-                                                                            width *
-                                                                            0.03,
-                                                                        height:
-                                                                            height *
-                                                                            0.03,
-                                                                        decoration: BoxDecoration(
-                                                                          shape:
-                                                                              BoxShape.circle,
-                                                                          color:
-                                                                              data.priority ==
-                                                                                      '3'
-                                                                                  ? Colors.red
-                                                                                  : data.priority ==
-                                                                                      '2'
-                                                                                  ? Colors.orange
-                                                                                  : Colors.green,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                              ],
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              vertical:
+                                                                  height *
+                                                                  0.005,
                                                             ),
-                                                            data
-                                                                    .description
-                                                                    .isEmpty
-                                                                ? SizedBox.shrink()
-                                                                : Text(
-                                                                  data.description,
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        Get
-                                                                            .textTheme
-                                                                            .labelMedium!
-                                                                            .fontSize! *
-                                                                        MediaQuery.of(
-                                                                          context,
-                                                                        ).textScaleFactor,
-                                                                    color:
-                                                                        Colors
-                                                                            .grey,
-                                                                  ),
-                                                                  maxLines: 6,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
+                                                        child: InkWell(
+                                                          onTap:
+                                                              !hideMenu
+                                                                  ? creatingTasks[data
+                                                                              .taskId
+                                                                              .toString()] ==
+                                                                          true
+                                                                      ? () {
+                                                                        log(
+                                                                          "สร้างยังไม่เสร็จ",
+                                                                        );
+                                                                      }
+                                                                      : () {
+                                                                        if (!hideMenu) {
+                                                                          setState(() {
+                                                                            hideMenu =
+                                                                                false;
+                                                                            addToday =
+                                                                                false;
+                                                                          });
+                                                                        }
+                                                                        log(
+                                                                          "เรียบร้อยกับยูเซอร์น่าโง่",
+                                                                        );
+                                                                      }
+                                                                  : null,
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    Row(
+                                                                      children: [
+                                                                        Expanded(
+                                                                          child: Text(
+                                                                            data.taskName,
+                                                                            style: TextStyle(
+                                                                              fontSize:
+                                                                                  Get.textTheme.titleMedium!.fontSize! *
+                                                                                  MediaQuery.of(
+                                                                                    context,
+                                                                                  ).textScaleFactor,
+                                                                              color:
+                                                                                  creatingTasks[data.taskId.toString()] ==
+                                                                                          true
+                                                                                      ? Colors.grey
+                                                                                      : selectedIsArchived.contains(
+                                                                                            data.taskId.toString(),
+                                                                                          ) ||
+                                                                                          data.status ==
+                                                                                              "2"
+                                                                                      ? Colors.grey
+                                                                                      : Colors.black,
+                                                                            ),
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
+                                                                          ),
+                                                                        ),
+                                                                        data.priority.isEmpty
+                                                                            ? SizedBox.shrink()
+                                                                            : Padding(
+                                                                              padding: EdgeInsets.symmetric(
+                                                                                horizontal:
+                                                                                    width *
+                                                                                    0.01,
+                                                                              ),
+                                                                              child: Container(
+                                                                                width:
+                                                                                    width *
+                                                                                    0.03,
+                                                                                height:
+                                                                                    height *
+                                                                                    0.03,
+                                                                                decoration: BoxDecoration(
+                                                                                  shape:
+                                                                                      BoxShape.circle,
+                                                                                  color:
+                                                                                      data.priority ==
+                                                                                              '3'
+                                                                                          ? Colors.red
+                                                                                          : data.priority ==
+                                                                                              '2'
+                                                                                          ? Colors.orange
+                                                                                          : Colors.green,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                      ],
+                                                                    ),
+                                                                    data.description.isEmpty
+                                                                        ? SizedBox.shrink()
+                                                                        : Text(
+                                                                          data.description,
+                                                                          style: TextStyle(
+                                                                            fontSize:
+                                                                                Get.textTheme.labelMedium!.fontSize! *
+                                                                                MediaQuery.of(
+                                                                                  context,
+                                                                                ).textScaleFactor,
+                                                                            color:
+                                                                                Colors.grey,
+                                                                          ),
+                                                                          maxLines:
+                                                                              6,
+                                                                          overflow:
+                                                                              TextOverflow.ellipsis,
+                                                                        ),
+                                                                    Row(
+                                                                      children: [
+                                                                        formatDateDisplay(
+                                                                              data.notifications,
+                                                                            ).isEmpty
+                                                                            ? SizedBox.shrink()
+                                                                            : Container(
+                                                                              decoration: BoxDecoration(
+                                                                                border: Border.all(
+                                                                                  width:
+                                                                                      0.5,
+                                                                                  color:
+                                                                                      Colors.red,
+                                                                                ),
+                                                                                borderRadius: BorderRadius.circular(
+                                                                                  6,
+                                                                                ),
+                                                                              ),
+                                                                              padding: EdgeInsets.symmetric(
+                                                                                horizontal:
+                                                                                    width *
+                                                                                    0.01,
+                                                                              ),
+                                                                              child: Row(
+                                                                                children: [
+                                                                                  SvgPicture.string(
+                                                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
+                                                                                    width:
+                                                                                        width *
+                                                                                        0.04,
+                                                                                    fit:
+                                                                                        BoxFit.contain,
+                                                                                    color:
+                                                                                        Colors.red,
+                                                                                  ),
+                                                                                  Text(
+                                                                                    " Due ",
+                                                                                    style: TextStyle(
+                                                                                      fontSize:
+                                                                                          Get.textTheme.labelMedium!.fontSize! *
+                                                                                          MediaQuery.of(
+                                                                                            context,
+                                                                                          ).textScaleFactor,
+                                                                                      color:
+                                                                                          Colors.red,
+                                                                                    ),
+                                                                                  ),
+                                                                                  Text(
+                                                                                    formatDateDisplay(
+                                                                                      data.notifications,
+                                                                                    ),
+                                                                                    style: TextStyle(
+                                                                                      fontSize:
+                                                                                          Get.textTheme.labelMedium!.fontSize! *
+                                                                                          MediaQuery.of(
+                                                                                            context,
+                                                                                          ).textScaleFactor,
+                                                                                      color:
+                                                                                          Colors.red,
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
                                                                 ),
-                                                            formatDateDisplay(
-                                                                  data.notifications,
-                                                                ).isEmpty
-                                                                ? SizedBox.shrink()
-                                                                : Text(
-                                                                  formatDateDisplay(
-                                                                    data.notifications,
-                                                                  ),
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        Get
-                                                                            .textTheme
-                                                                            .labelMedium!
-                                                                            .fontSize! *
-                                                                        MediaQuery.of(
-                                                                          context,
-                                                                        ).textScaleFactor,
-                                                                    color:
-                                                                        Colors
-                                                                            .red,
-                                                                  ),
-                                                                ),
-                                                          ],
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
                                                     ],
                                                   ),
                                                 ),
-                                              ),
-                                              Container(
-                                                width: width,
-                                                height: 0.5,
-                                                color: Colors.grey,
-                                              ),
-                                            ],
-                                          ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          );
-                        }),
-                    ],
+                            );
+                          }),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              if (addToday) SizedBox(height: height * 0.005),
               if (addToday)
                 GestureDetector(
                   onTap: () {
@@ -1176,54 +1276,57 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                   ),
                 ),
               if (!addToday && !hideMenu)
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: height * 0.02,
-                    right: width * 0.05,
-                    bottom: height * 0.02,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            addToday = !addToday;
-                          });
-                          if (addToday) {
-                            Future.delayed(Duration(milliseconds: 100), () {
-                              addTasknameFocusNode.requestFocus();
+                Container(
+                  color: Color(0xFFF2F2F6),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: height * 0.02,
+                      right: width * 0.05,
+                      bottom: height * 0.02,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              addToday = !addToday;
                             });
-                          }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.01,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                "New",
-                                style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleMedium!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
-                                  color: Color(0xFF007AFF),
-                                  fontWeight: FontWeight.w600,
+                            if (addToday) {
+                              Future.delayed(Duration(milliseconds: 100), () {
+                                addTasknameFocusNode.requestFocus();
+                              });
+                            }
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: width * 0.01,
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "New",
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize! *
+                                        MediaQuery.of(context).textScaleFactor,
+                                    color: Color(0xFF007AFF),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: width * 0.01),
-                              SvgPicture.string(
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4z"></path><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path></svg>',
-                                height: height * 0.04,
-                                fit: BoxFit.contain,
-                                color: Color(0xFF007AFF),
-                              ),
-                            ],
+                                SizedBox(width: width * 0.01),
+                                SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4z"></path><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path></svg>',
+                                  height: height * 0.04,
+                                  fit: BoxFit.contain,
+                                  color: Color(0xFF007AFF),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               if (hideMenu)
@@ -1876,7 +1979,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         model.Notification(
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: false,
+          isSend:
+              DateTime.parse(
+                    dueDate.toUtc().toIso8601String(),
+                  ).isAfter(DateTime.now())
+                  ? false
+                  : true,
           notificationId: tempId,
           recurringPattern: "never",
           taskId: tempId,
@@ -2033,13 +2141,28 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         model.Notification(
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: false,
+          isSend:
+              DateTime.parse(
+                    dueDate.toUtc().toIso8601String(),
+                  ).isAfter(DateTime.now())
+                  ? false
+                  : true,
           notificationId: notificationID,
           recurringPattern: "never",
           taskId: realId,
         ),
       ],
     );
+    if (DateTime.parse(
+      dueDate.toUtc().toIso8601String(),
+    ).isAfter(DateTime.now())) {
+      FirebaseFirestore.instance
+          .collection('Notifications')
+          .doc(box.read('userProfile')['email'])
+          .collection('Tasks')
+          .doc(notificationID.toString())
+          .update({'isShow': false});
+    }
 
     final appData = Provider.of<Appdata>(context, listen: false);
     appData.showMyTasks.removeTaskById(tempId);
@@ -2168,7 +2291,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   String getCurrentDayAndDate() {
     final now = DateTime.now();
-    final formatter = DateFormat('EEEE - d MMMM');
+    final formatter = DateFormat('EEEE, d MMMM');
     return formatter.format(now);
   }
 
