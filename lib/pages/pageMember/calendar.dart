@@ -165,6 +165,7 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = dayNumber;
               openSelectMonth = false;
             });
+            log("message");
           },
           child: Container(
             alignment: Alignment.center,
@@ -198,6 +199,7 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = i;
               openSelectMonth = false;
             });
+            log("message2 $selectedDay");
           },
           child: Container(
             width: width * 0.08,
@@ -251,6 +253,7 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = i;
               openSelectMonth = false;
             });
+            log("message3");
           },
           child: Container(
             alignment: Alignment.center,
@@ -987,70 +990,124 @@ class CalendarPageState extends State<CalendarPage> {
                                                                                                   ),
                                                                                                 ),
                                                                                               ),
-                                                                                          formatDateDisplay(
-                                                                                                data.notifications,
-                                                                                              ).isEmpty
-                                                                                              ? SizedBox.shrink()
-                                                                                              : Container(
-                                                                                                decoration: BoxDecoration(
-                                                                                                  border: Border.all(
-                                                                                                    width:
-                                                                                                        0.5,
-                                                                                                    color:
-                                                                                                        Colors.red,
-                                                                                                  ),
-                                                                                                  borderRadius: BorderRadius.circular(
-                                                                                                    6,
-                                                                                                  ),
-                                                                                                ),
-                                                                                                padding: EdgeInsets.symmetric(
-                                                                                                  horizontal:
-                                                                                                      width *
-                                                                                                      0.01,
-                                                                                                ),
-                                                                                                child: Row(
-                                                                                                  mainAxisSize:
-                                                                                                      MainAxisSize.min,
-                                                                                                  children: [
-                                                                                                    SvgPicture.string(
-                                                                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
-                                                                                                      width:
+                                                                                          Row(
+                                                                                            children: [
+                                                                                              formatDateDisplay(
+                                                                                                    data.notifications,
+                                                                                                  ).isEmpty
+                                                                                                  ? SizedBox.shrink()
+                                                                                                  : Container(
+                                                                                                    decoration: BoxDecoration(
+                                                                                                      border: Border.all(
+                                                                                                        width:
+                                                                                                            0.5,
+                                                                                                        color:
+                                                                                                            Colors.red,
+                                                                                                      ),
+                                                                                                      borderRadius: BorderRadius.circular(
+                                                                                                        6,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    padding: EdgeInsets.symmetric(
+                                                                                                      horizontal:
                                                                                                           width *
-                                                                                                          0.04,
-                                                                                                      fit:
-                                                                                                          BoxFit.contain,
-                                                                                                      color:
-                                                                                                          Colors.red,
+                                                                                                          0.01,
                                                                                                     ),
-                                                                                                    Text(
-                                                                                                      " Due ",
-                                                                                                      style: TextStyle(
-                                                                                                        fontSize:
-                                                                                                            Get.textTheme.labelMedium!.fontSize! *
-                                                                                                            MediaQuery.of(
-                                                                                                              context,
-                                                                                                            ).textScaleFactor,
-                                                                                                        color:
-                                                                                                            Colors.red,
-                                                                                                      ),
+                                                                                                    child: Row(
+                                                                                                      mainAxisSize:
+                                                                                                          MainAxisSize.min,
+                                                                                                      children: [
+                                                                                                        SvgPicture.string(
+                                                                                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
+                                                                                                          width:
+                                                                                                              width *
+                                                                                                              0.04,
+                                                                                                          fit:
+                                                                                                              BoxFit.contain,
+                                                                                                          color:
+                                                                                                              Colors.red,
+                                                                                                        ),
+                                                                                                        Text(
+                                                                                                          " Due ",
+                                                                                                          style: TextStyle(
+                                                                                                            fontSize:
+                                                                                                                Get.textTheme.labelMedium!.fontSize! *
+                                                                                                                MediaQuery.of(
+                                                                                                                  context,
+                                                                                                                ).textScaleFactor,
+                                                                                                            color:
+                                                                                                                Colors.red,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        Text(
+                                                                                                          formatDateDisplay(
+                                                                                                            data.notifications,
+                                                                                                          ),
+                                                                                                          style: TextStyle(
+                                                                                                            fontSize:
+                                                                                                                Get.textTheme.labelMedium!.fontSize! *
+                                                                                                                MediaQuery.of(
+                                                                                                                  context,
+                                                                                                                ).textScaleFactor,
+                                                                                                            color:
+                                                                                                                Colors.red,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
                                                                                                     ),
-                                                                                                    Text(
-                                                                                                      formatDateDisplay(
-                                                                                                        data.notifications,
-                                                                                                      ),
-                                                                                                      style: TextStyle(
-                                                                                                        fontSize:
-                                                                                                            Get.textTheme.labelMedium!.fontSize! *
-                                                                                                            MediaQuery.of(
-                                                                                                              context,
-                                                                                                            ).textScaleFactor,
-                                                                                                        color:
-                                                                                                            Colors.red,
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ],
+                                                                                                  ),
+                                                                                              FutureBuilder<
+                                                                                                String
+                                                                                              >(
+                                                                                                future: showTimeRemineMeBefore(
+                                                                                                  data.taskId,
                                                                                                 ),
+                                                                                                builder: (
+                                                                                                  context,
+                                                                                                  snapshot,
+                                                                                                ) {
+                                                                                                  if (snapshot.hasData &&
+                                                                                                      snapshot.data!.isNotEmpty) {
+                                                                                                    return Row(
+                                                                                                      children: [
+                                                                                                        Padding(
+                                                                                                          padding: EdgeInsets.symmetric(
+                                                                                                            horizontal:
+                                                                                                                width *
+                                                                                                                0.01,
+                                                                                                          ),
+                                                                                                          child: SvgPicture.string(
+                                                                                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
+                                                                                                            width:
+                                                                                                                width *
+                                                                                                                0.04,
+                                                                                                            fit:
+                                                                                                                BoxFit.contain,
+                                                                                                            color:
+                                                                                                                Colors.red,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        Text(
+                                                                                                          snapshot.data!,
+                                                                                                          style: TextStyle(
+                                                                                                            fontSize:
+                                                                                                                Get.textTheme.labelMedium!.fontSize! *
+                                                                                                                MediaQuery.of(
+                                                                                                                  context,
+                                                                                                                ).textScaleFactor,
+                                                                                                            color:
+                                                                                                                Colors.red,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
+                                                                                                    );
+                                                                                                  } else {
+                                                                                                    return SizedBox.shrink();
+                                                                                                  }
+                                                                                                },
                                                                                               ),
+                                                                                            ],
+                                                                                          ),
                                                                                         ],
                                                                                       ),
                                                                                     ),
@@ -1200,6 +1257,26 @@ class CalendarPageState extends State<CalendarPage> {
         ),
       ),
     );
+  }
+
+  Future<String> showTimeRemineMeBefore(int taskId) async {
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(box.read('userProfile')['email'])
+            .collection('Tasks')
+            .where('taskID', isEqualTo: taskId)
+            .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final data = snapshot.docs.first.data();
+      final remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+
+      if (remindTimestamp.isAfter(DateTime.now())) {
+        return "${remindTimestamp.hour.toString().padLeft(2, '0')}:${remindTimestamp.minute.toString().padLeft(2, '0')}";
+      }
+    }
+    return '';
   }
 
   // ฟังก์ชันสำหรับกรองงานตามวันที่ dueDate

@@ -64,6 +64,8 @@ class AlltasksPageState extends State<AlltasksPage>
   List<String> selectedIsArchived = [];
   int? selectedPriority;
   List<model.Task> tasks = [];
+  int? selectedBeforeMinutes;
+  String? selectedRepeat;
   Timer? debounceTimer;
   StreamSubscription<DocumentSnapshot>? boardSubscription;
   Timer? timer;
@@ -124,7 +126,7 @@ class AlltasksPageState extends State<AlltasksPage>
   }
 
   @override
-  void didChangeMetrics() {
+  void didChangeMetrics() async {
     final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
     final newKeyboardVisible = bottomInset > 0;
 
@@ -140,8 +142,10 @@ class AlltasksPageState extends State<AlltasksPage>
 
         setState(() {
           addTask = false;
-          hideMenu = false;
         });
+        if (focusedCategory != null) {
+          await _handleTaskSubmit(focusedCategory!);
+        }
       }
     }
   }
@@ -789,72 +793,126 @@ class AlltasksPageState extends State<AlltasksPage>
                                                                                               ),
                                                                                             ),
                                                                                           ),
-                                                                                      formatDateDisplay(
-                                                                                            data.notifications,
-                                                                                            category,
-                                                                                          ).isEmpty
-                                                                                          ? SizedBox.shrink()
-                                                                                          : Container(
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width:
-                                                                                                    0.5,
-                                                                                                color:
-                                                                                                    Colors.red,
-                                                                                              ),
-                                                                                              borderRadius: BorderRadius.circular(
-                                                                                                6,
-                                                                                              ),
-                                                                                            ),
-                                                                                            padding: EdgeInsets.symmetric(
-                                                                                              horizontal:
-                                                                                                  width *
-                                                                                                  0.01,
-                                                                                            ),
-                                                                                            child: Row(
-                                                                                              mainAxisSize:
-                                                                                                  MainAxisSize.min,
-                                                                                              children: [
-                                                                                                SvgPicture.string(
-                                                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
-                                                                                                  width:
+                                                                                      Row(
+                                                                                        children: [
+                                                                                          formatDateDisplay(
+                                                                                                data.notifications,
+                                                                                                category,
+                                                                                              ).isEmpty
+                                                                                              ? SizedBox.shrink()
+                                                                                              : Container(
+                                                                                                decoration: BoxDecoration(
+                                                                                                  border: Border.all(
+                                                                                                    width:
+                                                                                                        0.5,
+                                                                                                    color:
+                                                                                                        Colors.red,
+                                                                                                  ),
+                                                                                                  borderRadius: BorderRadius.circular(
+                                                                                                    6,
+                                                                                                  ),
+                                                                                                ),
+                                                                                                padding: EdgeInsets.symmetric(
+                                                                                                  horizontal:
                                                                                                       width *
-                                                                                                      0.04,
-                                                                                                  fit:
-                                                                                                      BoxFit.contain,
-                                                                                                  color:
-                                                                                                      Colors.red,
+                                                                                                      0.01,
                                                                                                 ),
-                                                                                                Text(
-                                                                                                  " Due ",
-                                                                                                  style: TextStyle(
-                                                                                                    fontSize:
-                                                                                                        Get.textTheme.labelMedium!.fontSize! *
-                                                                                                        MediaQuery.of(
-                                                                                                          context,
-                                                                                                        ).textScaleFactor,
-                                                                                                    color:
-                                                                                                        Colors.red,
-                                                                                                  ),
+                                                                                                child: Row(
+                                                                                                  mainAxisSize:
+                                                                                                      MainAxisSize.min,
+                                                                                                  children: [
+                                                                                                    SvgPicture.string(
+                                                                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
+                                                                                                      width:
+                                                                                                          width *
+                                                                                                          0.04,
+                                                                                                      fit:
+                                                                                                          BoxFit.contain,
+                                                                                                      color:
+                                                                                                          Colors.red,
+                                                                                                    ),
+                                                                                                    Text(
+                                                                                                      " Due ",
+                                                                                                      style: TextStyle(
+                                                                                                        fontSize:
+                                                                                                            Get.textTheme.labelMedium!.fontSize! *
+                                                                                                            MediaQuery.of(
+                                                                                                              context,
+                                                                                                            ).textScaleFactor,
+                                                                                                        color:
+                                                                                                            Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    Text(
+                                                                                                      formatDateDisplay(
+                                                                                                        data.notifications,
+                                                                                                        category,
+                                                                                                      ),
+                                                                                                      style: TextStyle(
+                                                                                                        fontSize:
+                                                                                                            Get.textTheme.labelMedium!.fontSize! *
+                                                                                                            MediaQuery.of(
+                                                                                                              context,
+                                                                                                            ).textScaleFactor,
+                                                                                                        color:
+                                                                                                            Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ],
                                                                                                 ),
-                                                                                                Text(
-                                                                                                  formatDateDisplay(
-                                                                                                    data.notifications,
-                                                                                                    category,
-                                                                                                  ),
-                                                                                                  style: TextStyle(
-                                                                                                    fontSize:
-                                                                                                        Get.textTheme.labelMedium!.fontSize! *
-                                                                                                        MediaQuery.of(
-                                                                                                          context,
-                                                                                                        ).textScaleFactor,
-                                                                                                    color:
-                                                                                                        Colors.red,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
+                                                                                              ),
+                                                                                          FutureBuilder<
+                                                                                            String
+                                                                                          >(
+                                                                                            future: showTimeRemineMeBefore(
+                                                                                              data.taskId,
                                                                                             ),
+                                                                                            builder: (
+                                                                                              context,
+                                                                                              snapshot,
+                                                                                            ) {
+                                                                                              if (snapshot.hasData &&
+                                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                                return Row(
+                                                                                                  children: [
+                                                                                                    Padding(
+                                                                                                      padding: EdgeInsets.symmetric(
+                                                                                                        horizontal:
+                                                                                                            width *
+                                                                                                            0.01,
+                                                                                                      ),
+                                                                                                      child: SvgPicture.string(
+                                                                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
+                                                                                                        width:
+                                                                                                            width *
+                                                                                                            0.04,
+                                                                                                        fit:
+                                                                                                            BoxFit.contain,
+                                                                                                        color:
+                                                                                                            Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    Text(
+                                                                                                      snapshot.data!,
+                                                                                                      style: TextStyle(
+                                                                                                        fontSize:
+                                                                                                            Get.textTheme.labelMedium!.fontSize! *
+                                                                                                            MediaQuery.of(
+                                                                                                              context,
+                                                                                                            ).textScaleFactor,
+                                                                                                        color:
+                                                                                                            Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ],
+                                                                                                );
+                                                                                              } else {
+                                                                                                return SizedBox.shrink();
+                                                                                              }
+                                                                                            },
                                                                                           ),
+                                                                                        ],
+                                                                                      ),
                                                                                     ],
                                                                                   ),
                                                                                 ),
@@ -1459,6 +1517,26 @@ class AlltasksPageState extends State<AlltasksPage>
     );
   }
 
+  Future<String> showTimeRemineMeBefore(int taskId) async {
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(box.read('userProfile')['email'])
+            .collection('Tasks')
+            .where('taskID', isEqualTo: taskId)
+            .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final data = snapshot.docs.first.data();
+      final remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+
+      if (remindTimestamp.isAfter(DateTime.now())) {
+        return "${remindTimestamp.hour.toString().padLeft(2, '0')}:${remindTimestamp.minute.toString().padLeft(2, '0')}";
+      }
+    }
+    return '';
+  }
+
   String showDetailPrivateOrGroup(model.Task task) {
     final rawData = box.read('userDataAll');
     final data = model.AllDataUserGetResponst.fromJson(rawData);
@@ -1548,14 +1626,9 @@ class AlltasksPageState extends State<AlltasksPage>
         model.Notification(
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend:
-              DateTime.parse(
-                    dueDate.toUtc().toIso8601String(),
-                  ).isAfter(DateTime.now())
-                  ? false
-                  : true,
+          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
           notificationId: tempId,
-          recurringPattern: "never",
+          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: tempId,
         ),
       ],
@@ -1610,6 +1683,8 @@ class AlltasksPageState extends State<AlltasksPage>
         isShowMenuPriority = false;
         isShowMenuRemind = false;
         isCustomReminderApplied = false;
+        selectedBeforeMinutes = null;
+        selectedRepeat = 'Onetime';
       });
     }
   }
@@ -1636,7 +1711,7 @@ class AlltasksPageState extends State<AlltasksPage>
           priority: selectedPriority == null ? '' : selectedPriority.toString(),
           reminder: Reminder(
             dueDate: dueDate.toUtc().toIso8601String(),
-            recurringPattern: "never",
+            recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
         ),
       ),
@@ -1659,7 +1734,7 @@ class AlltasksPageState extends State<AlltasksPage>
                 selectedPriority == null ? '' : selectedPriority.toString(),
             reminder: Reminder(
               dueDate: dueDate.toUtc().toIso8601String(),
-              recurringPattern: "never",
+              recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
           ),
         ),
@@ -1708,40 +1783,49 @@ class AlltasksPageState extends State<AlltasksPage>
         model.Notification(
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend:
-              DateTime.parse(
-                    dueDate.toUtc().toIso8601String(),
-                  ).isAfter(DateTime.now())
-                  ? false
-                  : true,
+          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
           notificationId: notificationID,
-          recurringPattern: "never",
+          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: realId,
         ),
       ],
     );
-    if (DateTime.parse(
-      dueDate.toUtc().toIso8601String(),
-    ).isAfter(DateTime.now())) {
+    FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(box.read('userProfile')['email'])
+        .collection('Tasks')
+        .doc(notificationID.toString())
+        .update({
+          'isShow':
+              dueDate.isAfter(DateTime.now()) ? false : FieldValue.delete(),
+        });
+    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      DateTime notificationDateTime = calculateNotificationTime(
+        dueDate,
+        selectedBeforeMinutes,
+      );
+      if (selectedBeforeMinutes == null || selectedBeforeMinutes == 0) return;
       FirebaseFirestore.instance
           .collection('Notifications')
           .doc(box.read('userProfile')['email'])
           .collection('Tasks')
           .doc(notificationID.toString())
-          .update({'isShow': false});
+          .update({
+            'isNotiRemind': false,
+            'remindMeBefore': notificationDateTime,
+          });
     }
 
     final appData = Provider.of<Appdata>(context, listen: false);
     appData.showMyTasks.removeTaskById(tempId);
     appData.showMyTasks.addTask(realTask);
 
+    await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
+    await loadDataAsync();
     if (mounted) {
       creatingTasks.remove(tempId);
       isCreatingTask = creatingTasks.isNotEmpty;
     }
-
-    await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
-    await loadDataAsync();
   }
 
   Future<void> _removeTempTask(String tempId) async {
@@ -1848,6 +1932,85 @@ class AlltasksPageState extends State<AlltasksPage>
       // สำหรับวันที่เกิน 7 วันข้างหน้า จัดเป็น "Coming soon"
       return 'Coming soon';
     }
+  }
+
+  // ฟังก์ชันตรวจสอบว่าเวลาแจ้งเตือนสมเหตุสมผลหรือไม่
+  bool isValidNotificationTime(DateTime dueDate, int? selectedBeforeMinutes) {
+    if (selectedBeforeMinutes == null || selectedBeforeMinutes == 0) {
+      return true; // Never หรือ ไม่ได้เลือก = ใช้ dueDate
+    }
+
+    final minutesBefore = getMinutesFromIndex(selectedBeforeMinutes);
+    if (minutesBefore <= 0) return true;
+
+    final calculatedNotificationTime = dueDate.subtract(
+      Duration(minutes: minutesBefore),
+    );
+    return calculatedNotificationTime.isAfter(DateTime.now());
+  }
+
+  int getMinutesFromIndex(int? index) {
+    if (index == null || index == 0) return 0; // Never
+
+    final options = getRemindMeBeforeOptions();
+    if (index >= 0 && index < options.length) {
+      return options[index]['minutes'];
+    }
+    return 0;
+  }
+
+  List<Map<String, dynamic>> getRemindMeBeforeOptions() {
+    return [
+      {'label': 'Never', 'minutes': 0},
+      {'label': '5 min', 'minutes': 5},
+      {'label': '10 min', 'minutes': 10},
+      {'label': '15 min', 'minutes': 15},
+      {'label': '30 min', 'minutes': 30},
+      {'label': '1 hour', 'minutes': 60},
+      {'label': '2 hours', 'minutes': 120},
+      {'label': '1 day', 'minutes': 1440},
+      {'label': '2 days', 'minutes': 2880},
+      {'label': '1 week', 'minutes': 10080},
+    ];
+  }
+
+  List<String> getRepeatOptions() {
+    return ['Onetime', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
+  }
+
+  // ฟังก์ชันคำนวณเวลาแจ้งเตือนที่ถูกต้อง
+  DateTime calculateNotificationTime(
+    DateTime dueDate,
+    int? selectedBeforeMinutes,
+  ) {
+    if (selectedBeforeMinutes == null || selectedBeforeMinutes == 0) {
+      return dueDate;
+    }
+
+    final minutesBefore = getMinutesFromIndex(selectedBeforeMinutes);
+    if (minutesBefore <= 0) return dueDate;
+
+    final calculatedNotificationTime = dueDate.subtract(
+      Duration(minutes: minutesBefore),
+    );
+
+    // หากเวลาแจ้งเตือนอยู่ในอดีต ให้ใช้ dueDate
+    if (calculatedNotificationTime.isBefore(DateTime.now())) {
+      return dueDate;
+    }
+
+    return calculatedNotificationTime;
+  }
+
+  // ฟังก์ชันสำหรับแปลง selectedBeforeMinutes เป็น label
+  String getLabelFromIndex(int? index) {
+    if (index == null) return 'Never';
+
+    final options = getRemindMeBeforeOptions();
+    if (index >= 0 && index < options.length) {
+      return options[index]['label'];
+    }
+    return 'Never';
   }
 
   // ฟังก์ชันจัดรูปแบบวันที่ในอนาคต
@@ -1966,232 +2129,6 @@ class AlltasksPageState extends State<AlltasksPage>
       default:
         return now;
     }
-  }
-
-  void _showCustomDateTimePicker(BuildContext context) {
-    DateTime now = DateTime.now();
-    DateTime tempSelectedDate = customReminderDateTime ?? now;
-    TimeOfDay tempSelectedTime = TimeOfDay.now();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState1) {
-            double height = MediaQuery.of(context).size.height;
-            double width = MediaQuery.of(context).size.width;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                top: height * 0.01,
-                left: width * 0.05,
-                right: width * 0.05,
-              ),
-              child: SizedBox(
-                height: height * 0.94,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          onPressed: () {
-                            Get.back();
-                            setState(() {
-                              addTask = true;
-                              isCustomReminderApplied = false;
-                            });
-                            Future.delayed(Duration(microseconds: 300), () {
-                              _scrollToForm(
-                                focusedCategory ?? getAllCategories().first,
-                              );
-                            });
-                          },
-                          child: Text(
-                            "Cancel",
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          "Custom Date & Time",
-                          style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleMedium!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            final selectedDateTime = DateTime(
-                              tempSelectedDate.year,
-                              tempSelectedDate.month,
-                              tempSelectedDate.day,
-                              tempSelectedTime.hour,
-                              tempSelectedTime.minute,
-                            );
-
-                            setState(() {
-                              selectedReminder =
-                                  'Custom: ${DateFormat('MMM dd, yyyy HH:mm').format(selectedDateTime)}';
-                              customReminderDateTime = selectedDateTime;
-                              isCustomReminderApplied = false;
-                              isShowMenuRemind = true;
-                              addTask = true;
-                            });
-                            // if (focusedCategory != null) {
-                            //   addTasknameFocusNodeMap[focusedCategory]!
-                            //       .requestFocus();
-                            // }
-                            Future.delayed(Duration(microseconds: 300), () {
-                              _scrollToForm(
-                                focusedCategory ?? getAllCategories().first,
-                              );
-                            });
-                            Get.back();
-                          },
-                          child: Text(
-                            'Apply',
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF4790EB),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: width * 0.02),
-                      child: Row(
-                        children: [
-                          Text(
-                            "Date:",
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(
-                          primary: Color(0xFF4790EB),
-                        ),
-                        textTheme: TextTheme(
-                          bodySmall: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      child: Container(
-                        height: height * 0.35,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Material(
-                            color: Colors.black12,
-                            child: CalendarDatePicker(
-                              initialDate: tempSelectedDate,
-                              firstDate: DateTime.now().subtract(
-                                Duration(days: 365),
-                              ),
-                              lastDate: DateTime.now().add(
-                                Duration(days: 365 * 5),
-                              ),
-                              onDateChanged: (date) {
-                                setState1(() {
-                                  tempSelectedDate = date;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: height * 0.02,
-                        left: width * 0.02,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            "Time:",
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: height * 0.2,
-                      decoration: BoxDecoration(
-                        color: Colors.black12,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: CupertinoDatePicker(
-                        mode: CupertinoDatePickerMode.time,
-                        initialDateTime: DateTime(
-                          tempSelectedDate.year,
-                          tempSelectedDate.month,
-                          tempSelectedDate.day,
-                          tempSelectedTime.hour,
-                          tempSelectedTime.minute,
-                        ),
-                        use24hFormat: true,
-                        onDateTimeChanged: (DateTime dateTime) {
-                          setState1(() {
-                            tempSelectedTime = TimeOfDay.fromDateTime(dateTime);
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ).whenComplete(() {
-      if (isCustomReminderApplied) {
-        setState(() {
-          isCustomReminderApplied = false;
-        });
-        setState(() {
-          addTask = false;
-          focusedCategory = null;
-          customReminderDateTime = null;
-          selectedReminder = null;
-          isShowMenuRemind = false;
-        });
-        addTasknameCtlMap.forEach((category, controller) {
-          addTasknameFocusNodeMap[category]?.unfocus();
-          addDescriptionFocusNodeMap[category]?.unfocus();
-        });
-      }
-    });
   }
 
   List<String> selectRemind() {
@@ -2617,6 +2554,645 @@ class AlltasksPageState extends State<AlltasksPage>
         ),
       ),
     );
+  }
+
+  //แสดง custom remind
+  void _showCustomDateTimePicker(BuildContext context) {
+    DateTime now = DateTime.now();
+    DateTime tempSelectedDate = now;
+    TimeOfDay tempSelectedTime = TimeOfDay.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState1) {
+            double height = MediaQuery.of(context).size.height;
+            double width = MediaQuery.of(context).size.width;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                top: height * 0.01,
+                left: width * 0.05,
+                right: width * 0.05,
+              ),
+              child: SizedBox(
+                height: height * 0.94,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Get.back();
+                              setState(() {
+                                addTask = true;
+                                selectedBeforeMinutes = null;
+                                selectedReminder = null;
+                                customReminderDateTime = null;
+                                isShowMenuRemind = false;
+                                isCustomReminderApplied = false;
+                              });
+                              Future.delayed(Duration(microseconds: 300), () {
+                                _scrollToForm(getAllCategories().first);
+                              });
+                            },
+                            child: Text(
+                              "Cancel",
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            "Custom Date & Time",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final selectedDateTime = DateTime(
+                                tempSelectedDate.year,
+                                tempSelectedDate.month,
+                                tempSelectedDate.day,
+                                tempSelectedTime.hour,
+                                tempSelectedTime.minute,
+                              );
+
+                              setState(() {
+                                selectedReminder =
+                                    'Custom: ${DateFormat('MMM dd, yyyy HH:mm').format(selectedDateTime)}';
+                                customReminderDateTime = selectedDateTime;
+                                isCustomReminderApplied = false;
+                                isShowMenuRemind = true;
+                                addTask = true;
+                              });
+                              Future.delayed(Duration(microseconds: 300), () {
+                                _scrollToForm(getAllCategories().first);
+                              });
+                              Get.back();
+                            },
+                            child: Text(
+                              'Apply',
+                              style: TextStyle(
+                                fontSize:
+                                    Get.textTheme.titleMedium!.fontSize! *
+                                    MediaQuery.of(context).textScaleFactor,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF4790EB),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                "Date:",
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: Color(0xFF4790EB),
+                              ),
+                              textTheme: TextTheme(
+                                bodySmall: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            child: Container(
+                              height: height * 0.35,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Material(
+                                  color: Colors.black12,
+                                  child: CalendarDatePicker(
+                                    initialDate: tempSelectedDate,
+                                    firstDate: DateTime.now().subtract(
+                                      Duration(days: 365),
+                                    ),
+                                    lastDate: DateTime.now().add(
+                                      Duration(days: 365 * 5),
+                                    ),
+                                    onDateChanged: (date) {
+                                      setState1(() {
+                                        tempSelectedDate = date;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Text(
+                                "Time:",
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize! *
+                                      MediaQuery.of(context).textScaleFactor,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: height * 0.16,
+                            decoration: BoxDecoration(
+                              color: Colors.black12,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: CupertinoDatePicker(
+                              mode: CupertinoDatePickerMode.time,
+                              initialDateTime: DateTime(
+                                tempSelectedDate.year,
+                                tempSelectedDate.month,
+                                tempSelectedDate.day,
+                                tempSelectedTime.hour,
+                                tempSelectedTime.minute,
+                              ),
+                              use24hFormat: true,
+                              onDateTimeChanged: (DateTime dateTime) {
+                                setState1(() {
+                                  tempSelectedTime = TimeOfDay.fromDateTime(
+                                    dateTime,
+                                  );
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: height * 0.02),
+                      InkWell(
+                        onTap: () {
+                          _showSelectRemindMeBefore(context, setState1);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                            vertical: height * 0.005,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
+                                    color:
+                                        selectedBeforeMinutes != null
+                                            ? Color(0xFF007AFF)
+                                            : Colors.black,
+                                  ),
+                                  SizedBox(width: width * 0.01),
+                                  Text(
+                                    "Remind me before",
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    getLabelFromIndex(selectedBeforeMinutes),
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black45,
+                                    ),
+                                  ),
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                    width: width * 0.03,
+                                    height: height * 0.03,
+                                    fit: BoxFit.contain,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: height * 0.01),
+                      InkWell(
+                        onTap: () {
+                          _showSelectRepeat(context, setState1);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                            vertical: height * 0.005,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M19 7a1 1 0 0 0-1-1h-8v2h7v5h-3l3.969 5L22 13h-3V7zM5 17a1 1 0 0 0 1 1h8v-2H7v-5h3L6 6l-4 5h3v6z"></path></svg>',
+                                    color: Colors.black,
+                                  ),
+                                  SizedBox(width: width * 0.01),
+                                  Text(
+                                    "Repeat",
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    selectedRepeat ?? 'Onetime',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black45,
+                                    ),
+                                  ),
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                    width: width * 0.03,
+                                    height: height * 0.03,
+                                    fit: BoxFit.contain,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSelectRemindMeBefore(
+    BuildContext context,
+    StateSetter parentSetState,
+  ) {
+    if (selectedBeforeMinutes == null) {
+      setState(() {
+        selectedBeforeMinutes = 0;
+      });
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState1) {
+            double height = MediaQuery.of(context).size.height;
+            double width = MediaQuery.of(context).size.width;
+            final options = getRemindMeBeforeOptions();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                top: height * 0.01,
+                left: width * 0.05,
+                right: width * 0.05,
+              ),
+              child: SizedBox(
+                height: height * 0.4,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          child: Text(
+                            "Back",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          "Remind me before",
+                          style: TextStyle(
+                            fontSize:
+                                Get.textTheme.titleMedium!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(width: width * 0.15),
+                      ],
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: 3,
+                        mainAxisSpacing: height * 0.01,
+                        crossAxisSpacing: width * 0.01,
+                        childAspectRatio: 2.5,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: width * 0.02,
+                          vertical: height * 0.01,
+                        ),
+                        physics: NeverScrollableScrollPhysics(),
+                        children:
+                            options.asMap().entries.map((entry) {
+                              final idx = entry.key;
+                              final data = entry.value;
+
+                              return InkWell(
+                                onTap: () {
+                                  setState1(() {
+                                    selectedBeforeMinutes = idx;
+                                  });
+
+                                  setState(() {
+                                    selectedBeforeMinutes = idx;
+                                  });
+
+                                  parentSetState(() {
+                                    selectedBeforeMinutes = idx;
+                                  });
+
+                                  Get.back();
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (selectedBeforeMinutes != null &&
+                                                idx == selectedBeforeMinutes)
+                                            ? Color(0xFF007AFF)
+                                            : Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    data['label'],
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          (selectedBeforeMinutes != null &&
+                                                  idx == selectedBeforeMinutes)
+                                              ? Colors.white
+                                              : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      if (selectedBeforeMinutes == 0) {
+        setState(() {
+          selectedBeforeMinutes = null;
+        });
+        parentSetState(() {
+          selectedBeforeMinutes = null;
+        });
+      } else {
+        setState(() {});
+        parentSetState(() {});
+      }
+    });
+  }
+
+  void _showSelectRepeat(BuildContext context, StateSetter parentSetState) {
+    if (selectedRepeat == null) {
+      setState(() {
+        selectedRepeat = 'Onetime';
+      });
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState1) {
+            double height = MediaQuery.of(context).size.height;
+            double width = MediaQuery.of(context).size.width;
+            final options = getRepeatOptions();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                top: height * 0.01,
+                left: width * 0.05,
+                right: width * 0.05,
+              ),
+              child: SizedBox(
+                height: height * 0.4,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          child: Text(
+                            "Back",
+                            style: TextStyle(
+                              fontSize:
+                                  Get.textTheme.titleMedium!.fontSize! *
+                                  MediaQuery.of(context).textScaleFactor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          "Repeat",
+                          style: TextStyle(
+                            fontSize:
+                                Get.textTheme.titleMedium!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(width: width * 0.15),
+                      ],
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        crossAxisCount: 1,
+                        mainAxisSpacing: height * 0.005,
+                        crossAxisSpacing: width * 0.01,
+                        childAspectRatio: 9.5,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: width * 0.02,
+                          vertical: height * 0.01,
+                        ),
+                        physics: NeverScrollableScrollPhysics(),
+                        children:
+                            options.map((data) {
+                              return InkWell(
+                                onTap: () {
+                                  setState1(() {
+                                    selectedRepeat = data;
+                                  });
+
+                                  setState(() {
+                                    selectedRepeat = data;
+                                  });
+
+                                  parentSetState(() {
+                                    selectedRepeat = data;
+                                  });
+
+                                  Get.back();
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  alignment: Alignment.centerLeft,
+                                  padding: EdgeInsets.only(left: width * 0.02),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (selectedRepeat != null &&
+                                                data == selectedRepeat)
+                                            ? Color(0xFF007AFF)
+                                            : Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    data,
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize! *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          (selectedRepeat != null &&
+                                                  data == selectedRepeat)
+                                              ? Colors.white
+                                              : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      if (selectedRepeat == 'Onetime') {
+        setState(() {
+          selectedRepeat = 'Onetime';
+        });
+        parentSetState(() {
+          selectedRepeat = 'Onetime';
+        });
+      } else {
+        setState(() {});
+        parentSetState(() {});
+      }
+    });
   }
 
   Future<void> loadNewRefreshToken() async {

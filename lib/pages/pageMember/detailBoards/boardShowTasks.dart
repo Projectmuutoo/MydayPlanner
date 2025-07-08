@@ -72,7 +72,7 @@ class _BoradprivatePageState extends State<BoradprivatePage> {
                       if (!await canSendInvitation(
                         box.read('userProfile')['email'],
                         '123@gmail.com',
-                        '248',
+                        '244',
                       )) {
                         Get.snackbar(
                           'Cannot Send',
@@ -89,11 +89,11 @@ class _BoradprivatePageState extends State<BoradprivatePage> {
                           .doc('123@gmail.com')
                           .collection('InviteJoin')
                           .doc(
-                            '${'248'}from-${box.read('userProfile')['email']}',
+                            '${'244'}from-${box.read('userProfile')['email']}',
                           )
                           .set({
                             'Profile': box.read('userProfile')['profile'],
-                            'BoardId': '248',
+                            'BoardId': '244',
                             'BoardName': 'group',
                             'InviterName': box.read('userProfile')['name'],
                             'Inviter': box.read('userProfile')['email'],
@@ -142,34 +142,29 @@ class _BoradprivatePageState extends State<BoradprivatePage> {
     String inviteeEmail,
     String boardId,
   ) async {
-    try {
-      // ตรวจสอบว่ามีคำเชิญที่ยังรออยู่หรือถูก Accept แล้วหรือไม่
-      final existingInvite =
-          await FirebaseFirestore.instance
-              .collection('Notifications')
-              .doc(inviteeEmail)
-              .collection('InviteJoin')
-              .where('Inviter', isEqualTo: inviterEmail)
-              .where('BoardId', isEqualTo: boardId)
-              .get();
+    // ตรวจสอบว่ามีคำเชิญที่ยังรออยู่หรือถูก Accept แล้วหรือไม่
+    final existingInvite =
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(inviteeEmail)
+            .collection('InviteJoin')
+            .where('Inviter', isEqualTo: inviterEmail)
+            .where('BoardId', isEqualTo: boardId)
+            .get();
 
-      if (existingInvite.docs.isEmpty) {
-        return true; // ไม่มีคำเชิญ สามารถส่งได้
-      }
+    if (existingInvite.docs.isEmpty) {
+      return true; // ไม่มีคำเชิญ สามารถส่งได้
+    }
 
-      final inviteData = existingInvite.docs.first.data();
-      final response = inviteData['Response'];
+    final inviteData = existingInvite.docs.first.data();
+    final response = inviteData['Response'];
 
-      // ถ้า Response เป็น Accept แล้ว ไม่สามารถส่งได้อีก
-      if (response == 'Accept') {
-        return false;
-      }
-
-      // ถ้า Response เป็น Waiting หรือ Decline ยังส่งได้
-      return response == 'Decline' || response == 'Waiting';
-    } catch (e) {
-      print('Error checking invitation status: $e');
+    // ถ้า Response เป็น Accept แล้ว ไม่สามารถส่งได้อีก
+    if (response == 'Accept') {
       return false;
     }
+
+    // ถ้า Response เป็น Waiting หรือ Decline ยังส่งได้
+    return response == 'Decline' || response == 'Waiting';
   }
 }

@@ -231,9 +231,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                               alignment: Alignment.centerLeft,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.03,
-                              ),
+                              padding: EdgeInsets.only(left: width * 0.03),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -265,33 +263,25 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ],
                                   ),
                                   if (savedFile != null)
-                                    Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: () {
-                                          if (savedFile != null) {
-                                            confirmInformation('', 'newUrl');
-                                          }
-                                        },
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.01,
-                                          ),
-                                          child: Text(
-                                            "Save",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  Get
-                                                      .textTheme
-                                                      .titleMedium!
-                                                      .fontSize! *
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).textScaleFactor,
-                                              fontWeight: FontWeight.normal,
-                                              color: Color(0xFF007AFF),
-                                            ),
-                                          ),
+                                    TextButton(
+                                      onPressed: () {
+                                        if (savedFile != null) {
+                                          confirmInformation('', 'newUrl');
+                                        }
+                                      },
+                                      child: Text(
+                                        "Save",
+                                        style: TextStyle(
+                                          fontSize:
+                                              Get
+                                                  .textTheme
+                                                  .titleMedium!
+                                                  .fontSize! *
+                                              MediaQuery.of(
+                                                context,
+                                              ).textScaleFactor,
+                                          fontWeight: FontWeight.normal,
+                                          color: Color(0xFF007AFF),
                                         ),
                                       ),
                                     ),
@@ -1261,7 +1251,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                           ),
                                           border: Border.all(
                                             width: 0.5,
-                                            color: Colors.black38,
+                                            color: Colors.red,
                                           ),
                                         ),
                                         child: Text(

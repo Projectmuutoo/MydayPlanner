@@ -127,7 +127,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                       'back',
                                       style: TextStyle(
                                         fontSize:
-                                            Get.textTheme.titleLarge!.fontSize,
+                                            Get.textTheme.titleMedium!.fontSize,
                                         fontWeight: FontWeight.normal,
                                         color: Colors.grey,
                                       ),
@@ -147,7 +147,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                 ? 'Enter verification code.'
                                 : 'Create new password.',
                             style: TextStyle(
-                              fontSize: Get.textTheme.headlineMedium!.fontSize,
+                              fontSize: Get.textTheme.headlineSmall!.fontSize,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -164,7 +164,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                     ? 'We’ve sent a code to'
                                     : 'You new password must be different\nfrom previous used passwords.',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -177,7 +177,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                                   emailCtl.text,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -194,7 +194,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Email',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -209,13 +209,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           keyboardType: TextInputType.emailAddress,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 isTyping ? '' : 'Enter your email address…',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -256,7 +256,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'OTP Code',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -274,12 +274,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                             FilteringTextInputFormatter.digitsOnly,
                           ],
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your code',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -315,7 +315,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -330,12 +330,12 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           obscureText: !isCheckedPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -383,7 +383,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Must be at least 8 characters.',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontSize: Get.textTheme.labelMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.grey,
                                 ),
@@ -400,7 +400,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Confirm password',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -415,13 +415,13 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           obscureText: !isCheckedConfirmPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                           ),
                           decoration: InputDecoration(
                             hintText:
                                 isTyping ? '' : 'Enter your confirm password',
                             hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -470,7 +470,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Both passwords must match.',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
+                                  fontSize: Get.textTheme.labelMedium!.fontSize,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.grey,
                                 ),
@@ -482,7 +482,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         Text(
                           textNotification,
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                             fontWeight: FontWeight.normal,
                             color: Colors.red,
                           ),
@@ -493,7 +493,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                         Text(
                           'ref: $ref',
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize,
+                            fontSize: Get.textTheme.titleSmall!.fontSize,
                             fontWeight: FontWeight.normal,
                           ),
                         ),
@@ -668,7 +668,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                           Text(
                             'You remember your password?',
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: Colors.grey,
                             ),
@@ -684,7 +684,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               child: Text(
                                 'Sign in.',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -710,7 +710,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                               ? 'Verify Code'
                               : 'Reset Password',
                           style: TextStyle(
-                            fontSize: Get.textTheme.titleLarge!.fontSize,
+                            fontSize: Get.textTheme.titleMedium!.fontSize,
                             fontWeight: FontWeight.normal,
                           ),
                         ),

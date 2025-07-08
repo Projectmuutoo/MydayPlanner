@@ -25,6 +25,12 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   final box = GetStorage();
   final GoogleSignIn googleSignIn = GoogleSignIn();
   final storage = FlutterSecureStorage();
+  late String url;
+
+  Future<String> loadAPIEndpoint() async {
+    var config = await Configuration.getConfig();
+    return config['apiEndpoint'];
+  }
 
   void startRealtimeMonitoring() {
     final userProfile = box.read('userProfile');
@@ -68,8 +74,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   }
 
   void logout() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+    url = await loadAPIEndpoint();
 
     await googleSignIn.signOut();
     await FirebaseAuth.instance.signOut();
@@ -95,8 +100,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> loadNewRefreshToken() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
+    url = await loadAPIEndpoint();
     var value = await storage.read(key: 'refreshToken');
     var loadtoketnew = await http.post(
       Uri.parse("$url/auth/newaccesstoken"),
@@ -250,12 +254,12 @@ class _NavbarPageState extends State<NavbarPage>
         .doc(box.read('userProfile')['email'])
         .collection('Tasks')
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
           for (var change in snapshot.docChanges) {
             if (change.type == DocumentChangeType.added ||
                 change.type == DocumentChangeType.modified ||
                 change.type == DocumentChangeType.removed) {
-              fetchDataOnResume();
+              await fetchDataOnResume();
               break;
             }
           }
@@ -271,16 +275,51 @@ class _NavbarPageState extends State<NavbarPage>
           timer = Timer.periodic(Duration(seconds: 1), (timer) {
             final now = DateTime.now();
             for (var doc in snapshot.docs) {
+              final rawData = box.read('userDataAll');
+              final tasksData = AllDataUserGetResponst.fromJson(rawData);
+              final task =
+                  tasksData.tasks
+                      .where((t) => t.taskId == doc['taskID'])
+                      .toList();
               final dueDate = (doc['dueDate'] as Timestamp).toDate();
+              final remindMeBefore =
+                  doc.data().containsKey('remindMeBefore')
+                      ? (doc['remindMeBefore'] as Timestamp).toDate()
+                      : null;
               final isSend = doc['isSend'];
+              final isNotiRemind =
+                  doc.data().containsKey('isNotiRemind')
+                      ? doc['isNotiRemind']
+                      : false;
               final notificationID = doc['notificationID'].toString();
+              final recurringPattern =
+                  doc.data().containsKey('recurringPattern')
+                      ? doc['recurringPattern'].toString().toLowerCase()
+                      : 'onetime';
+
+              if (remindMeBefore != null &&
+                  remindMeBefore.isBefore(now) &&
+                  !isNotiRemind) {
+                if (selectedIndex != 4) {
+                  Get.snackbar(
+                    "It's almost time for your work.",
+                    "You will be reminded before '${task.first.taskName}' starts.",
+                    duration: Duration(seconds: 4),
+                  );
+                }
+                FirebaseFirestore.instance
+                    .collection('Notifications')
+                    .doc(box.read('userProfile')['email'])
+                    .collection('Tasks')
+                    .doc(notificationID)
+                    .update({
+                      'isNotiRemind': true,
+                      'isNotiRemindShow': true,
+                      'dueDateOld': FieldValue.delete(),
+                      'remindMeBeforeOld': FieldValue.delete(),
+                    });
+              }
               if (dueDate.isBefore(now) && !isSend) {
-                final rawData = box.read('userDataAll');
-                final tasksData = AllDataUserGetResponst.fromJson(rawData);
-                final task =
-                    tasksData.tasks
-                        .where((t) => t.taskId == doc['taskID'])
-                        .toList();
                 if (selectedIndex != 4) {
                   Get.snackbar(
                     task.first.taskName,
@@ -328,18 +367,169 @@ class _NavbarPageState extends State<NavbarPage>
                                 ),
                               ],
                             ),
+                    duration: Duration(seconds: 4),
                   );
                 }
-                FirebaseFirestore.instance
-                    .collection('Notifications')
-                    .doc(box.read('userProfile')['email'])
-                    .collection('Tasks')
-                    .doc(notificationID)
-                    .update({'isSend': true, 'isShow': true});
+                _handleRecurringNotification(
+                  notificationID: notificationID,
+                  dueDate: dueDate,
+                  remindMeBefore: remindMeBefore,
+                  recurringPattern: recurringPattern,
+                  userEmail: box.read('userProfile')['email'],
+                  taskID: doc['taskID'],
+                );
               }
             }
           });
         });
+  }
+
+  void _handleRecurringNotification({
+    required String notificationID,
+    required DateTime dueDate,
+    required DateTime? remindMeBefore,
+    required String recurringPattern,
+    required String userEmail,
+    required int taskID,
+  }) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('Tasks')
+        .doc(notificationID);
+
+    DateTime? nextDueDate;
+    DateTime? nextRemindMeBefore;
+
+    if (recurringPattern == 'onetime') {
+      // กรณี onetime - อัพเดทสถานะแล้วจบ
+      await docRef.update({
+        'isSend': true,
+        'isShow': true,
+        'dueDateOld': FieldValue.delete(),
+        'remindMeBeforeOld': FieldValue.delete(),
+      });
+      nextDueDate = dueDate;
+    } else {
+      // กรณี recurring - คำนวณ dueDate ครั้งถัดไป
+      nextDueDate = _calculateNextDueDate(dueDate, recurringPattern);
+      nextRemindMeBefore =
+          remindMeBefore != null
+              ? _calculateNextRemindMeBefore(remindMeBefore, recurringPattern)
+              : null;
+
+      if (nextDueDate != null) {
+        // อัพเดท notification สำหรับรอบถัดไป
+        Map<String, dynamic> updateData = {
+          'dueDate': Timestamp.fromDate(nextDueDate),
+          'updatedAt': Timestamp.now(),
+          'dueDateOld': dueDate,
+          'remindMeBeforeOld': remindMeBefore,
+          'isSend': false,
+          'isShow': false,
+          'isNotiRemind': false,
+        };
+
+        if (nextRemindMeBefore != null) {
+          updateData['remindMeBefore'] = Timestamp.fromDate(nextRemindMeBefore);
+        }
+
+        await docRef.update(updateData);
+      }
+    }
+
+    url = await loadAPIEndpoint();
+    http.Response response;
+    response = await http.put(
+      Uri.parse("$url/notification/update/$taskID"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+      body: jsonEncode({
+        'due_date': nextDueDate?.toUtc().toIso8601String(),
+        'recurring_pattern': recurringPattern,
+        'is_send': recurringPattern == 'onetime' ? true : false,
+      }),
+    );
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      response = await http.put(
+        Uri.parse("$url/notification/update/$taskID"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+        body: jsonEncode({
+          'due_date': nextDueDate?.toUtc().toIso8601String(),
+          'recurring_pattern': recurringPattern,
+          'is_send': recurringPattern == 'onetime' ? true : false,
+        }),
+      );
+    }
+  }
+
+  // ฟังก์ชันคำนวณ dueDate ครั้งถัดไป
+  DateTime? _calculateNextDueDate(DateTime currentDueDate, String pattern) {
+    switch (pattern) {
+      case 'daily':
+        return currentDueDate.add(Duration(days: 1));
+      case 'weekly':
+        return currentDueDate.add(Duration(days: 7));
+      case 'monthly':
+        return DateTime(
+          currentDueDate.year,
+          currentDueDate.month + 1,
+          currentDueDate.day,
+          currentDueDate.hour,
+          currentDueDate.minute,
+          currentDueDate.second,
+        );
+      case 'yearly':
+        return DateTime(
+          currentDueDate.year + 1,
+          currentDueDate.month,
+          currentDueDate.day,
+          currentDueDate.hour,
+          currentDueDate.minute,
+          currentDueDate.second,
+        );
+      default:
+        return null;
+    }
+  }
+
+  // ฟังก์ชันคำนวณ remindMeBefore ครั้งถัดไป
+  DateTime? _calculateNextRemindMeBefore(
+    DateTime currentRemindMeBefore,
+    String pattern,
+  ) {
+    switch (pattern) {
+      case 'daily':
+        return currentRemindMeBefore.add(Duration(days: 1));
+      case 'weekly':
+        return currentRemindMeBefore.add(Duration(days: 7));
+      case 'monthly':
+        return DateTime(
+          currentRemindMeBefore.year,
+          currentRemindMeBefore.month + 1,
+          currentRemindMeBefore.day,
+          currentRemindMeBefore.hour,
+          currentRemindMeBefore.minute,
+          currentRemindMeBefore.second,
+        );
+      case 'yearly':
+        return DateTime(
+          currentRemindMeBefore.year + 1,
+          currentRemindMeBefore.month,
+          currentRemindMeBefore.day,
+          currentRemindMeBefore.hour,
+          currentRemindMeBefore.minute,
+          currentRemindMeBefore.second,
+        );
+      default:
+        return null;
+    }
   }
 
   String formatDateDisplay(dynamic date) {
@@ -581,11 +771,9 @@ class _NavbarPageState extends State<NavbarPage>
   }
 
   Future<void> fetchDataOnResume() async {
-    var config = await Configuration.getConfig();
-    var url = config['apiEndpoint'];
-    var oldUserProfile = box.read('userProfile');
+    url = await loadAPIEndpoint();
     var oldUserDataAllJson = box.read('userDataAll');
-    if (oldUserProfile == null || oldUserDataAllJson == null) return;
+    if (oldUserDataAllJson == null) return;
 
     var oldUserDataAll = AllDataUserGetResponst.fromJson(oldUserDataAllJson);
 

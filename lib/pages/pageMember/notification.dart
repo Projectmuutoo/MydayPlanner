@@ -78,6 +78,34 @@ class _NotificationPageState extends State<NotificationPage> {
                           collectionType3: 'Tasks',
                           all: true,
                         );
+                        FirebaseFirestore.instance
+                            .collection('Notifications')
+                            .doc(box.read('userProfile')['email'])
+                            .collection('Tasks')
+                            .doc(1963.toString())
+                            .update({
+                              'remindMeBefore': Timestamp.fromDate(
+                                DateTime(
+                                  DateTime.now().year,
+                                  DateTime.now().month,
+                                  DateTime.now().day,
+                                  DateTime.now().hour,
+                                  DateTime.now().minute + 1,
+                                ),
+                              ),
+                              'dueDate': Timestamp.fromDate(
+                                DateTime(
+                                  DateTime.now().year,
+                                  DateTime.now().month,
+                                  DateTime.now().day,
+                                  DateTime.now().hour,
+                                  DateTime.now().minute + 2,
+                                ),
+                              ),
+                              'isNotiRemind': false,
+                              'isSend': false,
+                              'recurringPattern': 'onetime',
+                            });
                       },
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
@@ -112,14 +140,56 @@ class _NotificationPageState extends State<NotificationPage> {
                           'No notifications',
                           style: TextStyle(
                             fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
+                                Get.textTheme.titleMedium!.fontSize! *
                                 MediaQuery.of(context).textScaleFactor,
                             fontWeight: FontWeight.w500,
+                            color: Colors.grey,
                           ),
                         ),
                       );
                     }
                     final notifications = snapshot.data!;
+                    final displayableNotifications =
+                        notifications.where((doc) {
+                          final data = doc.data() as Map;
+                          final isInvite =
+                              data.containsKey('InviterName') &&
+                              data['Response'] == 'Waiting';
+                          final isResponse =
+                              data.containsKey('ResponderName') &&
+                              data['Response'] == 'Accept';
+                          final isTaskNotification = data.containsKey('taskID');
+
+                          if (isInvite || isResponse) {
+                            return true;
+                          } else if (isTaskNotification) {
+                            final isShow =
+                                (data['isShow'] != null && data['isShow']) ||
+                                (data['dueDateOld'] != null);
+                            final isNotiRemind =
+                                (data['isNotiRemindShow'] != null &&
+                                    data['isNotiRemindShow']) ||
+                                (data['remindMeBeforeOld'] != null);
+                            return isShow || isNotiRemind;
+                          }
+                          return false;
+                        }).toList();
+
+                    if (displayableNotifications.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No notifications',
+                          style: TextStyle(
+                            fontSize:
+                                Get.textTheme.titleMedium!.fontSize! *
+                                MediaQuery.of(context).textScaleFactor,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    }
+
                     return ListView.builder(
                       itemCount: notifications.length,
                       itemBuilder: (context, index) {
@@ -470,6 +540,7 @@ class _NotificationPageState extends State<NotificationPage> {
                               tasksData.tasks
                                   .where((t) => t.taskId == data['taskID'])
                                   .toList();
+
                           if (task.isEmpty) return SizedBox.shrink();
 
                           final isFirstTime = !_animatedIds2.contains(doc.id);
@@ -477,186 +548,40 @@ class _NotificationPageState extends State<NotificationPage> {
                             _animatedIds2.add(doc.id);
                           }
 
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: height * 0.01),
-                            child: TweenAnimationBuilder(
-                              key: ValueKey(doc.id),
-                              tween: Tween<double>(
-                                begin: isFirstTime ? 0.0 : 1.0,
-                                end: 1.0,
+                          List<Widget> notificationWidgets = [];
+
+                          if ((data['isShow'] != null && data['isShow']) ||
+                              (data['dueDateOld'] != null)) {
+                            notificationWidgets.add(
+                              _buildTaskNotification(
+                                context: context,
+                                doc: doc,
+                                task: task.first,
+                                data: data,
+                                isFirstTime: isFirstTime,
+                                notificationType: 'show',
                               ),
-                              duration: Duration(
-                                milliseconds: isFirstTime ? 400 : 0,
+                            );
+                          }
+
+                          if ((data['isNotiRemindShow'] != null &&
+                                  data['isNotiRemindShow']) ||
+                              (data['remindMeBeforeOld'] != null)) {
+                            notificationWidgets.add(
+                              _buildTaskNotification(
+                                context: context,
+                                doc: doc,
+                                task: task.first,
+                                data: data,
+                                isFirstTime: isFirstTime,
+                                notificationType: 'remind',
                               ),
-                              curve: Curves.easeOutCirc,
-                              builder: (context, value, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, (1 - value) * -30),
-                                  child: Opacity(
-                                    opacity: value.clamp(0.0, 1.0),
-                                    child: Transform.scale(
-                                      scale: 0.8 + (value * 0.2),
-                                      child: child,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Material(
-                                color: Color(0xFFFFF2E6),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Dismissible(
-                                  key: ValueKey(doc.id),
-                                  direction: DismissDirection.endToStart,
-                                  background: Container(
-                                    alignment: Alignment.centerRight,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: width * 0.02,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.red,
-                                    ),
-                                    child: Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  confirmDismiss: (direction) async => true,
-                                  onDismissed: (direction) async {
-                                    await FirebaseFirestore.instance
-                                        .collection('Notifications')
-                                        .doc(box.read('userProfile')['email'])
-                                        .collection('Tasks')
-                                        .doc(doc.id)
-                                        .update({
-                                          'isShow': FieldValue.delete(),
-                                        });
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.only(
-                                      top: height * 0.01,
-                                      bottom: height * 0.01,
-                                      left: width * 0.02,
-                                      right: width * 0.03,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFF2F2F6),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: height * 0.05,
-                                          height: height * 0.05,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.black12,
-                                          ),
-                                          child: Icon(
-                                            Icons.schedule,
-                                            color: Colors.white,
-                                            size: height * 0.03,
-                                          ),
-                                        ),
-                                        SizedBox(width: width * 0.02),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      task.first.taskName,
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            Get
-                                                                .textTheme
-                                                                .titleSmall!
-                                                                .fontSize! *
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).textScaleFactor,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Color(
-                                                          0xFF007AFF,
-                                                        ),
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: width * 0.05),
-                                                  Text(
-                                                    timeAgo(
-                                                      data['dueDate']
-                                                          .toDate()
-                                                          .toIso8601String(),
-                                                    ),
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .labelMedium!
-                                                              .fontSize! *
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).textScaleFactor,
-                                                      fontWeight:
-                                                          FontWeight.normal,
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              showDetailPrivateOrGroup(
-                                                    task.first,
-                                                  ).isEmpty
-                                                  ? Text(
-                                                    "Today, ${formatDateDisplay(data['dueDate'])}",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .labelMedium!
-                                                              .fontSize! *
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).textScaleFactor,
-                                                      color: Colors.black,
-                                                    ),
-                                                  )
-                                                  : Text(
-                                                    "${showDetailPrivateOrGroup(task.first)}, ${formatDateDisplay(data['dueDate'])}",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .labelMedium!
-                                                              .fontSize! *
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).textScaleFactor,
-                                                      color: Colors.black,
-                                                    ),
-                                                  ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
+                            );
+                          }
+
+                          if (notificationWidgets.isNotEmpty) {
+                            return Column(children: notificationWidgets);
+                          }
                         }
                         return SizedBox.shrink();
                       },
@@ -669,6 +594,217 @@ class _NotificationPageState extends State<NotificationPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildTaskNotification({
+    required BuildContext context,
+    required QueryDocumentSnapshot doc,
+    required Task task,
+    required Map data,
+    required bool isFirstTime,
+    required String notificationType,
+  }) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: height * 0.01),
+      child: TweenAnimationBuilder(
+        key: ValueKey('${doc.id}_$notificationType'),
+        tween: Tween<double>(begin: isFirstTime ? 0.0 : 1.0, end: 1.0),
+        duration: Duration(milliseconds: isFirstTime ? 400 : 0),
+        curve: Curves.easeOutCirc,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, (1 - value) * -30),
+            child: Opacity(
+              opacity: value.clamp(0.0, 1.0),
+              child: Transform.scale(scale: 0.8 + (value * 0.2), child: child),
+            ),
+          );
+        },
+        child: Material(
+          color: Color(0xFFFFF2E6),
+          borderRadius: BorderRadius.circular(8),
+          child: Dismissible(
+            key: ValueKey('${doc.id}_$notificationType'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.red,
+              ),
+              child: Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (direction) async => true,
+            onDismissed: (direction) async {
+              if (notificationType == 'show') {
+                await FirebaseFirestore.instance
+                    .collection('Notifications')
+                    .doc(box.read('userProfile')['email'])
+                    .collection('Tasks')
+                    .doc(doc.id)
+                    .update({
+                      'isShow': FieldValue.delete(),
+                      'dueDateOld': FieldValue.delete(),
+                    });
+              } else if (notificationType == 'remind') {
+                await FirebaseFirestore.instance
+                    .collection('Notifications')
+                    .doc(box.read('userProfile')['email'])
+                    .collection('Tasks')
+                    .doc(doc.id)
+                    .update({
+                      'isNotiRemindShow': FieldValue.delete(),
+                      'remindMeBeforeOld': FieldValue.delete(),
+                    });
+              }
+            },
+            child: _buildNotificationContent(
+              context: context,
+              task: task,
+              data: data,
+              notificationType: notificationType,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationContent({
+    required BuildContext context,
+    required Task task,
+    required Map data,
+    required String notificationType,
+  }) {
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: height * 0.01,
+        bottom: height * 0.01,
+        left: width * 0.02,
+        right: width * 0.03,
+      ),
+      decoration: BoxDecoration(
+        color: Color(0xFFF2F2F6),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: height * 0.05,
+            height: height * 0.05,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black26,
+            ),
+            child: Align(
+              child: SvgPicture.string(
+                _getIconSvg(notificationType),
+                width: width * 0.034,
+                height: height * 0.034,
+                fit: BoxFit.contain,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(width: width * 0.02),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _getNotificationTitle(notificationType, task),
+                        style: TextStyle(
+                          fontSize:
+                              Get.textTheme.titleSmall!.fontSize! *
+                              MediaQuery.of(context).textScaleFactor,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF007AFF),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: width * 0.05),
+                    Text(
+                      timeAgo(
+                        notificationType == 'show'
+                            ? (data['dueDateOld'] ?? data['dueDate'])
+                                .toDate()
+                                .toIso8601String()
+                            : (data['remindMeBeforeOld'] ??
+                                    data['remindMeBefore'])
+                                .toDate()
+                                .toIso8601String(),
+                      ),
+                      style: TextStyle(
+                        fontSize:
+                            Get.textTheme.labelMedium!.fontSize! *
+                            MediaQuery.of(context).textScaleFactor,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  _getNotificationSubtitle(notificationType, task, data),
+                  style: TextStyle(
+                    fontSize:
+                        Get.textTheme.labelMedium!.fontSize! *
+                        MediaQuery.of(context).textScaleFactor,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getIconSvg(String notificationType) {
+    if (notificationType == 'show') {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z"></path></svg>';
+    } else {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>';
+    }
+  }
+
+  String _getNotificationTitle(String notificationType, Task task) {
+    if (notificationType == 'show') {
+      return task.taskName;
+    } else {
+      return "It's almost time for your work.";
+    }
+  }
+
+  String _getNotificationSubtitle(
+    String notificationType,
+    Task task,
+    Map data,
+  ) {
+    if (notificationType == 'show') {
+      final detail = showDetailPrivateOrGroup(task);
+      if (detail.isEmpty) {
+        return "Today, ${formatDateDisplay(data['dueDate'])}";
+      } else {
+        return "$detail, ${formatDateDisplay(data['dueDate'])}";
+      }
+    } else {
+      return "You will be reminded before '${task.taskName}' starts.";
+    }
   }
 
   String formatDateDisplay(dynamic date) {
@@ -811,7 +947,12 @@ class _NotificationPageState extends State<NotificationPage> {
         final snapshot3 =
             await baseCollection.collection(collectionType3).get();
         for (var doc in snapshot3.docs) {
-          await doc.reference.update({'isShow': FieldValue.delete()});
+          await doc.reference.update({
+            'isShow': FieldValue.delete(),
+            'dueDateOld': FieldValue.delete(),
+            'isNotiRemindShow': FieldValue.delete(),
+            'remindMeBeforeOld': FieldValue.delete(),
+          });
         }
       }
     } else {
@@ -840,10 +981,10 @@ class _NotificationPageState extends State<NotificationPage> {
         .collection('Notifications')
         .doc(box.read('userProfile')['email'])
         .collection('Tasks')
-        .where('isShow', isEqualTo: true)
         .orderBy('dueDate', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs);
+
     return rxdart.Rx.combineLatest3<
       List<QueryDocumentSnapshot>,
       List<QueryDocumentSnapshot>,
