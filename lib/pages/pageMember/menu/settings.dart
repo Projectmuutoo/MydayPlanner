@@ -21,7 +21,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -108,11 +107,10 @@ class _SettingsPageState extends State<SettingsPage> {
     name = box.read('userProfile')['name'];
     userEmail = box.read('userProfile')['email'];
     userProfile = box.read('userProfile')['profile'];
-    var result =
-        await FirebaseFirestore.instance
-            .collection('usersLogin')
-            .doc(userEmail)
-            .get();
+    var result = await FirebaseFirestore.instance
+        .collection('usersLogin')
+        .doc(userEmail)
+        .get();
     final data = result.data();
     if (data != null) {
       isChangePassword = data['changePassword'] == true;
@@ -128,6 +126,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    editNameCtl.dispose();
+    currentPasswordCtl.dispose();
+    newPasswordCtl.dispose();
+    confirmPasswordCtl.dispose();
+    conFirmDeleteCtl.dispose();
+    editNameFocusNode.dispose();
+    currentPasswordCtlFocusNode.dispose();
+    newPasswordFocusNode.dispose();
+    confirmPasswordFocusNode.dispose();
+    conFirmDeleteFocusNode.dispose();
     super.dispose();
   }
 
@@ -205,9 +213,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: Text(
                   'Settings',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -248,14 +254,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'Account',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.black,
                                         ),
@@ -272,14 +274,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Text(
                                         "Save",
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Color(0xFF007AFF),
                                         ),
@@ -315,14 +313,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Text(
                                         'Choose Photo',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleSmall!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
                                         ),
                                       ),
                                     ),
@@ -332,14 +326,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Text(
                                         'Choose file',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleSmall!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
                                         ),
                                       ),
                                     ),
@@ -349,14 +339,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Text(
                                         'Take Photo',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleSmall!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
                                         ),
                                       ),
                                     ),
@@ -402,20 +388,20 @@ class _SettingsPageState extends State<SettingsPage> {
                                 children: [
                                   savedFile != null
                                       ? Positioned(
-                                        right: -width * 0.012,
-                                        top: -height * 0.008,
-                                        child: InkWell(
-                                          onTap: () {
-                                            setState(() {
-                                              savedFile = null;
-                                            });
-                                          },
-                                          child: SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
-                                            width: width * 0.06,
+                                          right: -width * 0.012,
+                                          top: -height * 0.008,
+                                          child: InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                savedFile = null;
+                                              });
+                                            },
+                                            child: SvgPicture.string(
+                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
+                                              width: width * 0.06,
+                                            ),
                                           ),
-                                        ),
-                                      )
+                                        )
                                       : SizedBox.shrink(),
                                   Container(
                                     height: height * 0.08,
@@ -427,13 +413,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                   ),
                                   savedFile == null
                                       ? Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        child: ClipOval(
-                                          child:
-                                              userProfile == 'none-url'
-                                                  ? Container(
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          child: ClipOval(
+                                            child: userProfile == 'none-url'
+                                                ? Container(
                                                     height: height * 0.08,
                                                     width: width * 0.18,
                                                     decoration: BoxDecoration(
@@ -448,9 +433,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                                                 color: Color(
                                                                   0xFFF2F2F6,
                                                                 ),
-                                                                shape:
-                                                                    BoxShape
-                                                                        .circle,
+                                                                shape: BoxShape
+                                                                    .circle,
                                                               ),
                                                         ),
                                                         Positioned(
@@ -468,7 +452,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                                       ],
                                                     ),
                                                   )
-                                                  : Container(
+                                                : Container(
                                                     decoration: BoxDecoration(
                                                       color: Colors.black12,
                                                       shape: BoxShape.circle,
@@ -480,27 +464,27 @@ class _SettingsPageState extends State<SettingsPage> {
                                                       fit: BoxFit.cover,
                                                     ),
                                                   ),
-                                        ),
-                                      )
+                                          ),
+                                        )
                                       : Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        child: ClipOval(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.black12,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Image.file(
-                                              savedFile!,
-                                              height: height * 0.08,
-                                              width: width * 0.18,
-                                              fit: BoxFit.cover,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          child: ClipOval(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black12,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Image.file(
+                                                savedFile!,
+                                                height: height * 0.08,
+                                                width: width * 0.18,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
                                   Positioned(
                                     bottom: -5,
                                     right: -10,
@@ -550,10 +534,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Name',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleSmall!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleSmall!.fontSize!,
                                       fontWeight: FontWeight.normal,
                                     ),
                                   ),
@@ -572,31 +553,22 @@ class _SettingsPageState extends State<SettingsPage> {
                                           keyboardType: TextInputType.text,
                                           cursorColor: Colors.black,
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                           ),
                                           textAlign: TextAlign.end,
                                           decoration: InputDecoration(
                                             isDense: true,
-                                            hintText:
-                                                isTyping
-                                                    ? 'Enter your name'
-                                                    : name,
+                                            hintText: isTyping
+                                                ? 'Enter your name'
+                                                : name,
                                             hintStyle: TextStyle(
-                                              fontSize:
-                                                  Get
-                                                      .textTheme
-                                                      .labelMedium!
-                                                      .fontSize! *
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).textScaleFactor,
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .labelMedium!
+                                                  .fontSize!,
                                               fontWeight: FontWeight.normal,
                                               color: Color(0xFF000000),
                                             ),
@@ -615,43 +587,43 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ),
                                       isTyping
                                           ? InkWell(
-                                            onTap: () {
-                                              confirmInformation('newName', '');
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.01,
-                                                vertical: height * 0.005,
-                                              ),
-                                              child: Text(
-                                                'confirm',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .labelMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Color(0xFF007AFF),
+                                              onTap: () {
+                                                confirmInformation(
+                                                  'newName',
+                                                  '',
+                                                );
+                                              },
+                                              child: Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: width * 0.01,
+                                                  vertical: height * 0.005,
+                                                ),
+                                                child: Text(
+                                                  'confirm',
+                                                  style: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .labelMedium!
+                                                        .fontSize!,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    color: Color(0xFF007AFF),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          )
+                                            )
                                           : GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                isTyping = true;
-                                              });
-                                            },
-                                            child: SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                              height: height * 0.03,
-                                              fit: BoxFit.contain,
+                                              onTap: () {
+                                                setState(() {
+                                                  isTyping = true;
+                                                });
+                                              },
+                                              child: SvgPicture.string(
+                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                height: height * 0.03,
+                                                fit: BoxFit.contain,
+                                              ),
                                             ),
-                                          ),
                                     ],
                                   ),
                                 ],
@@ -672,10 +644,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Password',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleSmall!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleSmall!.fontSize!,
                                       fontWeight: FontWeight.normal,
                                     ),
                                   ),
@@ -704,14 +673,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                             ? 'Change password'
                                             : 'Add password',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .labelMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .labelMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black,
                                         ),
@@ -746,10 +711,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'My notifications',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleMedium!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleMedium!.fontSize!,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
@@ -774,14 +736,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'Mobile push notifications',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.black,
                                         ),
@@ -790,14 +748,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         TextSpan(
                                           text: 'Receive push notifications\n',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.normal,
                                             color: Color(0xFF979595),
                                           ),
@@ -805,14 +759,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                             TextSpan(
                                               text: 'via your mobile app.',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .labelMedium!
+                                                    .fontSize!,
                                                 fontWeight: FontWeight.normal,
                                                 height: 0.9,
                                                 color: Color(0xFF979595),
@@ -840,10 +790,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                         isTogglePushNotification
                                             ? Icons.toggle_on_outlined
                                             : Icons.toggle_off_outlined,
-                                        color:
-                                            isTogglePushNotification
-                                                ? Color(0xFF007AFF)
-                                                : Colors.grey,
+                                        color: isTogglePushNotification
+                                            ? Color(0xFF007AFF)
+                                            : Colors.grey,
                                       ),
                                       iconSize: height * 0.04,
                                     ),
@@ -870,14 +819,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'Send email notifications',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.black,
                                         ),
@@ -886,14 +831,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         TextSpan(
                                           text: 'Receive send notifications\n',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.normal,
                                             color: Color(0xFF979595),
                                           ),
@@ -901,14 +842,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                             TextSpan(
                                               text: 'via your email.',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .labelMedium!
+                                                    .fontSize!,
                                                 fontWeight: FontWeight.normal,
                                                 height: 0.9,
                                                 color: Color(0xFF979595),
@@ -936,10 +873,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                         isToggleEmailNotification
                                             ? Icons.toggle_on_outlined
                                             : Icons.toggle_off_outlined,
-                                        color:
-                                            isToggleEmailNotification
-                                                ? Color(0xFF007AFF)
-                                                : Colors.grey,
+                                        color: isToggleEmailNotification
+                                            ? Color(0xFF007AFF)
+                                            : Colors.grey,
                                       ),
                                       iconSize: height * 0.04,
                                     ),
@@ -973,10 +909,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'My settings',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleMedium!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleMedium!.fontSize!,
                                       fontWeight: FontWeight.normal,
                                       color: Colors.black,
                                     ),
@@ -1001,14 +934,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'First page',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.black,
                                         ),
@@ -1017,14 +946,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         TextSpan(
                                           text: 'Choose the home page\n',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.normal,
                                             color: Color(0xFF979595),
                                           ),
@@ -1032,14 +957,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                             TextSpan(
                                               text: 'you want.',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .labelMedium!
+                                                    .fontSize!,
                                                 fontWeight: FontWeight.normal,
                                                 height: 0.9,
                                                 color: Color(0xFF979595),
@@ -1075,10 +996,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                           horizontal: width * 0.02,
                                         ),
                                         decoration: BoxDecoration(
-                                          color:
-                                              private == 400
-                                                  ? Color(0xFF007AFF)
-                                                  : Colors.grey[private],
+                                          color: private == 400
+                                              ? Color(0xFF007AFF)
+                                              : Colors.grey[private],
                                           borderRadius: BorderRadius.all(
                                             Radius.circular(8),
                                           ),
@@ -1086,22 +1006,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                         child: Text(
                                           'Private',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            fontWeight:
-                                                private == 400
-                                                    ? FontWeight.w500
-                                                    : FontWeight.normal,
-                                            color:
-                                                private == 400
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
+                                            fontWeight: private == 400
+                                                ? FontWeight.w500
+                                                : FontWeight.normal,
+                                            color: private == 400
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                       ),
@@ -1128,10 +1042,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                           horizontal: width * 0.02,
                                         ),
                                         decoration: BoxDecoration(
-                                          color:
-                                              group == 400
-                                                  ? Color(0xFF007AFF)
-                                                  : Colors.grey[group],
+                                          color: group == 400
+                                              ? Color(0xFF007AFF)
+                                              : Colors.grey[group],
                                           borderRadius: BorderRadius.all(
                                             Radius.circular(8),
                                           ),
@@ -1139,22 +1052,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                         child: Text(
                                           'Groups',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            fontWeight:
-                                                group == 400
-                                                    ? FontWeight.w500
-                                                    : FontWeight.normal,
-                                            color:
-                                                group == 400
-                                                    ? Colors.white
-                                                    : Colors.black,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
+                                            fontWeight: group == 400
+                                                ? FontWeight.w500
+                                                : FontWeight.normal,
+                                            color: group == 400
+                                                ? Colors.white
+                                                : Colors.black,
                                           ),
                                         ),
                                       ),
@@ -1181,14 +1088,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'Delete my account',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.red,
                                         ),
@@ -1197,14 +1100,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         TextSpan(
                                           text: 'Delete your account and\n',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.normal,
                                             color: Color(0xFF979595),
                                           ),
@@ -1213,14 +1112,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                               text:
                                                   'also delete all your workspaces.',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .labelMedium!
+                                                    .fontSize!,
                                                 fontWeight: FontWeight.normal,
                                                 height: 0.9,
                                                 color: Color(0xFF979595),
@@ -1257,14 +1152,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                         child: Text(
                                           'Delete my account',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.red,
                                           ),
@@ -1298,14 +1189,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                       Text(
                                         'Sign Out',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Color(0xFFFF3A31),
                                         ),
@@ -1348,9 +1235,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   isChangePassword ? 'Change password' : 'Set password',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF007AFF),
                   ),
@@ -1359,9 +1244,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Use a password at least 8 letters long, or at least 8 characters long with both letters and numbers.',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.labelMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.labelMedium!.fontSize!,
                     color: Colors.black,
                   ),
                   textAlign: TextAlign.center,
@@ -1373,9 +1256,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         'Enter your current password',
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.labelMedium!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.labelMedium!.fontSize!,
                           color: Colors.black,
                         ),
                       ),
@@ -1388,35 +1269,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     obscureText: true,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Current password',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
-                      suffixIcon:
-                          currentPasswordCtl.text.isNotEmpty
-                              ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    currentPasswordCtl.clear();
-                                  });
-                                },
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 16,
-                                ),
-                              )
-                              : null,
+                      suffixIcon: currentPasswordCtl.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  currentPasswordCtl.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey,
+                                size: 16,
+                              ),
+                            )
+                          : null,
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.04,
                       ),
@@ -1439,9 +1315,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         'Enter a new password',
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.labelMedium!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.labelMedium!.fontSize!,
                           color: Colors.black,
                         ),
                       ),
@@ -1454,35 +1328,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     obscureText: true,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                     ),
                     decoration: InputDecoration(
                       hintText: 'New password',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
-                      suffixIcon:
-                          newPasswordCtl.text.isNotEmpty
-                              ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    newPasswordCtl.clear();
-                                  });
-                                },
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 16,
-                                ),
-                              )
-                              : null,
+                      suffixIcon: newPasswordCtl.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  newPasswordCtl.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey,
+                                size: 16,
+                              ),
+                            )
+                          : null,
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.04,
                       ),
@@ -1505,9 +1374,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         'Confirm your new password',
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.labelMedium!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.labelMedium!.fontSize!,
                           color: Colors.black,
                         ),
                       ),
@@ -1520,35 +1387,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     obscureText: true,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Confirm password',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
-                      suffixIcon:
-                          confirmPasswordCtl.text.isNotEmpty
-                              ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    confirmPasswordCtl.clear();
-                                  });
-                                },
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 16,
-                                ),
-                              )
-                              : null,
+                      suffixIcon: confirmPasswordCtl.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  confirmPasswordCtl.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey,
+                                size: 16,
+                              ),
+                            )
+                          : null,
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.04,
                       ),
@@ -1571,9 +1433,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         'Enter a new password',
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.labelMedium!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.labelMedium!.fontSize!,
                           color: Colors.black,
                         ),
                       ),
@@ -1586,35 +1446,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     obscureText: true,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                     ),
                     decoration: InputDecoration(
                       hintText: 'New password',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
-                      suffixIcon:
-                          newPasswordCtl.text.isNotEmpty
-                              ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    newPasswordCtl.clear();
-                                  });
-                                },
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 16,
-                                ),
-                              )
-                              : null,
+                      suffixIcon: newPasswordCtl.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  newPasswordCtl.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey,
+                                size: 16,
+                              ),
+                            )
+                          : null,
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.04,
                       ),
@@ -1637,9 +1492,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         'Confirm your new password',
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.labelMedium!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.labelMedium!.fontSize!,
                           color: Colors.black,
                         ),
                       ),
@@ -1652,35 +1505,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     obscureText: true,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Confirm password',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
-                      suffixIcon:
-                          confirmPasswordCtl.text.isNotEmpty
-                              ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    confirmPasswordCtl.clear();
-                                  });
-                                },
-                                padding: EdgeInsets.zero,
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 16,
-                                ),
-                              )
-                              : null,
+                      suffixIcon: confirmPasswordCtl.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  confirmPasswordCtl.clear();
+                                });
+                              },
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.clear,
+                                color: Colors.grey,
+                                size: 16,
+                              ),
+                            )
+                          : null,
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.04,
                       ),
@@ -1703,9 +1551,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     textNotification,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                       color: Colors.red,
                     ),
                   ),
@@ -1811,9 +1657,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Text(
                     isChangePassword ? 'Change password' : 'Set password',
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.titleSmall!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.titleSmall!.fontSize!,
                       color: Colors.white,
                     ),
                   ),
@@ -1832,9 +1676,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Remove password',
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.titleSmall!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.titleSmall!.fontSize!,
                         color: Colors.red,
                       ),
                     ),
@@ -1876,9 +1718,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleLarge!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -1886,9 +1726,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Update your profile successfully',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1912,9 +1750,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text(
                 'Ok',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleMedium!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
                   color: Colors.white,
                 ),
               ),
@@ -1947,9 +1783,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Remove password',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF007AFF),
                   ),
@@ -1960,9 +1794,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     Text(
                       'Enter your current password',
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         color: Colors.black,
                       ),
                     ),
@@ -1975,35 +1807,30 @@ class _SettingsPageState extends State<SettingsPage> {
                   obscureText: true,
                   cursorColor: Colors.black,
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.labelMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.labelMedium!.fontSize!,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Current password',
                     hintStyle: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                       fontWeight: FontWeight.normal,
                       color: Colors.grey,
                     ),
-                    suffixIcon:
-                        currentPasswordCtl.text.isNotEmpty
-                            ? IconButton(
-                              onPressed: () {
-                                setState1(() {
-                                  currentPasswordCtl.clear();
-                                });
-                              },
-                              padding: EdgeInsets.zero,
-                              icon: Icon(
-                                Icons.clear,
-                                color: Colors.grey,
-                                size: 16,
-                              ),
-                            )
-                            : null,
+                    suffixIcon: currentPasswordCtl.text.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              setState1(() {
+                                currentPasswordCtl.clear();
+                              });
+                            },
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              Icons.clear,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
+                          )
+                        : null,
                     constraints: BoxConstraints(
                       maxHeight: MediaQuery.of(context).size.height * 0.04,
                     ),
@@ -2025,9 +1852,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     textNotification,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.labelMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.labelMedium!.fontSize!,
                       color: Colors.red,
                     ),
                   ),
@@ -2106,9 +1931,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Text(
                     'Remove password',
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.titleMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.titleMedium!.fontSize!,
                       color: Colors.white,
                     ),
                   ),
@@ -2145,9 +1968,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Successfully!!',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleLarge!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleLarge!.fontSize!,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF007AFF),
                   ),
@@ -2155,9 +1976,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Update your profile successfully',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleSmall!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleSmall!.fontSize!,
                     color: Colors.black,
                   ),
                   textAlign: TextAlign.center,
@@ -2181,9 +2000,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Text(
                   'Ok',
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.titleMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
                     color: Colors.white,
                   ),
                 ),
@@ -2367,9 +2184,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleLarge!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -2377,9 +2192,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Update your profile successfully',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -2403,9 +2216,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Text(
                 'Ok',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleMedium!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
                   color: Colors.white,
                 ),
               ),
@@ -2434,14 +2245,11 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -2541,9 +2349,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     'Delete this account?',
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.titleLarge!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.titleLarge!.fontSize!,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF007AFF),
                     ),
@@ -2552,9 +2358,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     textAlign: TextAlign.center,
                     text: TextSpan(
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         color: Colors.black,
                       ),
                       children: [
@@ -2585,18 +2389,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     keyboardType: TextInputType.text,
                     cursorColor: Colors.black,
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.titleSmall!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.titleSmall!.fontSize!,
                     ),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: 'Confirm',
                       hintStyle: TextStyle(
-                        fontSize:
-                            Get.textTheme.titleSmall!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.titleSmall!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey,
                       ),
@@ -2616,14 +2416,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   SizedBox(height: height * 0.01),
                   ElevatedButton(
-                    onPressed:
-                        isConfirmMatched
-                            ? () async {
-                              if (conFirmDeleteFocusNode.hasFocus) {
-                                conFirmDeleteFocusNode.unfocus();
-                              }
-                              loadingDialog();
-                              var responseLogout = await http.post(
+                    onPressed: isConfirmMatched
+                        ? () async {
+                            if (conFirmDeleteFocusNode.hasFocus) {
+                              conFirmDeleteFocusNode.unfocus();
+                            }
+                            loadingDialog();
+                            var responseLogout = await http.post(
+                              Uri.parse("$url/auth/signout"),
+                              headers: {
+                                "Content-Type":
+                                    "application/json; charset=utf-8",
+                                "Authorization":
+                                    "Bearer ${box.read('accessToken')}",
+                              },
+                            );
+                            if (responseLogout.statusCode == 403) {
+                              await loadNewRefreshToken();
+                              responseLogout = await http.post(
                                 Uri.parse("$url/auth/signout"),
                                 headers: {
                                   "Content-Type":
@@ -2632,59 +2442,49 @@ class _SettingsPageState extends State<SettingsPage> {
                                       "Bearer ${box.read('accessToken')}",
                                 },
                               );
-                              if (responseLogout.statusCode == 403) {
-                                await loadNewRefreshToken();
-                                responseLogout = await http.post(
-                                  Uri.parse("$url/auth/signout"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8",
-                                    "Authorization":
-                                        "Bearer ${box.read('accessToken')}",
-                                  },
-                                );
-                              }
+                            }
+                            Get.back();
+
+                            if (responseLogout.statusCode == 200) {
+                              loadingDialog();
+                              var responseDelete = await http.delete(
+                                Uri.parse("$url/user/account"),
+                                headers: {
+                                  "Content-Type":
+                                      "application/json; charset=utf-8",
+                                  "Authorization":
+                                      "Bearer ${box.read('accessToken')}",
+                                },
+                              );
                               Get.back();
 
-                              if (responseLogout.statusCode == 200) {
-                                loadingDialog();
-                                var responseDelete = await http.delete(
-                                  Uri.parse("$url/user/account"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8",
-                                    "Authorization":
-                                        "Bearer ${box.read('accessToken')}",
-                                  },
+                              if (responseDelete.statusCode == 200) {
+                                await FirebaseFirestore.instance
+                                    .collection('usersLogin')
+                                    .doc(box.read('userProfile')['email'])
+                                    .update({
+                                      'deviceName': FieldValue.delete(),
+                                    });
+                                await box.erase();
+                                await googleSignIn.signOut();
+                                await FirebaseAuth.instance.signOut();
+                                await storage.deleteAll();
+                                Get.offAll(
+                                  () => SplashPage(),
+                                  arguments: {'fromLogout': true},
                                 );
-                                Get.back();
-
-                                if (responseDelete.statusCode == 200) {
-                                  await FirebaseFirestore.instance
-                                      .collection('usersLogin')
-                                      .doc(box.read('userProfile')['email'])
-                                      .update({
-                                        'deviceName': FieldValue.delete(),
-                                      });
-                                  await box.erase();
-                                  await googleSignIn.signOut();
-                                  await FirebaseAuth.instance.signOut();
-                                  await storage.deleteAll();
-                                  Get.offAll(
-                                    () => SplashPage(),
-                                    arguments: {'fromLogout': true},
-                                  );
-                                }
                               }
                             }
-                            : null,
+                          }
+                        : null,
                     style: ElevatedButton.styleFrom(
                       fixedSize: Size(
                         MediaQuery.of(context).size.width,
                         MediaQuery.of(context).size.height * 0.05,
                       ),
-                      backgroundColor:
-                          isConfirmMatched ? Colors.red : Colors.grey,
+                      backgroundColor: isConfirmMatched
+                          ? Colors.red
+                          : Colors.grey,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -2693,9 +2493,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Delete',
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.titleMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.titleMedium!.fontSize!,
                         color: Colors.white,
                       ),
                     ),
@@ -2728,9 +2526,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Cancel',
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.titleMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.titleMedium!.fontSize!,
                         color: Color(0xFF007AFF),
                       ),
                     ),
@@ -2782,9 +2578,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -2792,9 +2586,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -2835,9 +2627,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),

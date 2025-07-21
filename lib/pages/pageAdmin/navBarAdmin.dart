@@ -15,7 +15,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 
 mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   StreamSubscription<DocumentSnapshot>? _statusSubscription;
@@ -184,13 +183,9 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  void stopRealtimeMonitoring() {
-    _statusSubscription?.cancel();
-  }
-
   @override
   void dispose() {
-    stopRealtimeMonitoring();
+    _statusSubscription?.cancel();
     super.dispose();
   }
 }
@@ -343,11 +338,10 @@ class _NavbaradminPageState extends State<NavbaradminPage>
     }
 
     _timer2 = Timer.periodic(Duration(seconds: 5), (_) async {
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('usersLogin')
-              .doc(userProfile['email'])
-              .get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userProfile['email'])
+          .get();
 
       final serverdeviceName = snapshot.data()?['deviceName'];
       final localdeviceName = userLogin['deviceName'];

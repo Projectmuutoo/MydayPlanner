@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,6 +30,7 @@ class _NotificationPageState extends State<NotificationPage> {
   var box = GetStorage();
   final Set<String> _animatedIds = <String>{};
   final Set<String> _animatedIds2 = <String>{};
+  final Set<String> _animatedIds3 = <String>{};
   late String url;
   Timer? timer;
 
@@ -40,8 +40,9 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -59,11 +60,9 @@ class _NotificationPageState extends State<NotificationPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Notification',
+                    'Notifications',
                     style: TextStyle(
-                      fontSize:
-                          Get.textTheme.headlineMedium!.fontSize! *
-                          MediaQuery.of(context).textScaleFactor,
+                      fontSize: Get.textTheme.headlineMedium!.fontSize!,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -78,34 +77,34 @@ class _NotificationPageState extends State<NotificationPage> {
                           collectionType3: 'Tasks',
                           all: true,
                         );
-                        FirebaseFirestore.instance
-                            .collection('Notifications')
-                            .doc(box.read('userProfile')['email'])
-                            .collection('Tasks')
-                            .doc(1963.toString())
-                            .update({
-                              'remindMeBefore': Timestamp.fromDate(
-                                DateTime(
-                                  DateTime.now().year,
-                                  DateTime.now().month,
-                                  DateTime.now().day,
-                                  DateTime.now().hour,
-                                  DateTime.now().minute + 1,
-                                ),
-                              ),
-                              'dueDate': Timestamp.fromDate(
-                                DateTime(
-                                  DateTime.now().year,
-                                  DateTime.now().month,
-                                  DateTime.now().day,
-                                  DateTime.now().hour,
-                                  DateTime.now().minute + 2,
-                                ),
-                              ),
-                              'isNotiRemind': false,
-                              'isSend': false,
-                              'recurringPattern': 'onetime',
-                            });
+                        // FirebaseFirestore.instance
+                        //     .collection('Notifications')
+                        //     .doc(box.read('userProfile')['email'])
+                        //     .collection('Tasks')
+                        //     .doc(1963.toString())
+                        //     .update({
+                        //       'remindMeBefore': Timestamp.fromDate(
+                        //         DateTime(
+                        //           DateTime.now().year,
+                        //           DateTime.now().month,
+                        //           DateTime.now().day,
+                        //           DateTime.now().hour,
+                        //           DateTime.now().minute + 1,
+                        //         ),
+                        //       ),
+                        //       'dueDate': Timestamp.fromDate(
+                        //         DateTime(
+                        //           DateTime.now().year,
+                        //           DateTime.now().month,
+                        //           DateTime.now().day,
+                        //           DateTime.now().hour,
+                        //           DateTime.now().minute + 2,
+                        //         ),
+                        //       ),
+                        //       'isNotiRemind': false,
+                        //       'isSend': false,
+                        //       'recurringPattern': 'onetime',
+                        //     });
                       },
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
@@ -116,9 +115,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         child: Text(
                           "Clear",
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleMedium!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleMedium!.fontSize!,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -132,16 +129,16 @@ class _NotificationPageState extends State<NotificationPage> {
                   stream: getAllCombinedNotifications(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
                     }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return Center(
                         child: Text(
                           'No notifications',
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleMedium!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleMedium!.fontSize!,
                             fontWeight: FontWeight.w500,
                             color: Colors.grey,
                           ),
@@ -149,40 +146,57 @@ class _NotificationPageState extends State<NotificationPage> {
                       );
                     }
                     final notifications = snapshot.data!;
-                    final displayableNotifications =
-                        notifications.where((doc) {
-                          final data = doc.data() as Map;
-                          final isInvite =
-                              data.containsKey('InviterName') &&
-                              data['Response'] == 'Waiting';
-                          final isResponse =
-                              data.containsKey('ResponderName') &&
-                              data['Response'] == 'Accept';
-                          final isTaskNotification = data.containsKey('taskID');
+                    final userUid = box
+                        .read('userProfile')['userid']
+                        .toString();
 
-                          if (isInvite || isResponse) {
-                            return true;
-                          } else if (isTaskNotification) {
-                            final isShow =
-                                (data['isShow'] != null && data['isShow']) ||
-                                (data['dueDateOld'] != null);
-                            final isNotiRemind =
-                                (data['isNotiRemindShow'] != null &&
-                                    data['isNotiRemindShow']) ||
-                                (data['remindMeBeforeOld'] != null);
-                            return isShow || isNotiRemind;
+                    final validDisplayableNotifications = notifications.where((
+                      doc,
+                    ) {
+                      final data = doc.data() as Map<String, dynamic>;
+
+                      if (data.containsKey('InviterName') &&
+                          data['Response'] == 'Waiting') {
+                        return true;
+                      }
+                      if (data.containsKey('ResponderName') &&
+                          data['Response'] == 'Accept') {
+                        return true;
+                      }
+
+                      if (data.containsKey('taskID') &&
+                          !data.containsKey('userNotifications')) {
+                        return (data['isShow'] == true) ||
+                            (data['dueDateOld'] != null) ||
+                            (data['isNotiRemindShow'] == true) ||
+                            (data['remindMeBeforeOld'] != null);
+                      }
+
+                      if (data.containsKey('userNotifications')) {
+                        final userNotifications = data['userNotifications'];
+                        if (userNotifications != null &&
+                            userNotifications is Map<String, dynamic> &&
+                            userNotifications.containsKey(userUid)) {
+                          final userSettings = userNotifications[userUid];
+                          if (userSettings != null &&
+                              userSettings is Map<String, dynamic>) {
+                            return (userSettings['isShow'] == true) ||
+                                (userSettings['dueDateOld'] != null) ||
+                                (userSettings['isNotiRemindShow'] == true) ||
+                                (userSettings['remindMeBeforeOld'] != null);
                           }
-                          return false;
-                        }).toList();
+                        }
+                      }
 
-                    if (displayableNotifications.isEmpty) {
+                      return false;
+                    }).toList();
+
+                    if (validDisplayableNotifications.isEmpty) {
                       return Center(
                         child: Text(
                           'No notifications',
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleMedium!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleMedium!.fontSize!,
                             fontWeight: FontWeight.w500,
                             color: Colors.grey,
                           ),
@@ -191,10 +205,10 @@ class _NotificationPageState extends State<NotificationPage> {
                     }
 
                     return ListView.builder(
-                      itemCount: notifications.length,
+                      itemCount: validDisplayableNotifications.length,
                       itemBuilder: (context, index) {
-                        final doc = notifications[index];
-                        final data = doc.data() as Map;
+                        final doc = validDisplayableNotifications[index];
+                        final data = doc.data() as Map<String, dynamic>;
 
                         final isInvite =
                             data.containsKey('InviterName') &&
@@ -202,7 +216,6 @@ class _NotificationPageState extends State<NotificationPage> {
                         final isResponse =
                             data.containsKey('ResponderName') &&
                             data['Response'] == 'Accept';
-                        final isTaskNotification = data.containsKey('taskID');
 
                         if (isInvite || isResponse) {
                           final isFirstTime = !_animatedIds.contains(doc.id);
@@ -279,53 +292,55 @@ class _NotificationPageState extends State<NotificationPage> {
                                       right: width * 0.03,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Color(0xFFF2F2F6),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
                                         data['Profile'] == 'none-url'
                                             ? Container(
-                                              width: height * 0.05,
-                                              height: height * 0.05,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Stack(
-                                                children: [
-                                                  Container(
-                                                    height: height * 0.1,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black12,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                  ),
-                                                  Positioned(
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    child: SvgPicture.string(
-                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                      height: height * 0.035,
-                                                      fit: BoxFit.contain,
-                                                      color: Color(0xFF979595),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                            : Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.black12,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Image.network(
-                                                data['Profile'],
                                                 width: height * 0.05,
                                                 height: height * 0.05,
-                                                fit: BoxFit.cover,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Stack(
+                                                  children: [
+                                                    Container(
+                                                      height: height * 0.1,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black12,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    Positioned(
+                                                      left: 0,
+                                                      right: 0,
+                                                      bottom: 0,
+                                                      child: SvgPicture.string(
+                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                        height: height * 0.035,
+                                                        fit: BoxFit.contain,
+                                                        color: Color(
+                                                          0xFF979595,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black12,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Image.network(
+                                                  data['Profile'],
+                                                  width: height * 0.05,
+                                                  height: height * 0.05,
+                                                  fit: BoxFit.cover,
+                                                ),
                                               ),
-                                            ),
                                         SizedBox(width: width * 0.02),
                                         Expanded(
                                           child: Column(
@@ -342,20 +357,15 @@ class _NotificationPageState extends State<NotificationPage> {
                                                         ? 'Invite to join'
                                                         : 'Already joined the board',
                                                     style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .titleSmall!
-                                                              .fontSize! *
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).textScaleFactor,
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleSmall!
+                                                          .fontSize!,
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color:
-                                                          isInvite
-                                                              ? Colors.black
-                                                              : Colors.green,
+                                                      color: isInvite
+                                                          ? Colors.black
+                                                          : Colors.green,
                                                     ),
                                                   ),
                                                   Row(
@@ -363,24 +373,20 @@ class _NotificationPageState extends State<NotificationPage> {
                                                       Text(
                                                         isInvite
                                                             ? timeAgo(
-                                                              data['Invitation time']
-                                                                  .toDate()
-                                                                  .toIso8601String(),
-                                                            )
+                                                                data['Invitation time']
+                                                                    .toDate()
+                                                                    .toIso8601String(),
+                                                              )
                                                             : timeAgo(
-                                                              data['Response time']
-                                                                  .toDate()
-                                                                  .toIso8601String(),
-                                                            ),
+                                                                data['Response time']
+                                                                    .toDate()
+                                                                    .toIso8601String(),
+                                                              ),
                                                         style: TextStyle(
-                                                          fontSize:
-                                                              Get
-                                                                  .textTheme
-                                                                  .labelMedium!
-                                                                  .fontSize! *
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).textScaleFactor,
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize!,
                                                           fontWeight:
                                                               FontWeight.normal,
                                                         ),
@@ -395,32 +401,26 @@ class _NotificationPageState extends State<NotificationPage> {
                                                       .textTheme
                                                       .labelMedium!
                                                       .copyWith(
-                                                        fontSize:
-                                                            Get
-                                                                .textTheme
-                                                                .labelMedium!
-                                                                .fontSize! *
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).textScaleFactor,
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .labelMedium!
+                                                            .fontSize!,
                                                         color: Colors.black,
                                                       ),
                                                   children: [
                                                     TextSpan(
-                                                      text:
-                                                          isInvite
-                                                              ? '@${data['InviterName']} '
-                                                              : '@${data['ResponderName']} ',
+                                                      text: isInvite
+                                                          ? '@${data['InviterName']} '
+                                                          : '@${data['ResponderName']} ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.w500,
                                                       ),
                                                     ),
                                                     TextSpan(
-                                                      text:
-                                                          isInvite
-                                                              ? 'invited you to '
-                                                              : 'accepted your invitation to ',
+                                                      text: isInvite
+                                                          ? 'invited you to '
+                                                          : 'accepted your invitation to ',
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.normal,
@@ -443,8 +443,8 @@ class _NotificationPageState extends State<NotificationPage> {
                                                 Row(
                                                   children: [
                                                     ElevatedButton(
-                                                      onPressed:
-                                                          () => _handleAccept(
+                                                      onPressed: () =>
+                                                          _handleAccept(
                                                             doc.id,
                                                             data,
                                                           ),
@@ -463,14 +463,10 @@ class _NotificationPageState extends State<NotificationPage> {
                                                       child: Text(
                                                         'Accept',
                                                         style: TextStyle(
-                                                          fontSize:
-                                                              Get
-                                                                  .textTheme
-                                                                  .labelMedium!
-                                                                  .fontSize! *
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).textScaleFactor,
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize!,
                                                           fontWeight:
                                                               FontWeight.w500,
                                                           color: Colors.white,
@@ -481,8 +477,8 @@ class _NotificationPageState extends State<NotificationPage> {
                                                       width: width * 0.02,
                                                     ),
                                                     ElevatedButton(
-                                                      onPressed:
-                                                          () => _handleDecline(
+                                                      onPressed: () =>
+                                                          _handleDecline(
                                                             doc.id,
                                                             data,
                                                           ),
@@ -505,14 +501,10 @@ class _NotificationPageState extends State<NotificationPage> {
                                                       child: Text(
                                                         'Decline',
                                                         style: TextStyle(
-                                                          fontSize:
-                                                              Get
-                                                                  .textTheme
-                                                                  .labelMedium!
-                                                                  .fontSize! *
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).textScaleFactor,
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize!,
                                                           fontWeight:
                                                               FontWeight.w500,
                                                           color: Colors.black,
@@ -531,26 +523,30 @@ class _NotificationPageState extends State<NotificationPage> {
                               ),
                             ),
                           );
-                        } else if (isTaskNotification) {
-                          final rawData = box.read('userDataAll');
-                          final tasksData = AllDataUserGetResponst.fromJson(
-                            rawData,
-                          );
-                          final task =
-                              tasksData.tasks
-                                  .where((t) => t.taskId == data['taskID'])
-                                  .toList();
+                        }
 
-                          if (task.isEmpty) return SizedBox.shrink();
+                        final rawData = box.read('userDataAll');
+                        final tasksData = AllDataUserGetResponst.fromJson(
+                          rawData,
+                        );
+                        final task = tasksData.tasks
+                            .where((t) => t.taskId == data['taskID'])
+                            .toList();
 
+                        if (task.isEmpty) return SizedBox.shrink();
+
+                        final isTaskNotification =
+                            data.containsKey('taskID') &&
+                            !data.containsKey('userNotifications');
+
+                        if (isTaskNotification) {
                           final isFirstTime = !_animatedIds2.contains(doc.id);
                           if (isFirstTime) {
                             _animatedIds2.add(doc.id);
                           }
-
                           List<Widget> notificationWidgets = [];
 
-                          if ((data['isShow'] != null && data['isShow']) ||
+                          if ((data['isShow'] == true) ||
                               (data['dueDateOld'] != null)) {
                             notificationWidgets.add(
                               _buildTaskNotification(
@@ -564,8 +560,7 @@ class _NotificationPageState extends State<NotificationPage> {
                             );
                           }
 
-                          if ((data['isNotiRemindShow'] != null &&
-                                  data['isNotiRemindShow']) ||
+                          if ((data['isNotiRemindShow'] == true) ||
                               (data['remindMeBeforeOld'] != null)) {
                             notificationWidgets.add(
                               _buildTaskNotification(
@@ -578,11 +573,64 @@ class _NotificationPageState extends State<NotificationPage> {
                               ),
                             );
                           }
-
                           if (notificationWidgets.isNotEmpty) {
                             return Column(children: notificationWidgets);
                           }
+                        } else if (data.containsKey('userNotifications')) {
+                          final userNotifications = data['userNotifications'];
+
+                          if (userNotifications != null &&
+                              userNotifications is Map<String, dynamic> &&
+                              userNotifications.containsKey(userUid)) {
+                            final userSettings = userNotifications[userUid];
+                            if (userSettings != null &&
+                                userSettings is Map<String, dynamic>) {
+                              final isFirstTime = !_animatedIds3.contains(
+                                doc.id,
+                              );
+                              if (isFirstTime) {
+                                _animatedIds3.add(doc.id);
+                              }
+                              List<Widget> notificationWidgets = [];
+
+                              if ((userSettings['isShow'] == true) ||
+                                  (userSettings['dueDateOld'] != null)) {
+                                notificationWidgets.add(
+                                  _buildGroupTaskNotification(
+                                    context: context,
+                                    doc: doc,
+                                    task: task.first,
+                                    data: data,
+                                    userSettings: userSettings,
+                                    isFirstTime: isFirstTime,
+                                    notificationType: 'show',
+                                  ),
+                                );
+                              }
+
+                              if ((userSettings['isNotiRemindShow'] == true) ||
+                                  (userSettings['remindMeBeforeOld'] != null)) {
+                                notificationWidgets.add(
+                                  _buildGroupTaskNotification(
+                                    context: context,
+                                    doc: doc,
+                                    task: task.first,
+                                    data: data,
+                                    userSettings: userSettings,
+                                    isFirstTime: isFirstTime,
+                                    notificationType: 'remind',
+                                  ),
+                                );
+                              }
+                              if (notificationWidgets.isNotEmpty) {
+                                return Column(children: notificationWidgets);
+                              } else {
+                                return Text('data');
+                              }
+                            }
+                          }
                         }
+
                         return SizedBox.shrink();
                       },
                     );
@@ -603,6 +651,7 @@ class _NotificationPageState extends State<NotificationPage> {
     required Map data,
     required bool isFirstTime,
     required String notificationType,
+    bool isGroupTask = false,
   }) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
@@ -614,7 +663,7 @@ class _NotificationPageState extends State<NotificationPage> {
         tween: Tween<double>(begin: isFirstTime ? 0.0 : 1.0, end: 1.0),
         duration: Duration(milliseconds: isFirstTime ? 400 : 0),
         curve: Curves.easeOutCirc,
-        builder: (context, value, child) {
+        builder: (context, double value, child) {
           return Transform.translate(
             offset: Offset(0, (1 - value) * -30),
             child: Opacity(
@@ -624,7 +673,7 @@ class _NotificationPageState extends State<NotificationPage> {
           );
         },
         child: Material(
-          color: Color(0xFFFFF2E6),
+          color: isGroupTask ? Color(0xFFE6F3FF) : Color(0xFFFFF2E6),
           borderRadius: BorderRadius.circular(8),
           child: Dismissible(
             key: ValueKey('${doc.id}_$notificationType'),
@@ -640,33 +689,19 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
             confirmDismiss: (direction) async => true,
             onDismissed: (direction) async {
-              if (notificationType == 'show') {
-                await FirebaseFirestore.instance
-                    .collection('Notifications')
-                    .doc(box.read('userProfile')['email'])
-                    .collection('Tasks')
-                    .doc(doc.id)
-                    .update({
-                      'isShow': FieldValue.delete(),
-                      'dueDateOld': FieldValue.delete(),
-                    });
-              } else if (notificationType == 'remind') {
-                await FirebaseFirestore.instance
-                    .collection('Notifications')
-                    .doc(box.read('userProfile')['email'])
-                    .collection('Tasks')
-                    .doc(doc.id)
-                    .update({
-                      'isNotiRemindShow': FieldValue.delete(),
-                      'remindMeBeforeOld': FieldValue.delete(),
-                    });
-              }
+              await _dismissNotification(
+                doc,
+                data,
+                notificationType,
+                isGroupTask,
+              );
             },
             child: _buildNotificationContent(
               context: context,
               task: task,
               data: data,
               notificationType: notificationType,
+              isGroupTask: isGroupTask,
             ),
           ),
         ),
@@ -674,11 +709,98 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
+  Widget _buildGroupTaskNotification({
+    required BuildContext context,
+    required QueryDocumentSnapshot doc,
+    required Task task,
+    required Map data,
+    required Map<String, dynamic> userSettings,
+    required bool isFirstTime,
+    required String notificationType,
+  }) {
+    // สร้าง merged data object
+    final mergedData = Map<String, dynamic>.from(data);
+    mergedData['isShow'] = userSettings['isShow'];
+    mergedData['isNotiRemindShow'] = userSettings['isNotiRemindShow'];
+
+    return _buildTaskNotification(
+      context: context,
+      doc: doc,
+      task: task,
+      data: mergedData,
+      isFirstTime: isFirstTime,
+      notificationType: notificationType,
+      isGroupTask: true,
+    );
+  }
+
+  Future<void> _dismissNotification(
+    QueryDocumentSnapshot doc,
+    Map data,
+    String notificationType,
+    bool isGroupTask,
+  ) async {
+    final userID = box.read('userProfile')['userid'].toString();
+    final userEmail = box.read('userProfile')['email'];
+
+    if (isGroupTask) {
+      // สำหรับ group task notifications
+      final taskId = data['taskID'].toString();
+
+      if (notificationType == 'show') {
+        await FirebaseFirestore.instance
+            .collection('BoardTasks')
+            .doc(taskId)
+            .collection('Notifications')
+            .doc(doc.id)
+            .update({
+              'userNotifications.$userID.isShow': false,
+              'userNotifications.$userID.dueDateOld': FieldValue.delete(),
+            });
+      } else if (notificationType == 'remind') {
+        await FirebaseFirestore.instance
+            .collection('BoardTasks')
+            .doc(taskId)
+            .collection('Notifications')
+            .doc(doc.id)
+            .update({
+              'userNotifications.$userID.isNotiRemindShow': false,
+              'userNotifications.$userID.remindMeBeforeOld':
+                  FieldValue.delete(),
+            });
+      }
+    } else {
+      // สำหรับ personal task notifications
+      if (notificationType == 'show') {
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(userEmail)
+            .collection('Tasks')
+            .doc(doc.id)
+            .update({
+              'isShow': FieldValue.delete(),
+              'dueDateOld': FieldValue.delete(),
+            });
+      } else if (notificationType == 'remind') {
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(userEmail)
+            .collection('Tasks')
+            .doc(doc.id)
+            .update({
+              'isNotiRemindShow': FieldValue.delete(),
+              'remindMeBeforeOld': FieldValue.delete(),
+            });
+      }
+    }
+  }
+
   Widget _buildNotificationContent({
     required BuildContext context,
     required Task task,
     required Map data,
     required String notificationType,
+    bool isGroupTask = false,
   }) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
@@ -691,7 +813,7 @@ class _NotificationPageState extends State<NotificationPage> {
         right: width * 0.03,
       ),
       decoration: BoxDecoration(
-        color: Color(0xFFF2F2F6),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -701,11 +823,11 @@ class _NotificationPageState extends State<NotificationPage> {
             height: height * 0.05,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black26,
+              color: isGroupTask ? Colors.blue.shade400 : Colors.black26,
             ),
             child: Align(
               child: SvgPicture.string(
-                _getIconSvg(notificationType),
+                _getIconSvg(notificationType, isGroupTask),
                 width: width * 0.034,
                 height: height * 0.034,
                 fit: BoxFit.contain,
@@ -723,13 +845,17 @@ class _NotificationPageState extends State<NotificationPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        _getNotificationTitle(notificationType, task),
+                        _getNotificationTitle(
+                          notificationType,
+                          task,
+                          isGroupTask,
+                        ),
                         style: TextStyle(
-                          fontSize:
-                              Get.textTheme.titleSmall!.fontSize! *
-                              MediaQuery.of(context).textScaleFactor,
+                          fontSize: Get.textTheme.titleSmall!.fontSize!,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF007AFF),
+                          color: isGroupTask
+                              ? Color(0xFF007AFF)
+                              : Color(0xFF007AFF),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -740,17 +866,15 @@ class _NotificationPageState extends State<NotificationPage> {
                       timeAgo(
                         notificationType == 'show'
                             ? (data['dueDateOld'] ?? data['dueDate'])
-                                .toDate()
-                                .toIso8601String()
+                                  .toDate()
+                                  .toIso8601String()
                             : (data['remindMeBeforeOld'] ??
-                                    data['remindMeBefore'])
-                                .toDate()
-                                .toIso8601String(),
+                                      data['remindMeBefore'])
+                                  .toDate()
+                                  .toIso8601String(),
                       ),
                       style: TextStyle(
-                        fontSize:
-                            Get.textTheme.labelMedium!.fontSize! *
-                            MediaQuery.of(context).textScaleFactor,
+                        fontSize: Get.textTheme.labelMedium!.fontSize!,
                         fontWeight: FontWeight.normal,
                         color: Colors.grey.shade600,
                       ),
@@ -758,11 +882,14 @@ class _NotificationPageState extends State<NotificationPage> {
                   ],
                 ),
                 Text(
-                  _getNotificationSubtitle(notificationType, task, data),
+                  _getNotificationSubtitle(
+                    notificationType,
+                    task,
+                    data,
+                    isGroupTask,
+                  ),
                   style: TextStyle(
-                    fontSize:
-                        Get.textTheme.labelMedium!.fontSize! *
-                        MediaQuery.of(context).textScaleFactor,
+                    fontSize: Get.textTheme.labelMedium!.fontSize!,
                     color: Colors.black,
                   ),
                 ),
@@ -774,7 +901,7 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  String _getIconSvg(String notificationType) {
+  String _getIconSvg(String notificationType, [bool isGroupTask = false]) {
     if (notificationType == 'show') {
       return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z"></path></svg>';
     } else {
@@ -782,7 +909,11 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  String _getNotificationTitle(String notificationType, Task task) {
+  String _getNotificationTitle(
+    String notificationType,
+    Task task, [
+    bool isGroupTask = false,
+  ]) {
     if (notificationType == 'show') {
       return task.taskName;
     } else {
@@ -793,8 +924,9 @@ class _NotificationPageState extends State<NotificationPage> {
   String _getNotificationSubtitle(
     String notificationType,
     Task task,
-    Map data,
-  ) {
+    Map data, [
+    bool isGroupTask = false,
+  ]) {
     if (notificationType == 'show') {
       final detail = showDetailPrivateOrGroup(task);
       if (detail.isEmpty) {
@@ -926,6 +1058,8 @@ class _NotificationPageState extends State<NotificationPage> {
     String? collectionType3,
     bool all = false,
   }) async {
+    final rawData = box.read('userDataAll');
+    final tasksData = AllDataUserGetResponst.fromJson(rawData);
     final userEmail = box.read('userProfile')['email'];
     final baseCollection = FirebaseFirestore.instance
         .collection('Notifications')
@@ -937,15 +1071,17 @@ class _NotificationPageState extends State<NotificationPage> {
         await doc.reference.delete();
       }
       if (collectionType2 != null) {
-        final snapshot2 =
-            await baseCollection.collection(collectionType2).get();
+        final snapshot2 = await baseCollection
+            .collection(collectionType2)
+            .get();
         for (var doc in snapshot2.docs) {
           await doc.reference.delete();
         }
       }
       if (collectionType3 != null) {
-        final snapshot3 =
-            await baseCollection.collection(collectionType3).get();
+        final snapshot3 = await baseCollection
+            .collection(collectionType3)
+            .get();
         for (var doc in snapshot3.docs) {
           await doc.reference.update({
             'isShow': FieldValue.delete(),
@@ -954,6 +1090,37 @@ class _NotificationPageState extends State<NotificationPage> {
             'remindMeBeforeOld': FieldValue.delete(),
           });
         }
+
+        for (var boardgroup in tasksData.boardgroup) {
+          final boardId = boardgroup.boardId.toString();
+
+          var tasksSnapshot = await FirebaseFirestore.instance
+              .collection('Boards')
+              .doc(boardId)
+              .collection('Tasks')
+              .get();
+
+          for (var tasksDoc in tasksSnapshot.docs) {
+            final notiCollectionRef = FirebaseFirestore.instance
+                .collection('BoardTasks')
+                .doc(tasksDoc['taskID'].toString())
+                .collection('Notifications');
+
+            final notiDocsSnapshot = await notiCollectionRef.get();
+            for (var notiDoc in notiDocsSnapshot.docs) {
+              await notiDoc.reference.update({
+                'userNotifications.${box.read('userProfile')['userid'].toString()}.isShow':
+                    false,
+                'userNotifications.${box.read('userProfile')['userid'].toString()}.isNotiRemindShow':
+                    false,
+                'userNotifications.${box.read('userProfile')['userid'].toString()}.dueDateOld':
+                    FieldValue.delete(),
+                'userNotifications.${box.read('userProfile')['userid'].toString()}.remindMeBeforeOld':
+                    FieldValue.delete(),
+              });
+            }
+          }
+        }
       }
     } else {
       await baseCollection.collection(collectionType).doc(docId).delete();
@@ -961,53 +1128,106 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Stream<List<QueryDocumentSnapshot>> getAllCombinedNotifications() {
+    final rawData = box.read('userDataAll');
+    final tasksData = AllDataUserGetResponst.fromJson(rawData);
+    final userEmail = box.read('userProfile')['email'];
+
     final inviteStream = FirebaseFirestore.instance
         .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
+        .doc(userEmail)
         .collection('InviteJoin')
-        .orderBy('Invitation time', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
     final responseStream = FirebaseFirestore.instance
         .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
+        .doc(userEmail)
         .collection('InviteResponse')
-        .orderBy('Response time', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
     final taskStream = FirebaseFirestore.instance
         .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
+        .doc(userEmail)
         .collection('Tasks')
-        .orderBy('dueDate', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
-    return rxdart.Rx.combineLatest3<
-      List<QueryDocumentSnapshot>,
-      List<QueryDocumentSnapshot>,
-      List<QueryDocumentSnapshot>,
-      List<QueryDocumentSnapshot>
-    >(inviteStream, responseStream, taskStream, (invites, responses, tasks) {
-      final all = [...invites, ...responses, ...tasks];
-      all.sort((a, b) {
-        final aData = a.data() as Map;
-        final bData = b.data() as Map;
+    List<Stream<List<QueryDocumentSnapshot>>> taskGroupStreams = [];
 
-        final aTime =
-            aData['Invitation time'] ??
-            aData['Response time'] ??
-            aData['dueDate'];
-        final bTime =
-            bData['Invitation time'] ??
-            bData['Response time'] ??
-            bData['dueDate'];
+    for (var task in tasksData.tasks) {
+      final taskId = task.taskId.toString();
 
-        return (bTime as Timestamp).compareTo(aTime as Timestamp);
+      final taskNotificationStream = FirebaseFirestore.instance
+          .collection('BoardTasks')
+          .doc(taskId)
+          .collection('Notifications')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+
+      taskGroupStreams.add(taskNotificationStream);
+    }
+
+    // Combine all streams
+    if (taskGroupStreams.isEmpty) {
+      return rxdart.Rx.combineLatest3<
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>
+      >(inviteStream, responseStream, taskStream, (invites, responses, tasks) {
+        final all = [...invites, ...responses, ...tasks];
+        _sortNotifications(all);
+        return all;
       });
-      return all;
+    } else {
+      final allTaskGroupStreams = rxdart.Rx.combineLatestList(
+        taskGroupStreams,
+      ).map((listOfLists) => listOfLists.expand((list) => list).toList());
+
+      return rxdart.Rx.combineLatest4<
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>,
+        List<QueryDocumentSnapshot>
+      >(inviteStream, responseStream, taskStream, allTaskGroupStreams, (
+        invites,
+        responses,
+        tasks,
+        taskGroups,
+      ) {
+        final all = [...invites, ...responses, ...tasks, ...taskGroups];
+        _sortNotifications(all);
+        return all;
+      });
+    }
+  }
+
+  void _sortNotifications(List<QueryDocumentSnapshot> notifications) {
+    notifications.sort((a, b) {
+      final aData = a.data() as Map;
+      final bData = b.data() as Map;
+
+      final aTime =
+          aData['updatedAt'] ??
+          aData['Invitation time'] ??
+          aData['Response time'] ??
+          aData['dueDate'] ??
+          aData['dueDateOld'] ??
+          aData['remindMeBefore'] ??
+          aData['remindMeBeforeOld'];
+
+      final bTime =
+          bData['updatedAt'] ??
+          bData['Invitation time'] ??
+          bData['Response time'] ??
+          bData['dueDate'] ??
+          bData['dueDateOld'] ??
+          bData['remindMeBefore'] ??
+          bData['remindMeBeforeOld'];
+
+      return (bTime as Timestamp).compareTo(aTime as Timestamp);
     });
   }
 
@@ -1094,9 +1314,7 @@ class _NotificationPageState extends State<NotificationPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -1104,9 +1322,7 @@ class _NotificationPageState extends State<NotificationPage> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1147,9 +1363,7 @@ class _NotificationPageState extends State<NotificationPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),

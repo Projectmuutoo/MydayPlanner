@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -69,10 +68,6 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  void stopRealtimeMonitoring() {
-    _statusSubscription?.cancel();
-  }
-
   void logout() async {
     url = await loadAPIEndpoint();
 
@@ -137,9 +132,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -147,9 +140,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -190,9 +181,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),
@@ -204,7 +193,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
 
   @override
   void dispose() {
-    stopRealtimeMonitoring();
+    _statusSubscription?.cancel();
     super.dispose();
   }
 }
@@ -231,6 +220,8 @@ class _NavbarPageState extends State<NavbarPage>
   Timer? timer2;
   Timer? _timer;
   Timer? _timer2;
+  Timer? timerGroup;
+  Timer? timerGroup2;
   int? expiresIn;
 
   @override
@@ -248,23 +239,13 @@ class _NavbarPageState extends State<NavbarPage>
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
+    startNotificationPrivate();
+    timerGroup = Timer.periodic(Duration(seconds: 1), (timer) async {
+      startNotificationListener();
+    });
+  }
 
-    FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
-        .collection('Tasks')
-        .snapshots()
-        .listen((snapshot) async {
-          for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added ||
-                change.type == DocumentChangeType.modified ||
-                change.type == DocumentChangeType.removed) {
-              await fetchDataOnResume();
-              break;
-            }
-          }
-        });
-
+  void startNotificationPrivate() {
     FirebaseFirestore.instance
         .collection('Notifications')
         .doc(box.read('userProfile')['email'])
@@ -277,25 +258,23 @@ class _NavbarPageState extends State<NavbarPage>
             for (var doc in snapshot.docs) {
               final rawData = box.read('userDataAll');
               final tasksData = AllDataUserGetResponst.fromJson(rawData);
-              final task =
-                  tasksData.tasks
-                      .where((t) => t.taskId == doc['taskID'])
-                      .toList();
+              final task = tasksData.tasks
+                  .where((t) => t.taskId == doc['taskID'])
+                  .toList();
+
               final dueDate = (doc['dueDate'] as Timestamp).toDate();
-              final remindMeBefore =
-                  doc.data().containsKey('remindMeBefore')
-                      ? (doc['remindMeBefore'] as Timestamp).toDate()
-                      : null;
+              final remindMeBefore = doc.data().containsKey('remindMeBefore')
+                  ? (doc['remindMeBefore'] as Timestamp).toDate()
+                  : null;
               final isSend = doc['isSend'];
-              final isNotiRemind =
-                  doc.data().containsKey('isNotiRemind')
-                      ? doc['isNotiRemind']
-                      : false;
+              final isNotiRemind = doc.data().containsKey('isNotiRemind')
+                  ? doc['isNotiRemind']
+                  : false;
               final notificationID = doc['notificationID'].toString();
               final recurringPattern =
                   doc.data().containsKey('recurringPattern')
-                      ? doc['recurringPattern'].toString().toLowerCase()
-                      : 'onetime';
+                  ? doc['recurringPattern'].toString().toLowerCase()
+                  : 'onetime';
 
               if (remindMeBefore != null &&
                   remindMeBefore.isBefore(now) &&
@@ -304,7 +283,7 @@ class _NavbarPageState extends State<NavbarPage>
                   Get.snackbar(
                     "It's almost time for your work.",
                     "You will be reminded before '${task.first.taskName}' starts.",
-                    duration: Duration(seconds: 4),
+                    duration: Duration(seconds: 3),
                   );
                 }
                 FirebaseFirestore.instance
@@ -317,6 +296,7 @@ class _NavbarPageState extends State<NavbarPage>
                       'isNotiRemindShow': true,
                       'dueDateOld': FieldValue.delete(),
                       'remindMeBeforeOld': FieldValue.delete(),
+                      'updatedAt': Timestamp.now(),
                     });
               }
               if (dueDate.isBefore(now) && !isSend) {
@@ -326,48 +306,43 @@ class _NavbarPageState extends State<NavbarPage>
                     showDetailPrivateOrGroup(task.first).isEmpty
                         ? "Today, ${formatDateDisplay(doc['dueDate'])}"
                         : "${showDetailPrivateOrGroup(task.first)}, ${formatDateDisplay(doc['dueDate'])}",
-                    titleText:
-                        task.first.priority.isEmpty
-                            ? Text(
-                              task.first.taskName,
-                              style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF007AFF),
-                              ),
-                            )
-                            : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color:
-                                        task.first.priority == '3'
-                                            ? Colors.red
-                                            : task.first.priority == '2'
-                                            ? Colors.orange
-                                            : Colors.green,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  task.first.taskName,
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF007AFF),
-                                  ),
-                                ),
-                              ],
+                    titleText: task.first.priority.isEmpty
+                        ? Text(
+                            task.first.taskName,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF007AFF),
                             ),
-                    duration: Duration(seconds: 4),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: task.first.priority == '3'
+                                      ? Colors.red
+                                      : task.first.priority == '2'
+                                      ? Colors.orange
+                                      : Colors.green,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                task.first.taskName,
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF007AFF),
+                                ),
+                              ),
+                            ],
+                          ),
+                    duration: Duration(seconds: 3),
                   );
                 }
                 _handleRecurringNotification(
@@ -382,6 +357,172 @@ class _NavbarPageState extends State<NavbarPage>
             }
           });
         });
+  }
+
+  void startNotificationListener() async {
+    final rawData = box.read('userDataAll');
+    if (rawData == null) return;
+    final tasksData = AllDataUserGetResponst.fromJson(rawData);
+    final userEmail = box.read('userProfile')['email'];
+
+    List<String> taskDetails = [];
+    for (var boardgroup in tasksData.boardgroup) {
+      final boardId = boardgroup.boardId.toString();
+
+      for (var boardgroup in tasksData.boardgroup) {
+        final boardId = boardgroup.boardId.toString();
+
+        final result = await FirebaseFirestore.instance
+            .collection('Boards')
+            .doc(boardId)
+            .collection('Tasks')
+            .get();
+
+        for (var docTasks in result.docs) {
+          taskDetails.add(docTasks['taskID'].toString());
+        }
+      }
+
+      for (var tasks in taskDetails) {
+        final taskId = tasks.toString();
+
+        FirebaseFirestore.instance
+            .collection('BoardTasks')
+            .doc(taskId)
+            .collection('Notifications')
+            .snapshots()
+            .listen((notificationSnapshot) async {
+              final now = DateTime.now();
+              for (var doc in notificationSnapshot.docs) {
+                final rawData = box.read('userDataAll');
+                final tasksData = AllDataUserGetResponst.fromJson(rawData);
+
+                final taskList = tasksData.tasks
+                    .where((t) => t.taskId == doc['taskID'])
+                    .toList();
+
+                // ตรวจสอบว่าพบ task หรือไม่
+                if (taskList.isEmpty) {
+                  continue;
+                }
+
+                final task = taskList.first;
+                final dueDate = (doc['dueDate'] as Timestamp).toDate();
+                final remindMeBefore = doc.data().containsKey('remindMeBefore')
+                    ? (doc['remindMeBefore'] as Timestamp).toDate()
+                    : null;
+                final isSend = doc['isSend'];
+                final isNotiRemind = doc.data().containsKey('isNotiRemind')
+                    ? doc['isNotiRemind']
+                    : false;
+                final notificationID = doc['notificationID'].toString();
+                final recurringPattern =
+                    doc.data().containsKey('recurringPattern')
+                    ? doc['recurringPattern'].toString().toLowerCase()
+                    : 'onetime';
+
+                // เตือนก่อนถึงเวลา
+                if (remindMeBefore != null &&
+                    remindMeBefore.isBefore(now) &&
+                    !isNotiRemind) {
+                  // แสดง snackbar เฉพาะเมื่อไม่ได้อยู่ในหน้า notification
+                  if (selectedIndex != 4) {
+                    Get.snackbar(
+                      "It's almost time for your work.",
+                      "You will be reminded before '${task.taskName}' starts.",
+                      duration: Duration(seconds: 3),
+                    );
+                  }
+
+                  // อัปเดต notification status
+                  var boardUsersSnapshot = await FirebaseFirestore.instance
+                      .collection('Boards')
+                      .doc(boardId)
+                      .collection('BoardUsers')
+                      .get();
+
+                  for (var boardUsersDoc in boardUsersSnapshot.docs) {
+                    FirebaseFirestore.instance
+                        .collection('BoardTasks')
+                        .doc(taskId)
+                        .collection('Notifications')
+                        .doc(notificationID)
+                        .update({
+                          'isNotiRemind': true,
+                          'isNotiRemindShow': true,
+                          'dueDateOld': FieldValue.delete(),
+                          'remindMeBeforeOld': FieldValue.delete(),
+                          'updatedAt': Timestamp.now(),
+                          'userNotifications.${boardUsersDoc['UserID'].toString()}.isShow':
+                              false,
+                          'userNotifications.${boardUsersDoc['UserID'].toString()}.isNotiRemindShow':
+                              true,
+                        });
+                  }
+                }
+
+                // ถึงเวลาแล้ว
+                if (dueDate.isBefore(now) && !isSend) {
+                  if (selectedIndex != 4) {
+                    Get.snackbar(
+                      task.taskName,
+                      showDetailPrivateOrGroup(task).isEmpty
+                          ? "Today, ${formatDateDisplay(doc['dueDate'])}"
+                          : "${showDetailPrivateOrGroup(task)}, ${formatDateDisplay(doc['dueDate'])}",
+                      titleText: task.priority.isEmpty
+                          ? Text(
+                              task.taskName,
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF007AFF),
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: task.priority == '3'
+                                        ? Colors.red
+                                        : task.priority == '2'
+                                        ? Colors.orange
+                                        : Colors.green,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  task.taskName,
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize!,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF007AFF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      duration: Duration(seconds: 3),
+                    );
+                  }
+
+                  _handleRecurringNotification2(
+                    notificationID: notificationID,
+                    dueDate: dueDate,
+                    remindMeBefore: remindMeBefore,
+                    recurringPattern: recurringPattern,
+                    userEmail: userEmail,
+                    taskID: int.parse(taskId),
+                    boardID: boardId,
+                  );
+                }
+              }
+            });
+      }
+    }
   }
 
   void _handleRecurringNotification({
@@ -408,15 +549,15 @@ class _NavbarPageState extends State<NavbarPage>
         'isShow': true,
         'dueDateOld': FieldValue.delete(),
         'remindMeBeforeOld': FieldValue.delete(),
+        'updatedAt': Timestamp.now(),
       });
       nextDueDate = dueDate;
     } else {
       // กรณี recurring - คำนวณ dueDate ครั้งถัดไป
       nextDueDate = _calculateNextDueDate(dueDate, recurringPattern);
-      nextRemindMeBefore =
-          remindMeBefore != null
-              ? _calculateNextRemindMeBefore(remindMeBefore, recurringPattern)
-              : null;
+      nextRemindMeBefore = remindMeBefore != null
+          ? _calculateNextRemindMeBefore(remindMeBefore, recurringPattern)
+          : null;
 
       if (nextDueDate != null) {
         // อัพเดท notification สำหรับรอบถัดไป
@@ -467,6 +608,124 @@ class _NavbarPageState extends State<NavbarPage>
         }),
       );
     }
+
+    fetchDataOnResume();
+  }
+
+  void _handleRecurringNotification2({
+    required String notificationID,
+    required DateTime dueDate,
+    required DateTime? remindMeBefore,
+    required String recurringPattern,
+    required String userEmail,
+    required int taskID,
+    required String boardID,
+  }) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('BoardTasks')
+        .doc(taskID.toString())
+        .collection('Notifications')
+        .doc(notificationID);
+
+    DateTime? nextDueDate;
+    DateTime? nextRemindMeBefore;
+
+    if (recurringPattern == 'onetime') {
+      // กรณี onetime - อัพเดทสถานะแล้วจบ
+      var boardUsersSnapshot = await FirebaseFirestore.instance
+          .collection('Boards')
+          .doc(boardID)
+          .collection('BoardUsers')
+          .get();
+
+      for (var boardUsersDoc in boardUsersSnapshot.docs) {
+        await docRef.update({
+          'isSend': true,
+          'isShow': true,
+          'dueDateOld': FieldValue.delete(),
+          'updatedAt': Timestamp.now(),
+          'remindMeBeforeOld': FieldValue.delete(),
+          'userNotifications.${boardUsersDoc['UserID'].toString()}.isShow':
+              true,
+        });
+      }
+      nextDueDate = dueDate;
+    } else {
+      // กรณี recurring - คำนวณ dueDate ครั้งถัดไป
+      nextDueDate = _calculateNextDueDate(dueDate, recurringPattern);
+      nextRemindMeBefore = remindMeBefore != null
+          ? _calculateNextRemindMeBefore(remindMeBefore, recurringPattern)
+          : null;
+
+      if (nextDueDate != null) {
+        // อัพเดท notification สำหรับรอบถัดไป
+        var boardUsersSnapshot = await FirebaseFirestore.instance
+            .collection('Boards')
+            .doc(boardID)
+            .collection('BoardUsers')
+            .get();
+
+        for (var boardUsersDoc in boardUsersSnapshot.docs) {
+          Map<String, dynamic> updateData = {
+            'dueDate': Timestamp.fromDate(nextDueDate),
+            'updatedAt': Timestamp.now(),
+            'dueDateOld': dueDate,
+            'remindMeBeforeOld': remindMeBefore,
+            'isSend': false,
+            'isShow': false,
+            'isNotiRemind': false,
+            'userNotifications.${boardUsersDoc['UserID'].toString()}.isShow':
+                false,
+            'userNotifications.${boardUsersDoc['UserID'].toString()}.isNotiRemindShow':
+                false,
+            'userNotifications.${boardUsersDoc['UserID'].toString()}.dueDateOld':
+                dueDate,
+            'userNotifications.${boardUsersDoc['UserID'].toString()}.remindMeBeforeOld':
+                remindMeBefore,
+          };
+
+          if (nextRemindMeBefore != null) {
+            updateData['remindMeBefore'] = Timestamp.fromDate(
+              nextRemindMeBefore,
+            );
+          }
+
+          await docRef.update(updateData);
+        }
+      }
+    }
+
+    url = await loadAPIEndpoint();
+    http.Response response;
+    response = await http.put(
+      Uri.parse("$url/notification/update/$taskID"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+      body: jsonEncode({
+        'due_date': nextDueDate?.toUtc().toIso8601String(),
+        'recurring_pattern': recurringPattern,
+        'is_send': recurringPattern == 'onetime' ? true : false,
+      }),
+    );
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      response = await http.put(
+        Uri.parse("$url/notification/update/$taskID"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+        body: jsonEncode({
+          'due_date': nextDueDate?.toUtc().toIso8601String(),
+          'recurring_pattern': recurringPattern,
+          'is_send': recurringPattern == 'onetime' ? true : false,
+        }),
+      );
+    }
+
+    fetchDataOnResume();
   }
 
   // ฟังก์ชันคำนวณ dueDate ครั้งถัดไป
@@ -542,8 +801,12 @@ class _NavbarPageState extends State<NavbarPage>
     final rawData = box.read('userDataAll');
     final data = AllDataUserGetResponst.fromJson(rawData);
 
-    bool isPrivate = (data.board).any((b) => b.boardId == task.boardId);
-    bool isGroup = (data.boardgroup).any((b) => b.boardId == task.boardId);
+    bool isPrivate = (data.board).any(
+      (b) => b.boardId.toString() == task.boardId.toString(),
+    );
+    bool isGroup = (data.boardgroup).any(
+      (b) => b.boardId.toString() == task.boardId.toString(),
+    );
     if (isPrivate) return 'Private';
     if (isGroup) return 'Group';
 
@@ -663,93 +926,93 @@ class _NavbarPageState extends State<NavbarPage>
     final userProfile = box.read('userProfile');
     final userLogin = box.read('userLogin');
     if (userProfile == null || userLogin == null) return;
+    final localdeviceName = userLogin['deviceName'];
 
     _timer2 = Timer.periodic(Duration(seconds: 5), (_) async {
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('usersLogin')
-              .doc(userProfile['email'])
-              .get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userProfile['email'])
+          .get();
+      if (snapshot.data() != null) {
+        final serverdeviceName = snapshot['deviceName'].toString();
 
-      final serverdeviceName = snapshot.data()?['deviceName'];
-      final localdeviceName = userLogin['deviceName'];
+        if (localdeviceName != null) {
+          if ((serverdeviceName != localdeviceName)) {
+            _timer2?.cancel();
 
-      if (serverdeviceName != null && localdeviceName != null) {
-        if (serverdeviceName != localdeviceName) {
-          _timer2?.cancel();
-
-          Get.defaultDialog(
-            title: '',
-            titlePadding: EdgeInsets.zero,
-            backgroundColor: Colors.white,
-            barrierDismissible: false,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.04,
-              vertical: MediaQuery.of(context).size.height * 0.02,
-            ),
-            content: WillPopScope(
-              onWillPop: () async => false,
-              child: Column(
-                children: [
-                  Image.asset(
-                    "assets/images/aleart/warning.png",
-                    height: MediaQuery.of(context).size.height * 0.1,
-                    fit: BoxFit.contain,
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                  Text(
-                    'Warning!!',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.headlineSmall!.fontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
+            Get.defaultDialog(
+              title: '',
+              titlePadding: EdgeInsets.zero,
+              backgroundColor: Colors.white,
+              barrierDismissible: false,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width * 0.04,
+                vertical: MediaQuery.of(context).size.height * 0.02,
+              ),
+              content: WillPopScope(
+                onWillPop: () async => false,
+                child: Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/warning.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
                     ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                    Text(
+                      'Warning!!',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                    Text(
+                      'Detected login from another device.',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () async {
+                    await box.remove('userProfile');
+                    await box.remove('userLogin');
+                    await googleSignIn.signOut();
+                    await FirebaseAuth.instance.signOut();
+                    await storage.deleteAll();
+                    Get.offAll(
+                      () => SplashPage(),
+                      arguments: {'fromLogout': true},
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(
+                      MediaQuery.of(context).size.width,
+                      MediaQuery.of(context).size.height * 0.05,
+                    ),
+                    backgroundColor: Color(0xFF007AFF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 1,
                   ),
-                  Text(
-                    'Detected login from another device.',
+                  child: Text(
+                    'Login',
                     style: TextStyle(
                       fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () async {
-                  await box.remove('userProfile');
-                  await box.remove('userLogin');
-                  await googleSignIn.signOut();
-                  await FirebaseAuth.instance.signOut();
-                  await storage.deleteAll();
-                  Get.offAll(
-                    () => SplashPage(),
-                    arguments: {'fromLogout': true},
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width,
-                    MediaQuery.of(context).size.height * 0.05,
-                  ),
-                  backgroundColor: Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 1,
-                ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
-                    color: Colors.white,
                   ),
                 ),
-              ),
-            ],
-          );
+              ],
+            );
+          }
         }
       }
     });
@@ -758,8 +1021,12 @@ class _NavbarPageState extends State<NavbarPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    timer?.cancel();
+    timer2?.cancel();
     _timer?.cancel();
     _timer2?.cancel();
+    timerGroup?.cancel();
+    timerGroup2?.cancel();
     super.dispose();
   }
 
@@ -774,8 +1041,6 @@ class _NavbarPageState extends State<NavbarPage>
     url = await loadAPIEndpoint();
     var oldUserDataAllJson = box.read('userDataAll');
     if (oldUserDataAllJson == null) return;
-
-    var oldUserDataAll = AllDataUserGetResponst.fromJson(oldUserDataAllJson);
 
     http.Response response;
     response = await http.get(
@@ -799,14 +1064,8 @@ class _NavbarPageState extends State<NavbarPage>
     if (response.statusCode == 200) {
       final newDataJson = allDataUserGetResponstFromJson(response.body);
 
-      if (!deepEquals(oldUserDataAll, newDataJson)) {
-        box.write('userDataAll', newDataJson.toJson());
-      }
+      box.write('userDataAll', newDataJson.toJson());
     }
-  }
-
-  bool deepEquals(AllDataUserGetResponst a, AllDataUserGetResponst b) {
-    return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
   }
 
   @override
@@ -919,7 +1178,16 @@ class _NavbarPageState extends State<NavbarPage>
         unselectedItemColor: Color(0xFF979595),
         type: BottomNavigationBarType.fixed,
       ),
-      body: pageOptions[selectedIndex],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF1F7FF), Color(0xFFF2F2F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: pageOptions[selectedIndex],
+      ),
     );
   }
 }

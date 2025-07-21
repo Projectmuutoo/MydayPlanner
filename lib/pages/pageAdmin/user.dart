@@ -64,7 +64,7 @@ class _UserPageState extends State<UserPage> {
 
   @override
   void dispose() {
-    stopRepeatingTask();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -74,10 +74,6 @@ class _UserPageState extends State<UserPage> {
       getLatestLogin();
       setState(() {});
     });
-  }
-
-  void stopRepeatingTask() {
-    _debounce?.cancel();
   }
 
   Future<http.Response> loadAllUser() async {
@@ -131,8 +127,9 @@ class _UserPageState extends State<UserPage> {
           Future.delayed(Duration.zero, () {
             if (!mounted) return;
             setState(() {
-              itemCount =
-                  responseGetAlluser.isEmpty ? 1 : responseGetAlluser.length;
+              itemCount = responseGetAlluser.isEmpty
+                  ? 1
+                  : responseGetAlluser.length;
             });
           });
         }
@@ -156,8 +153,7 @@ class _UserPageState extends State<UserPage> {
                                 'Users',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.headlineMedium!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                      Get.textTheme.headlineMedium!.fontSize!,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF007AFF),
                                 ),
@@ -169,9 +165,7 @@ class _UserPageState extends State<UserPage> {
                               Text(
                                 'Latest login now: $loginCount',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleLarge!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
                                 ),
@@ -191,72 +185,63 @@ class _UserPageState extends State<UserPage> {
                                 physics: AlwaysScrollableScrollPhysics(),
                                 controller: _latestLoginController,
                                 child: Column(
-                                  children:
-                                      isLoadings || showShimmer
-                                          ? List.generate(
-                                            itemCount,
-                                            (index) => Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.005,
+                                  children: isLoadings || showShimmer
+                                      ? List.generate(
+                                          itemCount,
+                                          (index) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: height * 0.005,
+                                            ),
+                                            child: Shimmer.fromColors(
+                                              baseColor: Color(0xFFF7F7F7),
+                                              highlightColor: Colors.grey[300]!,
+                                              child: Container(
+                                                width: width,
+                                                height: height * 0.048,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
                                               ),
-                                              child: Shimmer.fromColors(
-                                                baseColor: Color(0xFFF7F7F7),
-                                                highlightColor:
-                                                    Colors.grey[300]!,
+                                            ),
+                                          ),
+                                        )
+                                      : getLatestLogin().map((data) {
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: height * 0.005,
+                                              right: getLatestLogin().length > 3
+                                                  ? width * 0.02
+                                                  : 0.0,
+                                            ),
+                                            child: Material(
+                                              color: Color(0xFFF2F2F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {},
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                                 child: Container(
                                                   width: width,
-                                                  height: height * 0.048,
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.03,
+                                                    vertical: height * 0.01,
+                                                  ),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.white,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           8,
                                                         ),
                                                   ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                          : getLatestLogin().map((data) {
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.005,
-                                                right:
-                                                    getLatestLogin().length > 3
-                                                        ? width * 0.02
-                                                        : 0.0,
-                                              ),
-                                              child: Material(
-                                                color: Color(0xFFF2F2F6),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: InkWell(
-                                                  onTap: () {},
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    width: width,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              width * 0.03,
-                                                          vertical:
-                                                              height * 0.01,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        data['email'].length >
-                                                                25
-                                                            ? SizedBox(
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      data['email'].length > 25
+                                                          ? SizedBox(
                                                               height:
                                                                   height *
                                                                   0.025,
@@ -266,20 +251,16 @@ class _UserPageState extends State<UserPage> {
                                                                 text:
                                                                     data['email'],
                                                                 style: TextStyle(
-                                                                  fontSize:
-                                                                      Get
-                                                                          .textTheme
-                                                                          .titleSmall!
-                                                                          .fontSize! *
-                                                                      MediaQuery.of(
-                                                                        context,
-                                                                      ).textScaleFactor,
+                                                                  fontSize: Get
+                                                                      .textTheme
+                                                                      .titleSmall!
+                                                                      .fontSize!,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .normal,
                                                                 ),
-                                                                scrollAxis:
-                                                                    Axis.horizontal,
+                                                                scrollAxis: Axis
+                                                                    .horizontal,
                                                                 blankSpace:
                                                                     20.0,
                                                                 velocity: 30.0,
@@ -307,54 +288,45 @@ class _UserPageState extends State<UserPage> {
                                                                         .easeOut,
                                                               ),
                                                             )
-                                                            : Text(
+                                                          : Text(
                                                               data['email'],
                                                               style: TextStyle(
-                                                                fontSize:
-                                                                    Get
-                                                                        .textTheme
-                                                                        .titleSmall!
-                                                                        .fontSize! *
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).textScaleFactor,
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .titleSmall!
+                                                                    .fontSize!,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .normal,
                                                               ),
                                                             ),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              timeAgo(
-                                                                data['updated_at'],
-                                                              ),
-                                                              style: TextStyle(
-                                                                fontSize:
-                                                                    Get
-                                                                        .textTheme
-                                                                        .labelMedium!
-                                                                        .fontSize! *
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).textScaleFactor,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal,
-                                                                color:
-                                                                    Colors
-                                                                        .black54,
-                                                              ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            timeAgo(
+                                                              data['updated_at'],
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .labelMedium!
+                                                                  .fontSize!,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .normal,
+                                                              color: Colors
+                                                                  .black54,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ),
-                                            );
-                                          }).toList(),
+                                            ),
+                                          );
+                                        }).toList(),
                                 ),
                               ),
                             ),
@@ -365,9 +337,7 @@ class _UserPageState extends State<UserPage> {
                               Text(
                                 'Manage users',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleLarge!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
                                 ),
@@ -403,14 +373,10 @@ class _UserPageState extends State<UserPage> {
                                         Text(
                                           disableCount.toString(),
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .headlineMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .headlineMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black38,
                                           ),
@@ -422,14 +388,10 @@ class _UserPageState extends State<UserPage> {
                                         Text(
                                           'Disable',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54,
                                           ),
@@ -465,14 +427,10 @@ class _UserPageState extends State<UserPage> {
                                         Text(
                                           deleteCount.toString(),
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .headlineMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .headlineMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black38,
                                           ),
@@ -484,14 +442,10 @@ class _UserPageState extends State<UserPage> {
                                         Text(
                                           'Delete',
                                           style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54,
                                           ),
@@ -530,8 +484,7 @@ class _UserPageState extends State<UserPage> {
                                   'Manage',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleMedium!.fontSize!,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black,
                                   ),
@@ -554,8 +507,9 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> compareUsers() async {
-    final firestoreSnapshot =
-        await FirebaseFirestore.instance.collection('usersLogin').get();
+    final firestoreSnapshot = await FirebaseFirestore.instance
+        .collection('usersLogin')
+        .get();
 
     matchingLogins.clear();
     inactiveLogins.clear();
@@ -602,15 +556,14 @@ class _UserPageState extends State<UserPage> {
       }
     }
 
-    responseGetAlluser =
-        responseGetAlluser
-            .where(
-              (user) =>
-                  matchingLogins.any((m) => m['email'] == user.email) ||
-                  inactiveLogins.any((i) => i['email'] == user.email) ||
-                  deleteLogins.any((j) => j['email'] == user.email),
-            )
-            .toList();
+    responseGetAlluser = responseGetAlluser
+        .where(
+          (user) =>
+              matchingLogins.any((m) => m['email'] == user.email) ||
+              inactiveLogins.any((i) => i['email'] == user.email) ||
+              deleteLogins.any((j) => j['email'] == user.email),
+        )
+        .toList();
   }
 
   List<Map<String, dynamic>> getLatestLogin() {
@@ -722,9 +675,7 @@ class _UserPageState extends State<UserPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -732,9 +683,7 @@ class _UserPageState extends State<UserPage> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -775,9 +724,7 @@ class _UserPageState extends State<UserPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),

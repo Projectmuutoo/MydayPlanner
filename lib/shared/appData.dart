@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 
 class Appdata with ChangeNotifier {
-  KeepIdBoard idBoard = KeepIdBoard();
+  KeepIdBoard boardDatas = KeepIdBoard();
   KeepSubjectReportPageAdmin subject = KeepSubjectReportPageAdmin();
   ChangeMyProfileProvider changeMyProfileProvider = ChangeMyProfileProvider();
   KeepEmailToUserPageVerifyOTP keepEmailToUserPageVerifyOTP =
@@ -110,6 +110,7 @@ class KeepIdBoard extends ChangeNotifier {
   String _idBoard = '';
   String _boardName = '';
   String _boardToken = '';
+
   String get idBoard => _idBoard;
   String get boardName => _boardName;
   String get boardToken => _boardToken;

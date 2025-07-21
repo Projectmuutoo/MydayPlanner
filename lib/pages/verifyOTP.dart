@@ -100,6 +100,19 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
   }
 
   @override
+  void dispose() {
+    for (final node in focusNodes) {
+      node.dispose();
+    }
+
+    for (final controller in otpControllers) {
+      controller.dispose();
+    }
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     //horizontal left right
     double width = MediaQuery.of(context).size.width;
@@ -228,11 +241,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                   Text(
                                                     'Successfully!!',
                                                     style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .headlineSmall!
-                                                              .fontSize,
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .headlineSmall!
+                                                          .fontSize,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                       color: Color(0xFF007AFF),
@@ -241,11 +253,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                   Text(
                                                     'You have successfully confirmed your email',
                                                     style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleMedium!
+                                                          .fontSize,
                                                       color: Colors.black,
                                                     ),
                                                     textAlign: TextAlign.center,
@@ -282,11 +293,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                 child: Text(
                                                   'Ok!',
                                                   style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .titleLarge!
-                                                            .fontSize,
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleLarge!
+                                                        .fontSize,
                                                     color: Color(0xFF007AFF),
                                                   ),
                                                 ),
@@ -340,11 +350,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                   Text(
                                                     'Successfully!!',
                                                     style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .headlineSmall!
-                                                              .fontSize,
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .headlineSmall!
+                                                          .fontSize,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                       color: Color(0xFF007AFF),
@@ -353,11 +362,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                   Text(
                                                     'You have successfully confirmed your email',
                                                     style: TextStyle(
-                                                      fontSize:
-                                                          Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize,
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleMedium!
+                                                          .fontSize,
                                                       color: Colors.black,
                                                     ),
                                                     textAlign: TextAlign.center,
@@ -394,11 +402,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                                 child: Text(
                                                   'Ok!',
                                                   style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .titleLarge!
-                                                            .fontSize,
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleLarge!
+                                                        .fontSize,
                                                     color: Color(0xFF007AFF),
                                                   ),
                                                 ),
@@ -413,8 +420,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                         .requestFocus(); // กลับไปช่องก่อนหน้า
                                   }
                                 },
-                                style:
-                                    Theme.of(context).textTheme.headlineMedium,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium,
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 inputFormatters: [
@@ -443,10 +451,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color:
-                                          warning.isNotEmpty
-                                              ? Color(int.parse('0xff$warning'))
-                                              : Colors.grey,
+                                      color: warning.isNotEmpty
+                                          ? Color(int.parse('0xff$warning'))
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
@@ -570,11 +577,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                               Text(
                                                 'Successfully!!',
                                                 style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .headlineSmall!
-                                                          .fontSize,
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .headlineSmall!
+                                                      .fontSize,
                                                   fontWeight: FontWeight.w500,
                                                   color: Color(0xFF007AFF),
                                                 ),
@@ -582,11 +588,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                               Text(
                                                 'You have successfully confirmed your email',
                                                 style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize,
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize,
                                                   color: Colors.black,
                                                 ),
                                                 textAlign: TextAlign.center,
@@ -621,11 +626,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                             child: Text(
                                               'Ok!',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleLarge!
-                                                        .fontSize,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .titleLarge!
+                                                    .fontSize,
                                                 color: Color(0xFF007AFF),
                                               ),
                                             ),
@@ -678,11 +682,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                               Text(
                                                 'Successfully!!',
                                                 style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .headlineSmall!
-                                                          .fontSize,
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .headlineSmall!
+                                                      .fontSize,
                                                   fontWeight: FontWeight.w500,
                                                   color: Color(0xFF007AFF),
                                                 ),
@@ -690,11 +693,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                               Text(
                                                 'You have successfully confirmed your email',
                                                 style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize,
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize,
                                                   color: Colors.black,
                                                 ),
                                                 textAlign: TextAlign.center,
@@ -729,11 +731,10 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                                             child: Text(
                                               'Ok!',
                                               style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleLarge!
-                                                        .fontSize,
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .titleLarge!
+                                                    .fontSize,
                                                 color: Color(0xFF007AFF),
                                               ),
                                             ),
@@ -783,107 +784,103 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                       ),
                       SizedBox(height: height * 0.01),
                       InkWell(
-                        onTap:
-                            canResend
-                                ? () async {
-                                  countToRequest++;
+                        onTap: canResend
+                            ? () async {
+                                countToRequest++;
 
-                                  if (countToRequest > 3) {
-                                    Map<String, dynamic> data = {
-                                      'email':
-                                          appData
-                                              .keepEmailToUserPageVerifyOTP
-                                              .email,
-                                      'createdAt': Timestamp.fromDate(
-                                        DateTime.now(),
-                                      ),
-                                      'expiresAt': Timestamp.fromDate(
-                                        DateTime.now().add(
-                                          Duration(minutes: 10),
-                                        ),
-                                      ),
-                                    };
-                                    await FirebaseFirestore.instance
-                                        .collection('EmailBlocked')
-                                        .doc(
-                                          appData
-                                              .keepEmailToUserPageVerifyOTP
-                                              .email,
-                                        )
-                                        .collection('OTPRecords_verify')
-                                        .doc(
-                                          appData
-                                              .keepEmailToUserPageVerifyOTP
-                                              .email,
-                                        )
-                                        .set(data);
-
-                                    setState(() {
-                                      blockOTP = true;
-                                      stopBlockOTP = true;
-                                      canResend = false;
-                                      expiresAtEmail =
-                                          formatTimestampTo12HourTimeWithSeconds(
-                                            data['expiresAt'] as Timestamp,
-                                          );
-                                    });
-                                    return;
-                                  }
-
-                                  url = await loadAPIEndpoint();
-                                  loadingDialog();
-                                  var responseOtp = await http.post(
-                                    Uri.parse("$url/auth/resendotp"),
-                                    headers: {
-                                      "Content-Type":
-                                          "application/json; charset=utf-8",
-                                    },
-                                    body: reSendOtpPostRequestToJson(
-                                      ReSendOtpPostRequest(
-                                        email:
-                                            appData
-                                                .keepEmailToUserPageVerifyOTP
-                                                .email,
-                                        record: '1',
-                                      ),
+                                if (countToRequest > 3) {
+                                  Map<String, dynamic> data = {
+                                    'email': appData
+                                        .keepEmailToUserPageVerifyOTP
+                                        .email,
+                                    'createdAt': Timestamp.fromDate(
+                                      DateTime.now(),
                                     ),
-                                  );
+                                    'expiresAt': Timestamp.fromDate(
+                                      DateTime.now().add(Duration(minutes: 10)),
+                                    ),
+                                  };
+                                  await FirebaseFirestore.instance
+                                      .collection('EmailBlocked')
+                                      .doc(
+                                        appData
+                                            .keepEmailToUserPageVerifyOTP
+                                            .email,
+                                      )
+                                      .collection('OTPRecords_verify')
+                                      .doc(
+                                        appData
+                                            .keepEmailToUserPageVerifyOTP
+                                            .email,
+                                      )
+                                      .set(data);
 
-                                  if (responseOtp.statusCode == 200) {
-                                    Get.back();
-                                    ReSendOtpPostResponst sendOTPResponse =
-                                        reSendOtpPostResponstFromJson(
-                                          responseOtp.body,
+                                  setState(() {
+                                    blockOTP = true;
+                                    stopBlockOTP = true;
+                                    canResend = false;
+                                    expiresAtEmail =
+                                        formatTimestampTo12HourTimeWithSeconds(
+                                          data['expiresAt'] as Timestamp,
                                         );
-
-                                    if (timer!.isActive) {
-                                      timer!.cancel();
-                                    }
-
-                                    setState(() {
-                                      appData.keepEmailToUserPageVerifyOTP
-                                          .setRef(sendOTPResponse.ref);
-                                      hasStartedCountdown = true;
-                                      canResend = false; // ล็อกการกดชั่วคราว
-                                      warning = '';
-                                      for (var controller in otpControllers) {
-                                        controller.clear();
-                                      }
-                                    });
-                                    startCountdown(
-                                      appData.keepEmailToUserPageVerifyOTP.ref,
-                                    );
-                                    // รอ 30 วิค่อยให้กดได้อีก
-                                    Future.delayed(Duration(seconds: 30), () {
-                                      setState(() {
-                                        canResend = true;
-                                      });
-                                    });
-                                  } else {
-                                    Get.back();
-                                  }
+                                  });
+                                  return;
                                 }
-                                : null,
+
+                                url = await loadAPIEndpoint();
+                                loadingDialog();
+                                var responseOtp = await http.post(
+                                  Uri.parse("$url/auth/resendotp"),
+                                  headers: {
+                                    "Content-Type":
+                                        "application/json; charset=utf-8",
+                                  },
+                                  body: reSendOtpPostRequestToJson(
+                                    ReSendOtpPostRequest(
+                                      email: appData
+                                          .keepEmailToUserPageVerifyOTP
+                                          .email,
+                                      record: '1',
+                                    ),
+                                  ),
+                                );
+
+                                if (responseOtp.statusCode == 200) {
+                                  Get.back();
+                                  ReSendOtpPostResponst sendOTPResponse =
+                                      reSendOtpPostResponstFromJson(
+                                        responseOtp.body,
+                                      );
+
+                                  if (timer!.isActive) {
+                                    timer!.cancel();
+                                  }
+
+                                  setState(() {
+                                    appData.keepEmailToUserPageVerifyOTP.setRef(
+                                      sendOTPResponse.ref,
+                                    );
+                                    hasStartedCountdown = true;
+                                    canResend = false; // ล็อกการกดชั่วคราว
+                                    warning = '';
+                                    for (var controller in otpControllers) {
+                                      controller.clear();
+                                    }
+                                  });
+                                  startCountdown(
+                                    appData.keepEmailToUserPageVerifyOTP.ref,
+                                  );
+                                  // รอ 30 วิค่อยให้กดได้อีก
+                                  Future.delayed(Duration(seconds: 30), () {
+                                    setState(() {
+                                      canResend = true;
+                                    });
+                                  });
+                                } else {
+                                  Get.back();
+                                }
+                              }
+                            : null,
                         child: Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: width * 0.01,
@@ -894,10 +891,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                               fontSize: Get.textTheme.titleSmall!.fontSize,
                               fontWeight: FontWeight.normal,
                               color: canResend ? Colors.blue : Colors.grey,
-                              decoration:
-                                  canResend
-                                      ? TextDecoration.underline
-                                      : TextDecoration.none,
+                              decoration: canResend
+                                  ? TextDecoration.underline
+                                  : TextDecoration.none,
                             ),
                           ),
                         ),
@@ -945,10 +941,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
     String ref,
   ) async {
     url = await loadAPIEndpoint();
-    String enteredOTP =
-        otpControllers
-            .map((controller) => controller.text)
-            .join(); // รวมค่าที่ป้อน
+    String enteredOTP = otpControllers
+        .map((controller) => controller.text)
+        .join(); // รวมค่าที่ป้อน
     if (enteredOTP.length == 6) {
       // แสดง Loading Dialog
       loadingDialog();
@@ -960,16 +955,15 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
             email: email,
             ref: ref,
             otp: enteredOTP,
-            record:
-                appData.keepEmailToUserPageVerifyOTP.cases == 'verifyEmail'
-                    ? "1"
-                    : appData.keepEmailToUserPageVerifyOTP.cases ==
-                        'verifyEmail-Register'
-                    ? "1"
-                    : appData.keepEmailToUserPageVerifyOTP.cases ==
-                        'verifyEmail-Admin'
-                    ? "1"
-                    : "2",
+            record: appData.keepEmailToUserPageVerifyOTP.cases == 'verifyEmail'
+                ? "1"
+                : appData.keepEmailToUserPageVerifyOTP.cases ==
+                      'verifyEmail-Register'
+                ? "1"
+                : appData.keepEmailToUserPageVerifyOTP.cases ==
+                      'verifyEmail-Admin'
+                ? "1"
+                : "2",
           ),
         ),
       );
@@ -1058,8 +1052,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
               .doc(response.user.email)
               .update({
                 'deviceName': deviceName,
-                'changePassword':
-                    response.user.role == "admin" ? FieldValue.delete() : true,
+                'changePassword': response.user.role == "admin"
+                    ? FieldValue.delete()
+                    : true,
               });
 
           if (response.user.role != "admin") {
@@ -1139,14 +1134,11 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -1197,13 +1189,12 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
   }
 
   void startOtpExpiryTimer(String email) async {
-    DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance
-            .collection('EmailBlocked')
-            .doc(email)
-            .collection('OTPRecords_verify')
-            .doc(email)
-            .get();
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection('EmailBlocked')
+        .doc(email)
+        .collection('OTPRecords_verify')
+        .doc(email)
+        .get();
 
     var data = snapshot.data() as Map<String, dynamic>?;
     if (data == null || data['expiresAt'] == null) return;

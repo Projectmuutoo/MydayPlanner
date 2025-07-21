@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.1.1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.8.1
 
 dependencies:
   flutter:
@@ -40,6 +40,10 @@ dependencies:
   flutter_screenutil: ^5.9.3
   app_links: ^6.4.0
   rxdart: ^0.28.0
+  dotted_border: ^2.0.0
+  
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

@@ -116,8 +116,9 @@ class _ReportPageState extends State<ReportPage> {
 
       List<Map<String, dynamic>> adjustedReportData = [];
       aggregatedData.forEach((key, value) {
-        double adjustedPercentage =
-            totalCount > 0 ? (value['count'] / totalCount) * 100 : 0.0;
+        double adjustedPercentage = totalCount > 0
+            ? (value['count'] / totalCount) * 100
+            : 0.0;
         adjustedReportData.add({
           "Category": value['subject'],
           "subject": value['subject'],
@@ -148,8 +149,9 @@ class _ReportPageState extends State<ReportPage> {
           Future.delayed(Duration.zero, () {
             if (!mounted) return;
             setState(() {
-              itemCount =
-                  getLatestReports().isEmpty ? 3 : getLatestReports().length;
+              itemCount = getLatestReports().isEmpty
+                  ? 3
+                  : getLatestReports().length;
             });
           });
         }
@@ -168,9 +170,7 @@ class _ReportPageState extends State<ReportPage> {
                           Text(
                             'Report',
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.headlineMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.headlineMedium!.fontSize!,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF007AFF),
                             ),
@@ -184,177 +184,155 @@ class _ReportPageState extends State<ReportPage> {
                             children: [
                               SizedBox(
                                 height: height * 0.3,
-                                child:
-                                    isLoadings || showShimmer
-                                        ? TweenAnimationBuilder<double>(
-                                          tween: Tween(begin: 0, end: 1),
-                                          duration: Duration.zero,
-                                          curve: Curves.easeOutCubic,
-                                          builder: (context, value, child) {
-                                            return Shimmer.fromColors(
-                                              baseColor: Color(0xFFF7F7F7),
-                                              highlightColor: Colors.grey[300]!,
-                                              child: PieChart(
-                                                PieChartData(
-                                                  sections: List.generate(1, (
-                                                    index,
-                                                  ) {
-                                                    return PieChartSectionData(
-                                                      radius: 65,
-                                                      color: Colors.grey,
-                                                    );
-                                                  }),
-                                                  sectionsSpace: 0,
-                                                  centerSpaceRadius: 50,
-                                                ),
+                                child: isLoadings || showShimmer
+                                    ? TweenAnimationBuilder<double>(
+                                        tween: Tween(begin: 0, end: 1),
+                                        duration: Duration.zero,
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, value, child) {
+                                          return Shimmer.fromColors(
+                                            baseColor: Color(0xFFF7F7F7),
+                                            highlightColor: Colors.grey[300]!,
+                                            child: PieChart(
+                                              PieChartData(
+                                                sections: List.generate(1, (
+                                                  index,
+                                                ) {
+                                                  return PieChartSectionData(
+                                                    radius: 65,
+                                                    color: Colors.grey,
+                                                  );
+                                                }),
+                                                sectionsSpace: 0,
+                                                centerSpaceRadius: 50,
                                               ),
-                                            );
-                                          },
-                                        )
-                                        : SizedBox(
-                                          height: height * 0.3,
-                                          child:
-                                              reportData.isEmpty
-                                                  ? Center(
-                                                    child: Text(
-                                                      "No information",
-                                                      style: TextStyle(
-                                                        color: Colors.grey,
-                                                        fontSize:
-                                                            Get
-                                                                .textTheme
-                                                                .titleSmall!
-                                                                .fontSize! *
-                                                            MediaQuery.of(
-                                                              context,
-                                                            ).textScaleFactor,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  )
-                                                  : TweenAnimationBuilder<
-                                                    double
-                                                  >(
-                                                    tween: Tween(
-                                                      begin: 0,
-                                                      end: 1,
-                                                    ),
-                                                    duration: Duration(
-                                                      milliseconds: 500,
-                                                    ),
-                                                    curve: Curves.easeOutCubic,
-                                                    builder: (
-                                                      context,
-                                                      value,
-                                                      child,
-                                                    ) {
-                                                      double startDegree =
-                                                          270 +
-                                                          360 * (1 + value);
-                                                      return PieChart(
-                                                        PieChartData(
-                                                          sections: List.generate(reportData.length, (
-                                                            index,
-                                                          ) {
-                                                            final data =
-                                                                reportData[index];
-                                                            final isTouched =
-                                                                index ==
-                                                                touchedIndex;
-                                                            return PieChartSectionData(
-                                                              value:
-                                                                  data['percentage'] *
-                                                                  value,
-                                                              title:
-                                                                  (value == 1)
-                                                                      ? (isTouched
-                                                                          ? ''
-                                                                          : '${data['percentage']}%')
-                                                                      : '',
-                                                              badgeWidget:
-                                                                  isTouched
-                                                                      ? Column(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          Text(
-                                                                            data['Category'],
-                                                                            style: TextStyle(
-                                                                              fontSize:
-                                                                                  Get.textTheme.titleSmall!.fontSize! *
-                                                                                  MediaQuery.of(
-                                                                                    context,
-                                                                                  ).textScaleFactor,
-                                                                              fontWeight:
-                                                                                  FontWeight.bold,
-                                                                              color:
-                                                                                  Colors.black54,
-                                                                            ),
-                                                                            textAlign:
-                                                                                TextAlign.center,
-                                                                          ),
-                                                                          Text(
-                                                                            '${data['percentage']}%',
-                                                                            style: TextStyle(
-                                                                              fontSize:
-                                                                                  Get.textTheme.titleSmall!.fontSize! *
-                                                                                  MediaQuery.of(
-                                                                                    context,
-                                                                                  ).textScaleFactor,
-                                                                              fontWeight:
-                                                                                  FontWeight.w600,
-                                                                              color:
-                                                                                  Colors.black54,
-                                                                            ),
-                                                                            textAlign:
-                                                                                TextAlign.center,
-                                                                          ),
-                                                                        ],
-                                                                      )
-                                                                      : null,
-                                                              badgePositionPercentageOffset:
-                                                                  .50,
-                                                              titleStyle: TextStyle(
-                                                                fontSize:
-                                                                    isTouched
-                                                                        ? Get.textTheme.titleMedium!.fontSize! *
-                                                                            MediaQuery.of(
-                                                                              context,
-                                                                            ).textScaleFactor
-                                                                        : Get.textTheme.titleSmall!.fontSize! *
-                                                                            MediaQuery.of(
-                                                                              context,
-                                                                            ).textScaleFactor,
-                                                                fontWeight:
-                                                                    isTouched
-                                                                        ? FontWeight
-                                                                            .bold
-                                                                        : FontWeight
-                                                                            .w500,
-                                                                color:
-                                                                    isTouched
-                                                                        ? Colors
-                                                                            .black54
-                                                                        : Colors
-                                                                            .white,
-                                                              ),
-                                                              radius:
-                                                                  isTouched
-                                                                      ? 80
-                                                                      : 65,
-                                                              color: hexToColor(
-                                                                data['Color'],
-                                                              ),
-                                                            );
-                                                          }),
-                                                          sectionsSpace: 0,
-                                                          centerSpaceRadius: 50,
-                                                          startDegreeOffset:
-                                                              startDegree,
-                                                          pieTouchData: PieTouchData(
-                                                            enabled: true,
-                                                            touchCallback: (
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : SizedBox(
+                                        height: height * 0.3,
+                                        child: reportData.isEmpty
+                                            ? Center(
+                                                child: Text(
+                                                  "No information",
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleSmall!
+                                                        .fontSize!,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              )
+                                            : TweenAnimationBuilder<double>(
+                                                tween: Tween(begin: 0, end: 1),
+                                                duration: Duration(
+                                                  milliseconds: 500,
+                                                ),
+                                                curve: Curves.easeOutCubic,
+                                                builder: (context, value, child) {
+                                                  double startDegree =
+                                                      270 + 360 * (1 + value);
+                                                  return PieChart(
+                                                    PieChartData(
+                                                      sections: List.generate(reportData.length, (
+                                                        index,
+                                                      ) {
+                                                        final data =
+                                                            reportData[index];
+                                                        final isTouched =
+                                                            index ==
+                                                            touchedIndex;
+                                                        return PieChartSectionData(
+                                                          value:
+                                                              data['percentage'] *
+                                                              value,
+                                                          title: (value == 1)
+                                                              ? (isTouched
+                                                                    ? ''
+                                                                    : '${data['percentage']}%')
+                                                              : '',
+                                                          badgeWidget: isTouched
+                                                              ? Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  children: [
+                                                                    Text(
+                                                                      data['Category'],
+                                                                      style: TextStyle(
+                                                                        fontSize: Get
+                                                                            .textTheme
+                                                                            .titleSmall!
+                                                                            .fontSize!,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        color: Colors
+                                                                            .black54,
+                                                                      ),
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .center,
+                                                                    ),
+                                                                    Text(
+                                                                      '${data['percentage']}%',
+                                                                      style: TextStyle(
+                                                                        fontSize: Get
+                                                                            .textTheme
+                                                                            .titleSmall!
+                                                                            .fontSize!,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                        color: Colors
+                                                                            .black54,
+                                                                      ),
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .center,
+                                                                    ),
+                                                                  ],
+                                                                )
+                                                              : null,
+                                                          badgePositionPercentageOffset:
+                                                              .50,
+                                                          titleStyle: TextStyle(
+                                                            fontSize: isTouched
+                                                                ? Get
+                                                                      .textTheme
+                                                                      .titleMedium!
+                                                                      .fontSize!
+                                                                : Get
+                                                                      .textTheme
+                                                                      .titleSmall!
+                                                                      .fontSize!,
+                                                            fontWeight:
+                                                                isTouched
+                                                                ? FontWeight
+                                                                      .bold
+                                                                : FontWeight
+                                                                      .w500,
+                                                            color: isTouched
+                                                                ? Colors.black54
+                                                                : Colors.white,
+                                                          ),
+                                                          radius: isTouched
+                                                              ? 80
+                                                              : 65,
+                                                          color: hexToColor(
+                                                            data['Color'],
+                                                          ),
+                                                        );
+                                                      }),
+                                                      sectionsSpace: 0,
+                                                      centerSpaceRadius: 50,
+                                                      startDegreeOffset:
+                                                          startDegree,
+                                                      pieTouchData: PieTouchData(
+                                                        enabled: true,
+                                                        touchCallback:
+                                                            (
                                                               FlTouchEvent
                                                               event,
                                                               pieTouchResponse,
@@ -380,12 +358,12 @@ class _ReportPageState extends State<ReportPage> {
                                                                 });
                                                               }
                                                             },
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                      ),
                               ),
                               Row(
                                 children: [
@@ -393,10 +371,7 @@ class _ReportPageState extends State<ReportPage> {
                                     'Latest Reports',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleLarge!.fontSize!,
                                       fontWeight: FontWeight.w500,
                                       color: Colors.black,
                                     ),
@@ -404,131 +379,116 @@ class _ReportPageState extends State<ReportPage> {
                                 ],
                               ),
                               Column(
-                                children:
-                                    isLoadings || showShimmer
-                                        ? List.generate(
-                                          itemCount,
-                                          (index) => Padding(
-                                            padding: EdgeInsets.only(
-                                              bottom: height * 0.005,
-                                            ),
-                                            child: Shimmer.fromColors(
-                                              baseColor: Color(0xFFF7F7F7),
-                                              highlightColor: Colors.grey[300]!,
-                                              child: Container(
-                                                width: width,
-                                                height: height * 0.048,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
+                                children: isLoadings || showShimmer
+                                    ? List.generate(
+                                        itemCount,
+                                        (index) => Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom: height * 0.005,
+                                          ),
+                                          child: Shimmer.fromColors(
+                                            baseColor: Color(0xFFF7F7F7),
+                                            highlightColor: Colors.grey[300]!,
+                                            child: Container(
+                                              width: width,
+                                              height: height * 0.048,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                             ),
                                           ),
-                                        )
-                                        : [
-                                          ...getLatestReports().map((data) {
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: height * 0.005,
-                                              ),
-                                              child: Material(
-                                                color: Color(0xFFF2F2F6),
+                                        ),
+                                      )
+                                    : [
+                                        ...getLatestReports().map((data) {
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: height * 0.005,
+                                            ),
+                                            child: Material(
+                                              color: Color(0xFFF2F2F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  showModal(
+                                                    data['ReportID'],
+                                                    data['Category'],
+                                                    data['Email'],
+                                                    data['Name'],
+                                                    data['Description'],
+                                                    data['CreateAt'],
+                                                  );
+                                                  markAsRead(data);
+                                                },
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    showModal(
-                                                      data['ReportID'],
-                                                      data['Category'],
-                                                      data['Email'],
-                                                      data['Name'],
-                                                      data['Description'],
-                                                      data['CreateAt'],
-                                                    );
-                                                    markAsRead(data);
-                                                  },
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    width: width,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              width * 0.02,
-                                                          vertical:
-                                                              height * 0.01,
+                                                child: Container(
+                                                  width: width,
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.02,
+                                                    vertical: height * 0.01,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
                                                         ),
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
-                                                          data['Category'],
-                                                          style: TextStyle(
-                                                            fontSize:
-                                                                Get
-                                                                    .textTheme
-                                                                    .titleSmall!
-                                                                    .fontSize! *
-                                                                MediaQuery.of(
-                                                                  context,
-                                                                ).textScaleFactor,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .normal,
-                                                            color: hexToColor(
-                                                              data['Color'],
-                                                            ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        data['Category'],
+                                                        style: TextStyle(
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .titleSmall!
+                                                              .fontSize!,
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          color: hexToColor(
+                                                            data['Color'],
                                                           ),
                                                         ),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              timeAgo(
-                                                                data['CreateAt'],
-                                                              ),
-                                                              style: TextStyle(
-                                                                fontSize:
-                                                                    Get
-                                                                        .textTheme
-                                                                        .labelMedium!
-                                                                        .fontSize! *
-                                                                    MediaQuery.of(
-                                                                      context,
-                                                                    ).textScaleFactor,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal,
-                                                                color:
-                                                                    Colors
-                                                                        .black54,
-                                                              ),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            timeAgo(
+                                                              data['CreateAt'],
                                                             ),
-                                                            SvgPicture.string(
-                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                                              color:
-                                                                  Colors
-                                                                      .black54,
+                                                            style: TextStyle(
+                                                              fontSize: Get
+                                                                  .textTheme
+                                                                  .labelMedium!
+                                                                  .fontSize!,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .normal,
+                                                              color: Colors
+                                                                  .black54,
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
+                                                          ),
+                                                          SvgPicture.string(
+                                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                            color:
+                                                                Colors.black54,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ),
-                                            );
-                                          }),
-                                        ],
+                                            ),
+                                          );
+                                        }),
+                                      ],
                               ),
                               SizedBox(height: height * 0.01),
                               Row(
@@ -537,10 +497,7 @@ class _ReportPageState extends State<ReportPage> {
                                     'Subject',
                                     style: TextStyle(
                                       fontSize:
-                                          Get.textTheme.titleLarge!.fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                          Get.textTheme.titleLarge!.fontSize!,
                                       fontWeight: FontWeight.w500,
                                       color: Colors.black,
                                     ),
@@ -548,113 +505,99 @@ class _ReportPageState extends State<ReportPage> {
                                 ],
                               ),
                               Column(
-                                children:
-                                    isLoadings || showShimmer
-                                        ? [
-                                          GridView.builder(
-                                            shrinkWrap: true,
-                                            physics:
-                                                NeverScrollableScrollPhysics(),
-                                            itemCount: 6,
-                                            gridDelegate:
-                                                SliverGridDelegateWithFixedCrossAxisCount(
-                                                  crossAxisCount: 3,
-                                                  crossAxisSpacing:
-                                                      width * 0.02,
-                                                  mainAxisSpacing:
-                                                      height * 0.01,
-                                                  childAspectRatio: 1.3,
+                                children: isLoadings || showShimmer
+                                    ? [
+                                        GridView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          itemCount: 6,
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: 3,
+                                                crossAxisSpacing: width * 0.02,
+                                                mainAxisSpacing: height * 0.01,
+                                                childAspectRatio: 1.3,
+                                              ),
+                                          itemBuilder: (context, index) {
+                                            return Shimmer.fromColors(
+                                              baseColor: Color(0xFFF7F7F7),
+                                              highlightColor: Colors.grey[300]!,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
-                                            itemBuilder: (context, index) {
-                                              return Shimmer.fromColors(
-                                                baseColor: Color(0xFFF7F7F7),
-                                                highlightColor:
-                                                    Colors.grey[300]!,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ]
+                                    : [
+                                        GridView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          itemCount: reportData.length,
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: 3,
+                                                crossAxisSpacing: width * 0.02,
+                                                mainAxisSpacing: height * 0.01,
+                                                childAspectRatio: 1.3,
+                                              ),
+                                          itemBuilder: (context, index) {
+                                            final data = reportData[index];
+                                            return Material(
+                                              color: Color(0xFFF2F2F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  context
+                                                          .read<Appdata>()
+                                                          .subject
+                                                          .subjectReport =
+                                                      data['Category'];
+                                                  _navigateAndRefresh();
+                                                },
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                                 child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: width * 0.01,
+                                                  ),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.white,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           8,
                                                         ),
                                                   ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ]
-                                        : [
-                                          GridView.builder(
-                                            shrinkWrap: true,
-                                            physics:
-                                                NeverScrollableScrollPhysics(),
-                                            itemCount: reportData.length,
-                                            gridDelegate:
-                                                SliverGridDelegateWithFixedCrossAxisCount(
-                                                  crossAxisCount: 3,
-                                                  crossAxisSpacing:
-                                                      width * 0.02,
-                                                  mainAxisSpacing:
-                                                      height * 0.01,
-                                                  childAspectRatio: 1.3,
-                                                ),
-                                            itemBuilder: (context, index) {
-                                              final data = reportData[index];
-                                              return Material(
-                                                color: Color(0xFFF2F2F6),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: InkWell(
-                                                  onTap: () {
-                                                    context
-                                                            .read<Appdata>()
-                                                            .subject
-                                                            .subjectReport =
-                                                        data['Category'];
-                                                    _navigateAndRefresh();
-                                                  },
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              width * 0.01,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                    child: Center(
-                                                      child: Text(
-                                                        '${data['Category']}\n(${countSubject(data['subject'])})',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: TextStyle(
-                                                          fontSize:
-                                                              Get
-                                                                  .textTheme
-                                                                  .titleSmall!
-                                                                  .fontSize! *
-                                                              MediaQuery.of(
-                                                                context,
-                                                              ).textScaleFactor,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: hexToColor(
-                                                            data['Color'],
-                                                          ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${data['Category']}\n(${countSubject(data['subject'])})',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: TextStyle(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .titleSmall!
+                                                            .fontSize!,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: hexToColor(
+                                                          data['Color'],
                                                         ),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                              );
-                                            },
-                                          ),
-                                        ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
                               ),
                             ],
                           ),
@@ -690,225 +633,203 @@ class _ReportPageState extends State<ReportPage> {
             double width = MediaQuery.of(context).size.width;
             double height = MediaQuery.of(context).size.height;
 
-            return SafeArea(
+            return SizedBox(
+              height: height * 0.94,
               child: Padding(
                 padding: EdgeInsets.only(
                   right: width * 0.05,
                   left: width * 0.05,
-                  top: height * 0.02,
+                  top: height * 0.01,
                 ),
-                child: SizedBox(
-                  height: height * 0.9,
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              Get.back();
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.02,
-                                vertical: height * 0.01,
-                              ),
-                              child: SvgPicture.string(
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
-                                height: height * 0.03,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            subject,
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              SizedBox(width: width * 0.03),
-                              InkWell(
-                                onTap: () => deleteReport(id, subject),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.02,
-                                    vertical: height * 0.01,
-                                  ),
-                                  child: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
-                                    fit: BoxFit.contain,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: height * 0.01),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(left: width * 0.03),
-                            child: Text(
-                              'Send by',
-                              style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: width,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: width * 0.02,
-                          vertical: height * 0.005,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF2F2F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
+                child: Scaffold(
+                  body: SafeArea(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Name: ',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      name,
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
+                            InkWell(
+                              onTap: () {
+                                Get.back();
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.02,
+                                  vertical: height * 0.01,
                                 ),
-                                SizedBox(height: height * 0.005),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Email: ',
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                child: SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
+                                  height: height * 0.03,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              subject,
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleLarge!.fontSize!,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                SizedBox(width: width * 0.03),
+                                InkWell(
+                                  onTap: () => deleteReport(id, subject),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.02,
+                                      vertical: height * 0.01,
                                     ),
-                                    Text(
-                                      email,
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        fontWeight: FontWeight.normal,
-                                      ),
+                                    child: SvgPicture.string(
+                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
+                                      fit: BoxFit.contain,
+                                      color: Colors.red,
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                      ),
-                      SizedBox(height: height * 0.01),
-                      Row(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.only(left: width * 0.03),
-                            child: Text(
-                              'Detail',
-                              style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
-                                fontWeight: FontWeight.w600,
+                        SizedBox(height: height * 0.01),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(left: width * 0.03),
+                              child: Text(
+                                'Send by',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                        Container(
+                          width: width,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.02,
+                            vertical: height * 0.005,
                           ),
-                        ],
-                      ),
-                      Container(
-                        width: width,
-                        height: height * 0.5,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: width * 0.03,
-                          vertical: height * 0.01,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF2F2F6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Name: ',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: height * 0.005),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Email: ',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        email,
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF2F2F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: SingleChildScrollView(
-                          child: Text(
-                            detail,
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.normal,
+                        SizedBox(height: height * 0.01),
+                        Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(left: width * 0.03),
+                              child: Text(
+                                'Detail',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                            softWrap: true,
-                          ),
+                          ],
                         ),
-                      ),
-                      SizedBox(height: height * 0.01),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            formatFullDateTime(timestamp),
-                            style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.labelMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
-                              fontWeight: FontWeight.w500,
+                        Container(
+                          width: width,
+                          height: height * 0.5,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: width * 0.03,
+                            vertical: height * 0.01,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF2F2F6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SingleChildScrollView(
+                            child: Text(
+                              detail,
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                              ),
+                              softWrap: true,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        SizedBox(height: height * 0.01),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              formatFullDateTime(timestamp),
+                              style: TextStyle(
+                                fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1017,14 +938,11 @@ class _ReportPageState extends State<ReportPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -1065,9 +983,7 @@ class _ReportPageState extends State<ReportPage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -1075,9 +991,7 @@ class _ReportPageState extends State<ReportPage> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1118,9 +1032,7 @@ class _ReportPageState extends State<ReportPage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),

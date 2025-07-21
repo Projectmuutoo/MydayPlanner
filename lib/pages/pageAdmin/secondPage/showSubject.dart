@@ -120,20 +120,20 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
             setState(() {
               itemCount =
                   reportData
-                          .where(
-                            (item) =>
-                                item['Category'] ==
-                                context.read<Appdata>().subject.subjectReport,
-                          )
-                          .isEmpty
-                      ? 1
-                      : reportData
-                          .where(
-                            (item) =>
-                                item['Category'] ==
-                                context.read<Appdata>().subject.subjectReport,
-                          )
-                          .length;
+                      .where(
+                        (item) =>
+                            item['Category'] ==
+                            context.read<Appdata>().subject.subjectReport,
+                      )
+                      .isEmpty
+                  ? 1
+                  : reportData
+                        .where(
+                          (item) =>
+                              item['Category'] ==
+                              context.read<Appdata>().subject.subjectReport,
+                        )
+                        .length;
             });
           });
         }
@@ -172,9 +172,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
               title: Text(
                 '${context.read<Appdata>().subject.subjectReport} (${countSubject(context.read<Appdata>().subject.subjectReport)})',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleMedium!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -208,177 +206,159 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           interactive: true,
                           child: SingleChildScrollView(
                             child: Column(
-                              children:
-                                  isLoadings || showShimmer
-                                      ? List.generate(
-                                        itemCount,
-                                        (index) => Padding(
-                                          padding: EdgeInsets.only(
-                                            bottom: height * 0.01,
-                                          ),
-                                          child: Shimmer.fromColors(
-                                            baseColor: Color(0xFFF7F7F7),
-                                            highlightColor: Colors.grey[300]!,
-                                            child: Container(
-                                              width: width,
-                                              height: height * 0.065,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
+                              children: isLoadings || showShimmer
+                                  ? List.generate(
+                                      itemCount,
+                                      (index) => Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: height * 0.01,
+                                        ),
+                                        child: Shimmer.fromColors(
+                                          baseColor: Color(0xFFF7F7F7),
+                                          highlightColor: Colors.grey[300]!,
+                                          child: Container(
+                                            width: width,
+                                            height: height * 0.065,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                           ),
                                         ),
-                                      )
-                                      : [
-                                        ...reportData
-                                            .where(
-                                              (item) =>
-                                                  item['Category'] ==
-                                                  context
-                                                      .read<Appdata>()
-                                                      .subject
-                                                      .subjectReport,
-                                            )
-                                            .map((item) {
-                                              bool isRead = readReportNos
-                                                  .contains(
-                                                    'ID: ${item['ReportID']}',
-                                                  );
-                                              return Padding(
-                                                padding: EdgeInsets.only(
-                                                  bottom: height * 0.01,
-                                                ),
-                                                child: Material(
-                                                  color:
-                                                      isRead
-                                                          ? Colors.grey[300]
-                                                          : Color(0xFFF2F2F6),
+                                      ),
+                                    )
+                                  : [
+                                      ...reportData
+                                          .where(
+                                            (item) =>
+                                                item['Category'] ==
+                                                context
+                                                    .read<Appdata>()
+                                                    .subject
+                                                    .subjectReport,
+                                          )
+                                          .map((item) {
+                                            bool isRead = readReportNos
+                                                .contains(
+                                                  'ID: ${item['ReportID']}',
+                                                );
+                                            return Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: height * 0.01,
+                                              ),
+                                              child: Material(
+                                                color: isRead
+                                                    ? Colors.grey[300]
+                                                    : Color(0xFFF2F2F6),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: InkWell(
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                  child: InkWell(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
+                                                  onTap: () {
+                                                    showModal(
+                                                      item['ReportID'],
+                                                      item['Category'],
+                                                      item['Email'],
+                                                      item['Name'],
+                                                      item['Description'],
+                                                      item['CreateAt'],
+                                                    );
+                                                    markAsRead(item);
+                                                  },
+                                                  child: Container(
+                                                    width: width,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal:
+                                                              width * 0.025,
+                                                          vertical:
+                                                              height * 0.005,
                                                         ),
-                                                    onTap: () {
-                                                      showModal(
-                                                        item['ReportID'],
-                                                        item['Category'],
-                                                        item['Email'],
-                                                        item['Name'],
-                                                        item['Description'],
-                                                        item['CreateAt'],
-                                                      );
-                                                      markAsRead(item);
-                                                    },
-                                                    child: Container(
-                                                      width: width,
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal:
-                                                                width * 0.025,
-                                                            vertical:
-                                                                height * 0.005,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
                                                           ),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
+                                                    ),
+                                                    child: Column(
+                                                      children: [
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Row(
+                                                              children: [
+                                                                Text(
+                                                                  item['Category'],
+                                                                  style: TextStyle(
+                                                                    fontSize: Get
+                                                                        .textTheme
+                                                                        .titleMedium!
+                                                                        .fontSize!,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                                ),
+                                                                SvgPicture.string(
+                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                                                  color: Colors
+                                                                      .black54,
+                                                                ),
+                                                              ],
                                                             ),
-                                                      ),
-                                                      child: Column(
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    item['Category'],
-                                                                    style: TextStyle(
-                                                                      fontSize:
-                                                                          Get
-                                                                              .textTheme
-                                                                              .titleMedium!
-                                                                              .fontSize! *
-                                                                          MediaQuery.of(
-                                                                            context,
-                                                                          ).textScaleFactor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w500,
-                                                                    ),
-                                                                  ),
-                                                                  SvgPicture.string(
-                                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                                                    color:
-                                                                        Colors
-                                                                            .black54,
-                                                                  ),
-                                                                ],
+                                                            Text(
+                                                              timeAgo(
+                                                                item['CreateAt'],
                                                               ),
-                                                              Text(
-                                                                timeAgo(
-                                                                  item['CreateAt'],
-                                                                ),
-                                                                style: TextStyle(
-                                                                  fontSize:
-                                                                      Get
-                                                                          .textTheme
-                                                                          .labelMedium!
-                                                                          .fontSize! *
-                                                                      MediaQuery.of(
-                                                                        context,
-                                                                      ).textScaleFactor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .normal,
-                                                                  color:
-                                                                      Colors
-                                                                          .black54,
-                                                                ),
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .labelMedium!
+                                                                    .fontSize!,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal,
+                                                                color: Colors
+                                                                    .black54,
                                                               ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              SizedBox(
-                                                                width:
-                                                                    width * 0.1,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            SizedBox(
+                                                              width:
+                                                                  width * 0.1,
+                                                            ),
+                                                            Text(
+                                                              item['Email'],
+                                                              style: TextStyle(
+                                                                fontSize: Get
+                                                                    .textTheme
+                                                                    .labelMedium!
+                                                                    .fontSize!,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
                                                               ),
-                                                              Text(
-                                                                item['Email'],
-                                                                style: TextStyle(
-                                                                  fontSize:
-                                                                      Get
-                                                                          .textTheme
-                                                                          .labelMedium!
-                                                                          .fontSize! *
-                                                                      MediaQuery.of(
-                                                                        context,
-                                                                      ).textScaleFactor,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ),
-                                              );
-                                            }),
-                                      ],
+                                              ),
+                                            );
+                                          }),
+                                    ],
                             ),
                           ),
                         ),
@@ -446,9 +426,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           Text(
                             subject,
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -481,9 +459,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             child: Text(
                               'Send by',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -511,13 +487,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       'Name: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
+                                            Get.textTheme.titleSmall!.fontSize!,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -525,13 +495,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       name,
                                       style: TextStyle(
                                         fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
+                                            Get.textTheme.titleSmall!.fontSize!,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -544,13 +508,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       'Email: ',
                                       style: TextStyle(
                                         fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
+                                            Get.textTheme.titleSmall!.fontSize!,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -558,13 +516,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                       email,
                                       style: TextStyle(
                                         fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleSmall!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
+                                            Get.textTheme.titleSmall!.fontSize!,
                                         fontWeight: FontWeight.normal,
                                       ),
                                     ),
@@ -583,9 +535,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             child: Text(
                               'Detail',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -607,9 +557,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           child: Text(
                             detail,
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                               fontWeight: FontWeight.normal,
                             ),
                             softWrap: true,
@@ -623,9 +571,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                           Text(
                             formatFullDateTime(timestamp),
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.labelMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.labelMedium!.fontSize!,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -837,12 +783,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     final subjects = reportData.map((e) => e['Category']).toSet();
 
     for (var subject in subjects) {
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('readReport')
-              .doc(box.read('userProfile')['email'].toString())
-              .collection(subject)
-              .get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('readReport')
+          .doc(box.read('userProfile')['email'].toString())
+          .collection(subject)
+          .get();
 
       for (var doc in snapshot.docs) {
         readNos.add(doc.id);
@@ -941,14 +886,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 

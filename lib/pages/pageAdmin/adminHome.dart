@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -138,9 +137,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
                           Text(
                             'Mydayplanner',
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.headlineMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.headlineMedium!.fontSize!,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF007AFF),
                             ),
@@ -172,160 +169,150 @@ class _AdminhomePageState extends State<AdminhomePage> {
                               children: [
                                 isLoadings || showShimmer
                                     ? Shimmer.fromColors(
-                                      baseColor: Color(0xFFF7F7F7),
-                                      highlightColor: Colors.grey[300]!,
-                                      child: Container(
+                                        baseColor: Color(0xFFF7F7F7),
+                                        highlightColor: Colors.grey[300]!,
+                                        child: Container(
+                                          width: width * 0.44,
+                                          height: height * 0.135,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
                                         width: width * 0.44,
-                                        height: height * 0.135,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.015,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: Color(0xFFF2F2F6),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
-                                      ),
-                                    )
-                                    : Container(
-                                      width: width * 0.44,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.015,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF2F2F6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SvgPicture.string(
-                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
-                                                width: width * 0.04,
-                                                height: height * 0.04,
-                                                fit: BoxFit.contain,
-                                                color: Color(0xFF007AFF),
-                                              ),
-                                              Text(
-                                                loginCount.toString(),
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .headlineMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black38,
+                                        child: Column(
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
+                                                  width: width * 0.04,
+                                                  height: height * 0.04,
+                                                  fit: BoxFit.contain,
+                                                  color: Color(0xFF007AFF),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                'Latest login now',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
+                                                Text(
+                                                  loginCount.toString(),
+                                                  style: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .headlineMedium!
+                                                        .fontSize!,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black38,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Latest login now',
+                                                  style: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize!,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                 isLoadings || showShimmer
                                     ? Shimmer.fromColors(
-                                      baseColor: Color(0xFFF7F7F7),
-                                      highlightColor: Colors.grey[300]!,
-                                      child: Container(
+                                        baseColor: Color(0xFFF7F7F7),
+                                        highlightColor: Colors.grey[300]!,
+                                        child: Container(
+                                          width: width * 0.44,
+                                          height: height * 0.135,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
                                         width: width * 0.44,
-                                        height: height * 0.135,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.015,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: Color(0xFFF2F2F6),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
-                                      ),
-                                    )
-                                    : Container(
-                                      width: width * 0.44,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.015,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF2F2F6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SvgPicture.string(
-                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                width: width * 0.04,
-                                                height: height * 0.04,
-                                                fit: BoxFit.contain,
-                                                color: Colors.green,
-                                              ),
-                                              Text(
-                                                itemCount == 1
-                                                    ? '${itemCount - 1}'
-                                                    : '${allUsers.where((user) => user.isActive != '2').toList().length - 1}',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .headlineMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black38,
+                                        child: Column(
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                SvgPicture.string(
+                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                  width: width * 0.04,
+                                                  height: height * 0.04,
+                                                  fit: BoxFit.contain,
+                                                  color: Colors.green,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                'Total User',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
+                                                Text(
+                                                  itemCount == 1
+                                                      ? '${itemCount - 1}'
+                                                      : '${allUsers.where((user) => user.isActive != '2').toList().length - 1}',
+                                                  style: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .headlineMedium!
+                                                        .fontSize!,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black38,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Total User',
+                                                  style: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize!,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                               ],
                             ),
                             SizedBox(height: height * 0.01),
@@ -334,108 +321,31 @@ class _AdminhomePageState extends State<AdminhomePage> {
                               children: [
                                 isLoadings || showShimmer
                                     ? Shimmer.fromColors(
-                                      baseColor: Color(0xFFF7F7F7),
-                                      highlightColor: Colors.grey[300]!,
-                                      child: Container(
+                                        baseColor: Color(0xFFF7F7F7),
+                                        highlightColor: Colors.grey[300]!,
+                                        child: Container(
+                                          width: width * 0.44,
+                                          height: height * 0.135,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
                                         width: width * 0.44,
-                                        height: height * 0.135,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.015,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: Color(0xFFF2F2F6),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
-                                      ),
-                                    )
-                                    : Container(
-                                      width: width * 0.44,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.015,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF2F2F6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              SvgPicture.string(
-                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m20 8-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM9 19H7v-9h2v9zm4 0h-2v-6h2v6zm4 0h-2v-3h2v3zM14 9h-1V4l5 5h-4z"></path></svg>',
-                                                width: width * 0.04,
-                                                height: height * 0.04,
-                                                fit: BoxFit.contain,
-                                                color: Colors.red,
-                                              ),
-                                              Text(
-                                                totalReportCount.toString(),
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .headlineMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black38,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                currentView == 'day'
-                                                    ? 'Daily Report'
-                                                    : currentView == 'week'
-                                                    ? 'Weekly Report'
-                                                    : currentView == 'month'
-                                                    ? 'Monthly Report'
-                                                    : 'Total Report',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleMedium!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                isLoadings || showShimmer
-                                    ? Container(
-                                      width: width * 0.44,
-                                      height: height * 0.135,
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF2F2F6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    )
-                                    : Container(
-                                      width: width * 0.44,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.03,
-                                        vertical: height * 0.015,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF2F2F6),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Opacity(
-                                        opacity: 0,
                                         child: Column(
                                           children: [
                                             Row(
@@ -453,14 +363,10 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                                 Text(
                                                   totalReportCount.toString(),
                                                   style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .headlineMedium!
-                                                            .fontSize! *
-                                                        MediaQuery.of(
-                                                          context,
-                                                        ).textScaleFactor,
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .headlineMedium!
+                                                        .fontSize!,
                                                     fontWeight: FontWeight.w500,
                                                     color: Colors.black38,
                                                   ),
@@ -470,16 +376,18 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  "Report",
+                                                  currentView == 'day'
+                                                      ? 'Daily Report'
+                                                      : currentView == 'week'
+                                                      ? 'Weekly Report'
+                                                      : currentView == 'month'
+                                                      ? 'Monthly Report'
+                                                      : 'Total Report',
                                                   style: TextStyle(
-                                                    fontSize:
-                                                        Get
-                                                            .textTheme
-                                                            .titleMedium!
-                                                            .fontSize! *
-                                                        MediaQuery.of(
-                                                          context,
-                                                        ).textScaleFactor,
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleMedium!
+                                                        .fontSize!,
                                                     fontWeight: FontWeight.w500,
                                                     color: Colors.black54,
                                                   ),
@@ -489,7 +397,79 @@ class _AdminhomePageState extends State<AdminhomePage> {
                                           ],
                                         ),
                                       ),
-                                    ),
+                                isLoadings || showShimmer
+                                    ? Container(
+                                        width: width * 0.44,
+                                        height: height * 0.135,
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFF2F2F6),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        width: width * 0.44,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.03,
+                                          vertical: height * 0.015,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFF2F2F6),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Opacity(
+                                          opacity: 0,
+                                          child: Column(
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  SvgPicture.string(
+                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m20 8-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM9 19H7v-9h2v9zm4 0h-2v-6h2v6zm4 0h-2v-3h2v3zM14 9h-1V4l5 5h-4z"></path></svg>',
+                                                    width: width * 0.04,
+                                                    height: height * 0.04,
+                                                    fit: BoxFit.contain,
+                                                    color: Colors.red,
+                                                  ),
+                                                  Text(
+                                                    totalReportCount.toString(),
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .headlineMedium!
+                                                          .fontSize!,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Colors.black38,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    "Report",
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleMedium!
+                                                          .fontSize!,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                               ],
                             ),
                             SizedBox(height: height * 0.02),
@@ -1094,8 +1074,9 @@ class _AdminhomePageState extends State<AdminhomePage> {
   }
 
   Future<void> compareUsers() async {
-    final firestoreSnapshot =
-        await FirebaseFirestore.instance.collection('usersLogin').get();
+    final firestoreSnapshot = await FirebaseFirestore.instance
+        .collection('usersLogin')
+        .get();
 
     matchingLogins.clear();
     loginCount = 0;
@@ -1119,12 +1100,9 @@ class _AdminhomePageState extends State<AdminhomePage> {
       }
     }
 
-    responseGetAlluser =
-        responseGetAlluser
-            .where(
-              (user) => matchingLogins.any((m) => m['email'] == user.email),
-            )
-            .toList();
+    responseGetAlluser = responseGetAlluser
+        .where((user) => matchingLogins.any((m) => m['email'] == user.email))
+        .toList();
   }
 
   List<BarChartGroupData> getBarChartData(String view) {
@@ -1425,14 +1403,11 @@ class _AdminhomePageState extends State<AdminhomePage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -1560,9 +1535,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
               Text(
                 'Waring!!',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Colors.red,
                 ),
@@ -1570,9 +1543,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
               Text(
                 'The system has expired. Please log in again.',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1613,9 +1584,7 @@ class _AdminhomePageState extends State<AdminhomePage> {
             child: Text(
               'Login',
               style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
                 color: Colors.white,
               ),
             ),

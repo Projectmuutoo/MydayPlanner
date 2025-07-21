@@ -95,6 +95,22 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    emailConfirmOtpCtl.dispose();
+    nameFocusNode.dispose();
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
+    confirmPasswordFocusNode.dispose();
+    emailConfirmOtpFocusNode.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     //horizontal left right
     double width = MediaQuery.of(context).size.width;
@@ -240,14 +256,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                     Text(
                                       'back',
                                       style: TextStyle(
-                                        fontSize:
-                                            Get
-                                                .textTheme
-                                                .titleMedium!
-                                                .fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
+                                        fontSize: Get
+                                            .textTheme
+                                            .titleMedium!
+                                            .fontSize!,
                                         fontWeight: FontWeight.normal,
                                         color: Color(0x99000000),
                                       ),
@@ -277,14 +289,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                   Text(
                                     'Register',
                                     style: TextStyle(
-                                      fontSize:
-                                          Get
-                                              .textTheme
-                                              .headlineMedium!
-                                              .fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                      fontSize: Get
+                                          .textTheme
+                                          .headlineMedium!
+                                          .fontSize!,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -297,8 +305,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   'Please register to login.',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleMedium!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -318,9 +325,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Name',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleSmall!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -336,17 +341,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.text,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                           ),
                           decoration: InputDecoration(
                             counterText: '',
                             hintText: isTyping ? '' : 'Enter your name',
                             hintStyle: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                               fontWeight: FontWeight.normal,
                               color: colorAlearName,
                             ),
@@ -388,8 +389,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearName,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleSmall!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearName,
                                   ),
@@ -404,9 +404,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Email',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleSmall!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -422,17 +420,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.emailAddress,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                           ),
                           decoration: InputDecoration(
-                            hintText:
-                                isTyping ? '' : 'Enter your email address',
+                            hintText: isTyping
+                                ? ''
+                                : 'Enter your email address',
                             hintStyle: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                               fontWeight: FontWeight.normal,
                               color: colorAlearEmail,
                             ),
@@ -443,19 +438,17 @@ class _RegisterPageState extends State<RegisterPage> {
                                 color: Color(0xff7B7B7B),
                               ),
                             ),
-                            suffixIcon:
-                                alearIconEmail.isNotEmpty
-                                    ? IconButton(
-                                      onPressed: null,
-                                      icon: SvgPicture.string(
-                                        alearIconEmail,
-                                        color:
-                                            colorAlearEmail == Colors.red
-                                                ? Colors.red
-                                                : Colors.green,
-                                      ),
-                                    )
-                                    : null,
+                            suffixIcon: alearIconEmail.isNotEmpty
+                                ? IconButton(
+                                    onPressed: null,
+                                    icon: SvgPicture.string(
+                                      alearIconEmail,
+                                      color: colorAlearEmail == Colors.red
+                                          ? Colors.red
+                                          : Colors.green,
+                                    ),
+                                  )
+                                : null,
                             constraints: BoxConstraints(
                               maxHeight: height * 0.05,
                             ),
@@ -487,8 +480,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearEmail,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleSmall!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearEmail,
                                   ),
@@ -503,9 +495,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Password',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleSmall!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -519,16 +509,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           obscureText: !isCheckedPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                           ),
                           decoration: InputDecoration(
                             hintText: isTyping ? '' : 'Enter your password',
                             hintStyle: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                               fontWeight: FontWeight.normal,
                               color: colorAlearPassword,
                             ),
@@ -561,16 +547,18 @@ class _RegisterPageState extends State<RegisterPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                width:
-                                    colorAlearPassword == Colors.red ? 1 : 0.5,
+                                width: colorAlearPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
                                 color: colorAlearPassword,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                width:
-                                    colorAlearPassword == Colors.red ? 1 : 0.5,
+                                width: colorAlearPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
                                 color: colorAlearPassword,
                               ),
                             ),
@@ -585,8 +573,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearPassword,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleSmall!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearPassword,
                                   ),
@@ -601,9 +588,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: Text(
                                 'Confirm password',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleSmall!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -617,17 +602,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           obscureText: !isCheckedConfirmPassword,
                           cursorColor: Colors.black,
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                           ),
                           decoration: InputDecoration(
-                            hintText:
-                                isTyping ? '' : 'Enter your confirm password',
+                            hintText: isTyping
+                                ? ''
+                                : 'Enter your confirm password',
                             hintStyle: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                               fontWeight: FontWeight.normal,
                               color: colorAlearConfirmPassword,
                             ),
@@ -661,20 +643,18 @@ class _RegisterPageState extends State<RegisterPage> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                width:
-                                    colorAlearConfirmPassword == Colors.red
-                                        ? 1
-                                        : 0.5,
+                                width: colorAlearConfirmPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
                                 color: colorAlearConfirmPassword,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
-                                width:
-                                    colorAlearConfirmPassword == Colors.red
-                                        ? 1
-                                        : 0.5,
+                                width: colorAlearConfirmPassword == Colors.red
+                                    ? 1
+                                    : 0.5,
                                 color: colorAlearConfirmPassword,
                               ),
                             ),
@@ -689,8 +669,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   alearConfirmPassword,
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleSmall!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                     color: colorAlearConfirmPassword,
                                   ),
@@ -702,125 +681,115 @@ class _RegisterPageState extends State<RegisterPage> {
                         // แสดงสถานะ CAPTCHA
                         !iamHuman
                             ? Container(
-                              padding: EdgeInsets.symmetric(
-                                vertical: height * 0.015,
-                                horizontal: width * 0.025,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    isCaptchaVerified
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.grey.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color:
-                                      isCaptchaVerified
-                                          ? Colors.green
-                                          : Colors.grey,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  isCaptchaVerified
-                                      ? Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                        size: 18,
-                                      )
-                                      : SizedBox(
-                                        width: 12,
-                                        height: 12,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                  SizedBox(width: 12),
-                                  Flexible(
-                                    child: Text(
-                                      isCaptchaVerified
-                                          ? "Verification Complete"
-                                          : "Verification Required",
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.bodySmall!.fontSize! *
-                                            MediaQuery.of(
-                                              context,
-                                            ).textScaleFactor,
-                                        color:
-                                            isCaptchaVerified
-                                                ? Colors.green
-                                                : Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                            : InkWell(
-                              onTap: () {
-                                setState(() {
-                                  isCaptchaVerified = true;
-                                  iamHuman = false;
-                                  coloralearRecaptcha = Colors.green;
-                                  alearRecaptcha = '';
-                                });
-                              },
-                              child: Container(
                                 padding: EdgeInsets.symmetric(
-                                  vertical: height * 0.01,
+                                  vertical: height * 0.015,
                                   horizontal: width * 0.025,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.withOpacity(0.1),
+                                  color: isCaptchaVerified
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.grey.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: coloralearRecaptcha,
+                                    color: isCaptchaVerified
+                                        ? Colors.green
+                                        : Colors.grey,
                                     width: 1,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.string(
-                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12c.001 5.515 4.487 10.001 10 10.001 5.514 0 10-4.486 10.001-10.001 0-5.514-4.486-10-10.001-10zm0 18.001c-4.41 0-7.999-3.589-8-8.001 0-4.411 3.589-8 8-8 4.412 0 8.001 3.589 8.001 8-.001 4.412-3.59 8.001-8.001 8.001z"></path></svg>',
-                                          color: Colors.grey,
-                                        ),
-                                        SizedBox(width: width * 0.02),
-                                        Text(
-                                          "I am human",
-                                          style: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .bodySmall!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            color: Colors.grey,
-                                            fontWeight: FontWeight.w500,
+                                    isCaptchaVerified
+                                        ? Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                            size: 18,
+                                          )
+                                        : SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.grey,
+                                            ),
                                           ),
+                                    SizedBox(width: 12),
+                                    Flexible(
+                                      child: Text(
+                                        isCaptchaVerified
+                                            ? "Verification Complete"
+                                            : "Verification Required",
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .bodySmall!
+                                              .fontSize!,
+                                          color: isCaptchaVerified
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ],
                                 ),
+                              )
+                            : InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    isCaptchaVerified = true;
+                                    iamHuman = false;
+                                    coloralearRecaptcha = Colors.green;
+                                    alearRecaptcha = '';
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: height * 0.01,
+                                    horizontal: width * 0.025,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: coloralearRecaptcha,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12c.001 5.515 4.487 10.001 10 10.001 5.514 0 10-4.486 10.001-10.001 0-5.514-4.486-10-10.001-10zm0 18.001c-4.41 0-7.999-3.589-8-8.001 0-4.411 3.589-8 8-8 4.412 0 8.001 3.589 8.001 8-.001 4.412-3.59 8.001-8.001 8.001z"></path></svg>',
+                                            color: Colors.grey,
+                                          ),
+                                          SizedBox(width: width * 0.02),
+                                          Text(
+                                            "I am human",
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .bodySmall!
+                                                  .fontSize!,
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
                         if (coloralearRecaptcha == Colors.red)
                           SizedBox(height: height * 0.01),
                         if (coloralearRecaptcha == Colors.red)
                           Text(
                             alearRecaptcha,
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.labelMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.labelMedium!.fontSize!,
                               fontWeight: FontWeight.normal,
                               color: coloralearRecaptcha,
                             ),
@@ -839,9 +808,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Text(
                             'Sign up',
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleMedium!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
                               fontWeight: FontWeight.normal,
                             ),
                           ),
@@ -850,9 +817,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         Text(
                           'Already have an account?',
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                             fontWeight: FontWeight.normal,
                             color: Colors.grey,
                           ),
@@ -866,9 +831,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             child: Text(
                               'Sign in.',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.black,
                               ),
@@ -977,14 +940,11 @@ class _RegisterPageState extends State<RegisterPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -1436,11 +1396,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                       Text(
                                         'back',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleLarge!
-                                                  .fontSize,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleLarge!
+                                              .fontSize,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.grey,
                                         ),
@@ -1509,8 +1468,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               fontSize: Get.textTheme.titleMedium!.fontSize,
                             ),
                             decoration: InputDecoration(
-                              hintText:
-                                  isTyping ? '' : 'Enter your email address…',
+                              hintText: isTyping
+                                  ? ''
+                                  : 'Enter your email address…',
                               hintStyle: TextStyle(
                                 fontSize: Get.textTheme.titleMedium!.fontSize,
                                 fontWeight: FontWeight.normal,
@@ -1601,13 +1561,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                   );
                                   Get.to(() => VerifyotpPage());
                                 } else {
-                                  var result =
-                                      await FirebaseFirestore.instance
-                                          .collection('EmailBlocked')
-                                          .doc(email)
-                                          .collection('OTPRecords_verify')
-                                          .doc(email)
-                                          .get();
+                                  var result = await FirebaseFirestore.instance
+                                      .collection('EmailBlocked')
+                                      .doc(email)
+                                      .collection('OTPRecords_verify')
+                                      .doc(email)
+                                      .get();
                                   var data = result.data();
                                   if (data != null) {
                                     setState(() {

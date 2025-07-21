@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
@@ -72,12 +71,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    // var re = box.getKeys();
-    // for (var i in re) {
-    //   log(i);
-    // }
+  void dispose() {
+    emailCtl.dispose();
+    passwordCtl.dispose();
+    emailConfirmOtpCtl.dispose();
+    emailFocusNode.dispose();
+    passwordFocusNode.dispose();
+    emailConfirmOtpFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -127,14 +128,10 @@ class _LoginPageState extends State<LoginPage> {
                                   Text(
                                     'Welcome!',
                                     style: TextStyle(
-                                      fontSize:
-                                          Get
-                                              .textTheme
-                                              .headlineMedium!
-                                              .fontSize! *
-                                          MediaQuery.of(
-                                            context,
-                                          ).textScaleFactor,
+                                      fontSize: Get
+                                          .textTheme
+                                          .headlineMedium!
+                                          .fontSize!,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -147,8 +144,7 @@ class _LoginPageState extends State<LoginPage> {
                                   'Please Sign in to continue.',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleMedium!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -169,253 +165,212 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: height * 0.02),
                         AnimatedSwitcher(
                           duration: Duration(milliseconds: 200),
-                          child:
-                              selectLogin
-                                  ? Column(
-                                    key: ValueKey(true),
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                              left: width * 0.03,
-                                            ),
-                                            child: Text(
-                                              'Email',
-                                              style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleSmall!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
+                          child: selectLogin
+                              ? Column(
+                                  key: ValueKey(true),
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            left: width * 0.03,
                                           ),
-                                        ],
-                                      ),
-                                      TextField(
-                                        controller: emailCtl,
-                                        focusNode: emailFocusNode,
-                                        keyboardType:
-                                            TextInputType.emailAddress,
-                                        cursorColor: Colors.black,
-                                        style: TextStyle(
-                                          fontSize:
-                                              Get
+                                          child: Text(
+                                            'Email',
+                                            style: TextStyle(
+                                              fontSize: Get
                                                   .textTheme
                                                   .titleSmall!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                          ),
                                         ),
-                                        decoration: InputDecoration(
-                                          hintText:
-                                              isTyping
-                                                  ? ''
-                                                  : 'Enter your email address…',
-                                          hintStyle: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .titleSmall!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            fontWeight: FontWeight.normal,
+                                      ],
+                                    ),
+                                    TextField(
+                                      controller: emailCtl,
+                                      focusNode: emailFocusNode,
+                                      keyboardType: TextInputType.emailAddress,
+                                      cursorColor: Colors.black,
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleSmall!.fontSize!,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: isTyping
+                                            ? ''
+                                            : 'Enter your email address…',
+                                        hintStyle: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                          color: Colors.grey,
+                                        ),
+                                        prefixIcon: IconButton(
+                                          onPressed: null,
+                                          icon: SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
                                             color: Colors.grey,
                                           ),
-                                          prefixIcon: IconButton(
-                                            onPressed: null,
-                                            icon: SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                              color: Colors.grey,
-                                            ),
+                                        ),
+                                        constraints: BoxConstraints(
+                                          maxHeight: height * 0.05,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          constraints: BoxConstraints(
-                                            maxHeight: height * 0.05,
+                                          borderSide: BorderSide(width: 0.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.02,
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            borderSide: BorderSide(width: 0.5),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            borderSide: BorderSide(width: 0.5),
-                                          ),
+                                          borderSide: BorderSide(width: 0.5),
                                         ),
                                       ),
-                                      SizedBox(height: height * 0.01),
-                                      Row(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.only(
-                                              left: width * 0.03,
-                                            ),
-                                            child: Text(
-                                              'Password',
-                                              style: TextStyle(
-                                                fontSize:
-                                                    Get
-                                                        .textTheme
-                                                        .titleSmall!
-                                                        .fontSize! *
-                                                    MediaQuery.of(
-                                                      context,
-                                                    ).textScaleFactor,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
+                                    ),
+                                    SizedBox(height: height * 0.01),
+                                    Row(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            left: width * 0.03,
                                           ),
-                                        ],
-                                      ),
-                                      TextField(
-                                        controller: passwordCtl,
-                                        focusNode: passwordFocusNode,
-                                        keyboardType:
-                                            TextInputType.visiblePassword,
-                                        obscureText: !isCheckedPassword,
-                                        cursorColor: Colors.black,
-                                        style: TextStyle(
-                                          fontSize:
-                                              Get
+                                          child: Text(
+                                            'Password',
+                                            style: TextStyle(
+                                              fontSize: Get
                                                   .textTheme
                                                   .titleSmall!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                          ),
                                         ),
-                                        decoration: InputDecoration(
-                                          hintText:
-                                              isTyping
-                                                  ? ''
-                                                  : 'Enter your password',
-                                          hintStyle: TextStyle(
-                                            fontSize:
-                                                Get
-                                                    .textTheme
-                                                    .titleSmall!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            fontWeight: FontWeight.normal,
+                                      ],
+                                    ),
+                                    TextField(
+                                      controller: passwordCtl,
+                                      focusNode: passwordFocusNode,
+                                      keyboardType:
+                                          TextInputType.visiblePassword,
+                                      obscureText: !isCheckedPassword,
+                                      cursorColor: Colors.black,
+                                      style: TextStyle(
+                                        fontSize:
+                                            Get.textTheme.titleSmall!.fontSize!,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: isTyping
+                                            ? ''
+                                            : 'Enter your password',
+                                        hintStyle: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                          color: Colors.grey,
+                                        ),
+                                        prefixIcon: IconButton(
+                                          onPressed: null,
+                                          icon: SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
                                             color: Colors.grey,
                                           ),
-                                          prefixIcon: IconButton(
-                                            onPressed: null,
-                                            icon: SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          suffixIcon: IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                isCheckedPassword =
-                                                    !isCheckedPassword;
-                                              });
-                                            },
-                                            icon: Icon(
-                                              isCheckedPassword
-                                                  ? Icons.visibility
-                                                  : Icons.visibility_off,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          constraints: BoxConstraints(
-                                            maxHeight: height * 0.05,
-                                          ),
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.02,
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            borderSide: BorderSide(width: 0.5),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            borderSide: BorderSide(width: 0.5),
+                                        ),
+                                        suffixIcon: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              isCheckedPassword =
+                                                  !isCheckedPassword;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            isCheckedPassword
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                            color: Colors.grey,
                                           ),
                                         ),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          InkWell(
-                                            onTap: forgotPassword,
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.02,
-                                              ),
-                                              child: Text(
-                                                'Forgot password?',
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize! *
-                                                      MediaQuery.of(
-                                                        context,
-                                                      ).textScaleFactor,
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: height * 0.01),
-                                      ElevatedButton(
-                                        onPressed: login,
-                                        style: ElevatedButton.styleFrom(
-                                          fixedSize: Size(width, height * 0.04),
-                                          backgroundColor: Color(0xFF007AFF),
-                                          elevation: 1,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
+                                        constraints: BoxConstraints(
+                                          maxHeight: height * 0.05,
                                         ),
-                                        child: Text(
-                                          'Sign in',
-                                          style: TextStyle(
-                                            fontSize:
-                                                Get
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          borderSide: BorderSide(width: 0.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          borderSide: BorderSide(width: 0.5),
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        InkWell(
+                                          onTap: forgotPassword,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * 0.02,
+                                            ),
+                                            child: Text(
+                                              'Forgot password?',
+                                              style: TextStyle(
+                                                fontSize: Get
                                                     .textTheme
-                                                    .titleMedium!
-                                                    .fontSize! *
-                                                MediaQuery.of(
-                                                  context,
-                                                ).textScaleFactor,
-                                            fontWeight: FontWeight.normal,
+                                                    .titleSmall!
+                                                    .fontSize!,
+                                                fontWeight: FontWeight.normal,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: height * 0.01),
+                                    ElevatedButton(
+                                      onPressed: login,
+                                      style: ElevatedButton.styleFrom(
+                                        fixedSize: Size(width, height * 0.04),
+                                        backgroundColor: Color(0xFF007AFF),
+                                        elevation: 1,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  )
-                                  : SizedBox(height: height * 0.15),
+                                      child: Text(
+                                        'Sign in',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : SizedBox(height: height * 0.15),
                         ),
                         if (textNotification.isNotEmpty)
                           Padding(
@@ -425,9 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text(
                               textNotification,
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.red,
                               ),
@@ -477,8 +430,7 @@ class _LoginPageState extends State<LoginPage> {
                                 'Sign in with Email',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.titleMedium!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                      Get.textTheme.titleMedium!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -523,8 +475,7 @@ class _LoginPageState extends State<LoginPage> {
                                 'Continue with Google',
                                 style: TextStyle(
                                   fontSize:
-                                      Get.textTheme.titleMedium!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                      Get.textTheme.titleMedium!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                   color: Colors.black,
                                 ),
@@ -536,9 +487,7 @@ class _LoginPageState extends State<LoginPage> {
                         Text(
                           'Don’t have an account?',
                           style: TextStyle(
-                            fontSize:
-                                Get.textTheme.titleSmall!.fontSize! *
-                                MediaQuery.of(context).textScaleFactor,
+                            fontSize: Get.textTheme.titleSmall!.fontSize!,
                             fontWeight: FontWeight.normal,
                             color: Colors.grey,
                           ),
@@ -552,9 +501,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text(
                               'Create yours now.',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.black,
                               ),
@@ -573,11 +520,9 @@ class _LoginPageState extends State<LoginPage> {
                               color: Colors.black54,
                             ),
                             Text(
-                              ' ${getCurrentDayAndDate()} Mydayplanner.',
+                              ' 2154 & 2172, ${getCurrentDayAndDate()} Mydayplanner.',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.labelMedium!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.labelMedium!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.black54,
                               ),
@@ -695,11 +640,10 @@ class _LoginPageState extends State<LoginPage> {
           'role': response.user.role,
         });
 
-        var result =
-            await FirebaseFirestore.instance
-                .collection('usersLogin')
-                .doc(response.user.email)
-                .get();
+        var result = await FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(response.user.email)
+            .get();
         String deviceName = await getDeviceName();
         Map<String, dynamic> currentData = box.read('userLogin') ?? {};
         currentData['deviceName'] = deviceName;
@@ -710,12 +654,11 @@ class _LoginPageState extends State<LoginPage> {
             .update({
               'deviceName': deviceName,
               'loginWithGoogle': true,
-              'changePassword':
-                  response.user.role == "admin"
-                      ? FieldValue.delete()
-                      : result.data() != null
-                      ? (result.data()?['changePassword'] == true)
-                      : false,
+              'changePassword': response.user.role == "admin"
+                  ? FieldValue.delete()
+                  : result.data() != null
+                  ? (result.data()?['changePassword'] == true)
+                  : false,
             });
 
         if (response.user.role != "admin") {
@@ -747,14 +690,11 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            content: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
     );
   }
 
@@ -809,9 +749,7 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'Confirm now?',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleLarge!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF007AFF),
                 ),
@@ -820,9 +758,7 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'Your account must verify your email first',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -849,9 +785,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Text(
                 'Confirm',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleMedium!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
                   color: Colors.white,
                 ),
               ),
@@ -874,9 +808,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Text(
                 'Back',
                 style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleMedium!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
                   color: Color(0xFF007AFF),
                 ),
               ),
@@ -932,8 +864,9 @@ class _LoginPageState extends State<LoginPage> {
           .doc(response.user.email)
           .update({
             'deviceName': deviceName,
-            'changePassword':
-                response.user.role == "admin" ? FieldValue.delete() : true,
+            'changePassword': response.user.role == "admin"
+                ? FieldValue.delete()
+                : true,
           });
 
       if (response.user.role != "admin") {
@@ -1039,14 +972,10 @@ class _LoginPageState extends State<LoginPage> {
                                       Text(
                                         'back',
                                         style: TextStyle(
-                                          fontSize:
-                                              Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              MediaQuery.of(
-                                                context,
-                                              ).textScaleFactor,
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.grey,
                                         ),
@@ -1072,9 +1001,7 @@ class _LoginPageState extends State<LoginPage> {
                               Text(
                                 'Verify your email',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleLarge!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleLarge!.fontSize!,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1085,9 +1012,7 @@ class _LoginPageState extends State<LoginPage> {
                               Text(
                                 'We will send the otp code to the email you entered',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.titleSmall!.fontSize! *
-                                      MediaQuery.of(context).textScaleFactor,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -1102,8 +1027,7 @@ class _LoginPageState extends State<LoginPage> {
                                   'Email',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleSmall!.fontSize! *
-                                        MediaQuery.of(context).textScaleFactor,
+                                        Get.textTheme.titleSmall!.fontSize!,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -1116,17 +1040,14 @@ class _LoginPageState extends State<LoginPage> {
                             keyboardType: TextInputType.emailAddress,
                             cursorColor: Colors.black,
                             style: TextStyle(
-                              fontSize:
-                                  Get.textTheme.titleSmall!.fontSize! *
-                                  MediaQuery.of(context).textScaleFactor,
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
                             ),
                             decoration: InputDecoration(
-                              hintText:
-                                  isTyping ? '' : 'Enter your email address…',
+                              hintText: isTyping
+                                  ? ''
+                                  : 'Enter your email address…',
                               hintStyle: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.grey,
                               ),
@@ -1158,9 +1079,7 @@ class _LoginPageState extends State<LoginPage> {
                             Text(
                               'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.red,
                               ),
@@ -1219,13 +1138,12 @@ class _LoginPageState extends State<LoginPage> {
                                   );
                                   Get.to(() => VerifyotpPage());
                                 } else {
-                                  var result =
-                                      await FirebaseFirestore.instance
-                                          .collection('EmailBlocked')
-                                          .doc(email)
-                                          .collection('OTPRecords_verify')
-                                          .doc(email)
-                                          .get();
+                                  var result = await FirebaseFirestore.instance
+                                      .collection('EmailBlocked')
+                                      .doc(email)
+                                      .collection('OTPRecords_verify')
+                                      .doc(email)
+                                      .get();
                                   var data = result.data();
                                   if (data != null) {
                                     setState(() {
@@ -1250,9 +1168,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: Text(
                               blockOTP ? 'Back' : 'Request code',
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.titleSmall!.fontSize! *
-                                    MediaQuery.of(context).textScaleFactor,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),
