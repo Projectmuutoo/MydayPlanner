@@ -190,7 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 elevation: 0,
                 foregroundColor: Colors.black,
                 centerTitle: true,
-                leading: InkWell(
+                leading: GestureDetector(
                   onTap: () {
                     if (box.read('showDisplays')['groupTF'] ||
                         box.read('showDisplays')['privateTF']) {

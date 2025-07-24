@@ -645,9 +645,6 @@ class _LoginPageState extends State<LoginPage> {
             .doc(response.user.email)
             .get();
         String deviceName = await getDeviceName();
-        Map<String, dynamic> currentData = box.read('userLogin') ?? {};
-        currentData['deviceName'] = deviceName;
-        await box.write('userLogin', currentData);
         await FirebaseFirestore.instance
             .collection('usersLogin')
             .doc(response.user.email)
@@ -856,9 +853,6 @@ class _LoginPageState extends State<LoginPage> {
       });
 
       String deviceName = await getDeviceName();
-      Map<String, dynamic> currentData = box.read('userLogin') ?? {};
-      currentData['deviceName'] = deviceName;
-      await box.write('userLogin', currentData);
       await FirebaseFirestore.instance
           .collection('usersLogin')
           .doc(response.user.email)
@@ -890,9 +884,16 @@ class _LoginPageState extends State<LoginPage> {
 
     if (Platform.isAndroid) {
       final androidInfo = await deviceInfoPlugin.androidInfo;
-      return androidInfo.model;
+      final model = androidInfo.model;
+      final id = androidInfo.id;
+      return '${model}_$id';
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfoPlugin.iosInfo;
+      final model = iosInfo.modelName;
+      final id = iosInfo.identifierForVendor!;
+      return '${model}_$id';
     } else {
-      return Random().nextInt(100000000).toString();
+      return 'Unknown_${Random().nextInt(100000000)}';
     }
   }
 

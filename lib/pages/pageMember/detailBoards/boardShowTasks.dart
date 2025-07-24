@@ -13,6 +13,7 @@ import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/BoardTasksCreatePostRequest.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
+import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -168,7 +169,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           notificationStreams,
         );
 
-        combinedNotificationStream.listen((notificationSnapshots) {
+        combinedNotificationStream.listen((notificationSnapshots) async {
           if (!mounted) return;
 
           List<model.Task> updatedFirebaseTasks = [];
@@ -1093,10 +1094,10 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                     child: Container(
                                                       padding:
                                                           EdgeInsets.symmetric(
+                                                            vertical:
+                                                                height * 0.005,
                                                             horizontal:
                                                                 width * 0.01,
-                                                            vertical:
-                                                                height * 0.002,
                                                           ),
                                                       decoration: BoxDecoration(
                                                         color:
@@ -1123,11 +1124,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                         children: [
                                                           Row(
                                                             crossAxisAlignment:
-                                                                !hideMenu
-                                                                ? CrossAxisAlignment
-                                                                      .start
-                                                                : CrossAxisAlignment
-                                                                      .center,
+                                                                CrossAxisAlignment
+                                                                    .center,
                                                             children: [
                                                               GestureDetector(
                                                                 onTap: !hideMenu
@@ -1198,21 +1196,23 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                 child: Column(
                                                                   children: [
                                                                     Padding(
-                                                                      padding: EdgeInsets.symmetric(
-                                                                        vertical:
+                                                                      padding: EdgeInsets.only(
+                                                                        top:
                                                                             height *
                                                                             0.005,
+                                                                        bottom:
+                                                                            height *
+                                                                            0.005,
+                                                                        right:
+                                                                            width *
+                                                                            0.02,
                                                                       ),
                                                                       child: InkWell(
                                                                         onTap:
                                                                             !hideMenu
                                                                             ? creatingTasks[data.taskId.toString()] ==
                                                                                       true
-                                                                                  ? () {
-                                                                                      log(
-                                                                                        "สร้างยังไม่เสร็จ",
-                                                                                      );
-                                                                                    }
+                                                                                  ? null
                                                                                   : () {
                                                                                       if (!hideMenu) {
                                                                                         setState(
@@ -1222,8 +1222,10 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                                           },
                                                                                         );
                                                                                       }
-                                                                                      log(
-                                                                                        "สร้างเสร็จ ${data.taskId}",
+                                                                                      Get.to(
+                                                                                        () => TasksdetailPage(
+                                                                                          taskId: data.taskId,
+                                                                                        ),
                                                                                       );
                                                                                     }
                                                                             : null,
@@ -1295,7 +1297,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                                             fontSize: Get.textTheme.labelMedium!.fontSize!,
                                                                                             color: Colors.grey,
                                                                                           ),
-                                                                                          maxLines: 6,
+                                                                                          maxLines: 2,
                                                                                           overflow: TextOverflow.ellipsis,
                                                                                         ),
                                                                                   Row(
@@ -1753,7 +1755,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                   ),
                                   decoration: InputDecoration(
                                     isDense: true,
-                                    hintText: isTyping ? '' : 'Add title',
+                                    hintText: isTyping ? '' : 'Add Title',
                                     hintStyle: TextStyle(
                                       fontSize:
                                           Get.textTheme.titleSmall!.fontSize!,
@@ -2601,9 +2603,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
             for (var id in idList) {
               deletedTaskIds.remove(id); // ลบออกจาก deleted set
             }
-            _updateDisplayTasks(firebaseTasks); // รีเฟรช UI
-
             if (mounted) {
+              _updateDisplayTasks(firebaseTasks); // รีเฟรช UI
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('ไม่สามารถลบ task ได้ กรุณาลองใหม่อีกครั้ง'),

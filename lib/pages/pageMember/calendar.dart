@@ -13,6 +13,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
+import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
@@ -366,7 +367,7 @@ class CalendarPageState extends State<CalendarPage> {
                         Row(
                           children: [
                             if (!hideMenu)
-                              InkWell(
+                              GestureDetector(
                                 key: iconKey,
                                 onTap: () {
                                   setState(() {
@@ -574,25 +575,47 @@ class CalendarPageState extends State<CalendarPage> {
                     ),
                   ),
                   SizedBox(height: height * 0.01),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: weekDays
-                        .map(
-                          (day) => Expanded(
-                            child: Center(
-                              child: Text(
-                                day,
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: width * 0.03),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFEFF6FF), Color(0xFFF2F2F6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: weekDays
+                                .map(
+                                  (day) => Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        day,
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF3B82F6),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
-                        )
-                        .toList(),
+                          calendarWidget,
+                        ],
+                      ),
+                    ),
                   ),
-                  calendarWidget,
                   Expanded(
                     child: tasksForSelectedDate.isEmpty
                         ? Center(
@@ -853,8 +876,8 @@ class CalendarPageState extends State<CalendarPage> {
                                               },
                                               child: Container(
                                                 padding: EdgeInsets.symmetric(
+                                                  vertical: height * 0.005,
                                                   horizontal: width * 0.01,
-                                                  vertical: height * 0.002,
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color:
@@ -868,16 +891,16 @@ class CalendarPageState extends State<CalendarPage> {
                                                       : Colors.white,
                                                   borderRadius:
                                                       BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: Color(0xFFE2E8F0),
+                                                  ),
                                                 ),
                                                 child: Column(
                                                   children: [
                                                     Row(
                                                       crossAxisAlignment:
-                                                          !hideMenu
-                                                          ? CrossAxisAlignment
-                                                                .start
-                                                          : CrossAxisAlignment
-                                                                .center,
+                                                          CrossAxisAlignment
+                                                              .center,
                                                       children: [
                                                         GestureDetector(
                                                           onTap: !hideMenu
@@ -955,22 +978,23 @@ class CalendarPageState extends State<CalendarPage> {
                                                           child: Column(
                                                             children: [
                                                               Padding(
-                                                                padding:
-                                                                    EdgeInsets.symmetric(
-                                                                      vertical:
-                                                                          height *
-                                                                          0.005,
-                                                                    ),
+                                                                padding: EdgeInsets.only(
+                                                                  top:
+                                                                      height *
+                                                                      0.005,
+                                                                  bottom:
+                                                                      height *
+                                                                      0.005,
+                                                                  right:
+                                                                      width *
+                                                                      0.02,
+                                                                ),
                                                                 child: InkWell(
                                                                   onTap:
                                                                       !hideMenu
                                                                       ? creatingTasks[data.taskId.toString()] ==
                                                                                 true
-                                                                            ? () {
-                                                                                log(
-                                                                                  "สร้างยังไม่เสร็จ",
-                                                                                );
-                                                                              }
+                                                                            ? null
                                                                             : () {
                                                                                 if (!hideMenu) {
                                                                                   setState(
@@ -980,8 +1004,10 @@ class CalendarPageState extends State<CalendarPage> {
                                                                                     },
                                                                                   );
                                                                                 }
-                                                                                log(
-                                                                                  "เรียบร้อย",
+                                                                                Get.to(
+                                                                                  () => TasksdetailPage(
+                                                                                    taskId: data.taskId,
+                                                                                  ),
                                                                                 );
                                                                               }
                                                                       : null,
@@ -1059,7 +1085,7 @@ class CalendarPageState extends State<CalendarPage> {
                                                                                                 fontSize: Get.textTheme.labelMedium!.fontSize!,
                                                                                                 color: Colors.grey,
                                                                                               ),
-                                                                                              maxLines: 6,
+                                                                                              maxLines: 2,
                                                                                               overflow: TextOverflow.ellipsis,
                                                                                             ),
                                                                                       showDetailPrivateOrGroup(
@@ -1435,11 +1461,23 @@ class CalendarPageState extends State<CalendarPage> {
                       children: monthNames.asMap().entries.map((entry) {
                         int idx = entry.key;
                         String month = entry.value;
+
+                        final isSelected = selectedDate.month == (idx + 1);
+                        final isCurrentMonth =
+                            DateTime.now().month == (idx + 1);
+
+                        Color backgroundColor;
+
+                        if (isSelected) {
+                          backgroundColor = Color(0xFF3B82F6).withOpacity(0.8);
+                        } else if (isCurrentMonth) {
+                          backgroundColor = Colors.black12;
+                        } else {
+                          backgroundColor = Colors.transparent;
+                        }
+
                         return Material(
-                          color:
-                              month.contains(monthNames[selectedDate.month - 1])
-                              ? Colors.black12
-                              : Colors.transparent,
+                          color: backgroundColor,
                           borderRadius: BorderRadius.circular(8),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
@@ -1464,6 +1502,9 @@ class CalendarPageState extends State<CalendarPage> {
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleSmall!.fontSize!,
                                   fontWeight: FontWeight.w500,
+                                  color: !isSelected
+                                      ? Colors.black
+                                      : Colors.white,
                                 ),
                               ),
                             ),

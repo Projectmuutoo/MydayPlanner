@@ -9,6 +9,28 @@ class Appdata with ChangeNotifier {
       KeepEmailToUserPageVerifyOTP();
   ShowMyBoards showMyBoards = ShowMyBoards();
   ShowMyTasks showMyTasks = ShowMyTasks();
+  ShowDetailTask showDetailTask = ShowDetailTask();
+}
+
+class ShowDetailTask extends ChangeNotifier {
+  Task? _currentTask;
+  bool _isGroupTask = false;
+
+  Task? get currentTask => _currentTask;
+  bool get isGroupTask => _isGroupTask;
+
+  // ===== Set Task =====
+  void setCurrentTask(Task task, {bool isGroup = false}) {
+    _currentTask = task;
+    _isGroupTask = isGroup;
+    notifyListeners();
+  }
+
+  // ===== Clear Data =====
+  void clearData() {
+    _currentTask = null;
+    notifyListeners();
+  }
 }
 
 //use page todayuser

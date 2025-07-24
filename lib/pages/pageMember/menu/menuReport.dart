@@ -83,7 +83,7 @@ class _MenureportPageState extends State<MenureportPage> {
             elevation: 0,
             foregroundColor: Colors.black,
             centerTitle: true,
-            leading: InkWell(
+            leading: GestureDetector(
               onTap: () {
                 Get.back();
                 openSubject = false;

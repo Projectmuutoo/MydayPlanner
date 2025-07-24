@@ -55,7 +55,7 @@ class MainApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: false,
             fontFamily: 'baloo',
-            scaffoldBackgroundColor: Colors.transparent,
+            scaffoldBackgroundColor: Colors.white,
           ),
           home: const SplashPage(),
         );

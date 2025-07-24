@@ -211,7 +211,7 @@ class AlltasksPageState extends State<AlltasksPage>
                     children: [
                       !hideMenu
                           ? Text(
-                              'All tasks',
+                              'All Tasks',
                               style: TextStyle(
                                 fontSize:
                                     Get.textTheme.headlineMedium!.fontSize!,
@@ -231,7 +231,7 @@ class AlltasksPageState extends State<AlltasksPage>
                       Row(
                         children: [
                           if (!hideMenu)
-                            InkWell(
+                            GestureDetector(
                               key: iconKey,
                               onTap: () {
                                 showPopupMenuOverlay(context);
@@ -259,6 +259,9 @@ class AlltasksPageState extends State<AlltasksPage>
                                       }
                                     }
                                   : () async {
+                                      setState(() {
+                                        addTask = false;
+                                      });
                                       if (focusedCategory != null) {
                                         addTasknameFocusNodeMap[focusedCategory]
                                             ?.unfocus();
@@ -334,71 +337,77 @@ class AlltasksPageState extends State<AlltasksPage>
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(vertical: height * 0.005),
+                padding: EdgeInsets.symmetric(
+                  vertical: height * 0.002,
+                  horizontal: width * 0.03,
+                ),
                 controller: scrollController,
                 child: Column(
-                  children: [
-                    Column(
-                      children: allCategories.map((category) {
-                        List<model.Task> categoryTasks =
-                            groupedTasks[category] ?? [];
+                  children: allCategories.map((category) {
+                    List<model.Task> categoryTasks =
+                        groupedTasks[category] ?? [];
 
-                        return Column(
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        top: height * 0.005,
+                        bottom: height * 0.01,
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.only(
+                          top: height * 0.02,
+                          bottom: height * 0.02,
+                          right: width * 0.02,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: category == 'Past Due'
+                                ? Color(0xFFFEE2E2)
+                                : Color(0xFFE5E7EB),
+                          ),
+                          gradient: LinearGradient(
+                            colors: [
+                              category == 'Past Due'
+                                  ? Color(0xFFFEE2E2)
+                                  : Color(0xFFEFF6FF),
+                              Color(0xFFF2F2F6),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 2,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (category != 'Past Due' &&
-                                categoryTasks.isNotEmpty)
-                              Padding(
-                                padding: hideMenu
-                                    ? EdgeInsets.symmetric(
-                                        vertical: height * 0.01,
-                                      )
-                                    : EdgeInsets.only(top: height * 0.005),
-                                child: Container(
-                                  height: 2,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap:
-                                    category != 'Past Due' &&
-                                        category != 'Coming soon' &&
-                                        !hideMenu
-                                    ? creatingTasks.isEmpty
-                                          ? () async {
-                                              if (focusedCategory != null &&
-                                                  focusedCategory != category) {
-                                                await _handleTaskSubmit(
-                                                  focusedCategory!,
-                                                );
-                                                WidgetsBinding.instance
-                                                    .addPostFrameCallback((_) {
-                                                      addTasknameFocusNodeMap[category]
-                                                          ?.requestFocus();
-                                                    });
-                                              } else {
-                                                addTasknameFocusNodeMap[category]
-                                                    ?.requestFocus();
-                                              }
-                                              setState(() {
-                                                addTask = true;
-                                                focusedCategory = category;
-                                                selectedReminder = null;
-                                                customReminderDateTime = null;
-                                              });
-                                            }
-                                          : null
-                                    : null,
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.03,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                            Padding(
+                              padding: EdgeInsets.only(bottom: height * 0.01),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Row(
                                     children: [
+                                      Container(
+                                        width: 4,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: category == 'Past Due'
+                                              ? Color(0xFFDC2626)
+                                              : Color(0xFF3B82F6),
+                                          borderRadius: BorderRadius.circular(
+                                            2,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: width * 0.02),
                                       Text(
                                         category,
                                         style: TextStyle(
@@ -411,645 +420,854 @@ class AlltasksPageState extends State<AlltasksPage>
                                                     .textTheme
                                                     .titleMedium!
                                                     .fontSize!,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.w600,
                                           color: categoryTasks.isNotEmpty
-                                              ? Colors.black
+                                              ? category == 'Past Due'
+                                                    ? Color(0xFFDC2626)
+                                                    : Colors.black
                                               : Colors.black45,
                                         ),
                                       ),
-                                      if (category != 'Past Due' &&
-                                          category != 'Coming soon' &&
-                                          !hideMenu)
-                                        SvgPicture.string(
-                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>',
-                                          width: width * 0.05,
-                                          fit: BoxFit.contain,
-                                          color: Colors.black45,
-                                        ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
-                            ...categoryTasks.map((data) {
-                              return TweenAnimationBuilder(
-                                tween: Tween<double>(begin: 0.0, end: 1.0),
-                                duration: Duration(milliseconds: 400),
-                                curve: Curves.easeOutCirc,
-                                builder: (context, value, child) {
-                                  return Transform.translate(
-                                    offset: Offset(0, (1 - value) * -30),
-                                    child: Opacity(
-                                      opacity: value.clamp(0.0, 1.0),
-                                      child: Transform.scale(
-                                        scale: 0.8 + (value * 0.2),
-                                        child: child,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: width * 0.03,
-                                    right: width * 0.03,
-                                    top: height * 0.005,
-                                  ),
-                                  child: Material(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
-                                      onTap: hideMenu
-                                          ? () {
-                                              if (selectedTaskIds.contains(
-                                                data.taskId.toString(),
-                                              )) {
-                                                selectedTaskIds.remove(
-                                                  data.taskId.toString(),
-                                                );
-                                              } else {
-                                                selectedTaskIds.add(
-                                                  data.taskId.toString(),
-                                                );
-                                              }
-                                              setState(() {});
-                                            }
-                                          : null,
-                                      child: Dismissible(
-                                        key: ValueKey(data.taskId),
-                                        direction:
-                                            hideMenu ||
-                                                creatingTasks[data.taskId
-                                                        .toString()] ==
-                                                    true
-                                            ? DismissDirection.none
-                                            : DismissDirection.endToStart,
-                                        background: Container(
+                                  if (category != 'Past Due' &&
+                                      category != 'Coming soon' &&
+                                      !hideMenu)
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(8),
+                                        onTap:
+                                            category != 'Past Due' &&
+                                                category != 'Coming soon' &&
+                                                !hideMenu
+                                            ? creatingTasks.isEmpty
+                                                  ? () async {
+                                                      if (focusedCategory !=
+                                                              null &&
+                                                          focusedCategory !=
+                                                              category) {
+                                                        await _handleTaskSubmit(
+                                                          focusedCategory!,
+                                                        );
+                                                        WidgetsBinding.instance
+                                                            .addPostFrameCallback((
+                                                              _,
+                                                            ) {
+                                                              addTasknameFocusNodeMap[category]
+                                                                  ?.requestFocus();
+                                                            });
+                                                      } else {
+                                                        addTasknameFocusNodeMap[category]
+                                                            ?.requestFocus();
+                                                      }
+                                                      setState(() {
+                                                        addTask = true;
+                                                        focusedCategory =
+                                                            category;
+                                                        selectedReminder = null;
+                                                        customReminderDateTime =
+                                                            null;
+                                                      });
+                                                    }
+                                                  : null
+                                            : null,
+                                        child: Container(
+                                          padding: EdgeInsets.all(4),
                                           decoration: BoxDecoration(
-                                            color: Colors.red,
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                          ),
-                                          alignment: Alignment.centerRight,
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.02,
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Color(
+                                                  0xFF3B82F6,
+                                                ).withOpacity(0.8),
+                                                Color(
+                                                  0xFF1D4ED8,
+                                                ).withOpacity(0.7),
+                                              ],
+                                            ),
+                                            shape: BoxShape.rectangle,
                                           ),
                                           child: Icon(
-                                            Icons.delete,
+                                            Icons.add,
+                                            size: 18,
                                             color: Colors.white,
                                           ),
                                         ),
-                                        confirmDismiss: (direction) async {
-                                          return await showDialog<bool>(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (_) {
-                                              return AlertDialog(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                contentPadding:
-                                                    EdgeInsets.symmetric(
-                                                      horizontal:
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.width *
-                                                          0.04,
-                                                      vertical:
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.height *
-                                                          0.02,
-                                                    ),
-                                                content: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Image.asset(
-                                                      "assets/images/aleart/question.png",
-                                                      height:
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.height *
-                                                          0.1,
-                                                      fit: BoxFit.contain,
-                                                    ),
-                                                    SizedBox(
-                                                      height:
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.height *
-                                                          0.02,
-                                                    ),
-                                                    Text(
-                                                      'Do you want to delete this task?',
-                                                      style: TextStyle(
-                                                        fontSize: Get
-                                                            .textTheme
-                                                            .titleMedium!
-                                                            .fontSize!,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Colors.red,
-                                                      ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                    SizedBox(
-                                                      height:
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.height *
-                                                          0.02,
-                                                    ),
-                                                    ElevatedButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(true),
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Color(
-                                                          0xFF007AFF,
-                                                        ),
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        fixedSize: Size(
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.width,
-                                                          MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.05,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        'Confirm',
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize!,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    ElevatedButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(false),
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.red[400],
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        fixedSize: Size(
-                                                          MediaQuery.of(
-                                                            context,
-                                                          ).size.width,
-                                                          MediaQuery.of(
-                                                                context,
-                                                              ).size.height *
-                                                              0.05,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        'Cancel',
-                                                        style: TextStyle(
-                                                          fontSize: Get
-                                                              .textTheme
-                                                              .titleMedium!
-                                                              .fontSize!,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        },
-                                        onDismissed: (direction) {
-                                          setState(() {
-                                            tasks.removeWhere(
-                                              (t) => t.taskId == data.taskId,
-                                            );
-                                          });
-                                          deleteTaskById(
-                                            data.taskId.toString(),
-                                            false,
-                                          );
-                                        },
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.01,
-                                            vertical: height * 0.002,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                selectedTaskIds.contains(
-                                                  data.taskId.toString(),
-                                                )
-                                                ? Colors.black12
-                                                : data.status == "2" && hideMenu
-                                                ? Colors.grey[100]
-                                                : Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            ClipRRect(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: width * 0.03),
+                                child: Column(
+                                  children: categoryTasks.isEmpty
+                                      ? [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: height * 0.03,
                                             ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                crossAxisAlignment: !hideMenu
-                                                    ? CrossAxisAlignment.start
-                                                    : CrossAxisAlignment.center,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Center(
+                                              child: Column(
                                                 children: [
-                                                  GestureDetector(
-                                                    onTap: !hideMenu
-                                                        ? () => handleTaskTap(
-                                                            data,
-                                                          )
-                                                        : null,
-                                                    child: !hideMenu
-                                                        ? SvgPicture.string(
-                                                            selectedIsArchived
-                                                                    .contains(
-                                                                      data.taskId
-                                                                          .toString(),
-                                                                    )
-                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                                : data.status ==
-                                                                      "2"
-                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
-                                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                            height:
-                                                                height * 0.04,
-                                                            fit: BoxFit.contain,
-                                                            color:
-                                                                creatingTasks[data
-                                                                        .taskId
-                                                                        .toString()] ==
-                                                                    true
-                                                                ? Colors
-                                                                      .grey[300]
-                                                                : selectedIsArchived
-                                                                      .contains(
-                                                                        data.taskId
-                                                                            .toString(),
-                                                                      )
-                                                                ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                : data.status ==
-                                                                      "2"
-                                                                ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                : Colors.grey,
-                                                          )
-                                                        : SvgPicture.string(
-                                                            selectedTaskIds.contains(
-                                                                  data.taskId
-                                                                      .toString(),
-                                                                )
-                                                                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
-                                                                : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                                            height:
-                                                                height * 0.04,
-                                                            fit: BoxFit.contain,
-                                                            color:
-                                                                selectedTaskIds
-                                                                    .contains(
-                                                                      data.taskId
-                                                                          .toString(),
-                                                                    )
-                                                                ? Color(
-                                                                    0xFF007AFF,
-                                                                  )
-                                                                : Colors.grey,
+                                                  Container(
+                                                    padding: EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
                                                           ),
+                                                      shape: BoxShape.rectangle,
+                                                      color: Colors.grey[100],
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .check_circle_outline_rounded,
+                                                      color: Color(0xFF10B981),
+                                                      size: 20,
+                                                    ),
                                                   ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Expanded(
-                                                    child: Column(
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              EdgeInsets.symmetric(
-                                                                vertical:
-                                                                    height *
-                                                                    0.005,
-                                                              ),
-                                                          child: InkWell(
-                                                            onTap: !hideMenu
-                                                                ? creatingTasks[data
-                                                                              .taskId
-                                                                              .toString()] ==
-                                                                          true
-                                                                      ? () {
-                                                                          log(
-                                                                            "สร้างยังไม่เสร็จ",
-                                                                          );
-                                                                        }
-                                                                      : () async {
-                                                                          if (!hideMenu) {
-                                                                            setState(() {
-                                                                              hideMenu = false;
-                                                                              addTask = false;
-                                                                            });
-                                                                          }
-                                                                          log(
-                                                                            "เรียบร้อย",
-                                                                          );
-                                                                          if (focusedCategory !=
-                                                                              null) {
-                                                                            addTasknameFocusNodeMap[focusedCategory]!.unfocus();
-                                                                            addDescriptionFocusNodeMap[focusedCategory]!.unfocus();
-                                                                            await _handleTaskSubmit(
-                                                                              focusedCategory!,
-                                                                            );
-                                                                          }
-                                                                          Get.to(
-                                                                            () =>
-                                                                                TasksdetailPage(),
-                                                                          );
-                                                                        }
-                                                                : null,
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                Expanded(
-                                                                  child: Column(
-                                                                    children: [
-                                                                      Row(
-                                                                        children: [
-                                                                          Expanded(
-                                                                            child: Text(
-                                                                              data.taskName,
-                                                                              style: TextStyle(
-                                                                                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                                                                                color:
-                                                                                    creatingTasks[data.taskId.toString()] ==
-                                                                                        true
-                                                                                    ? Colors.grey
-                                                                                    : selectedIsArchived.contains(
-                                                                                            data.taskId.toString(),
-                                                                                          ) ||
-                                                                                          data.status ==
-                                                                                              "2"
-                                                                                    ? Colors.grey
-                                                                                    : Colors.black,
-                                                                              ),
-                                                                              overflow: TextOverflow.ellipsis,
-                                                                            ),
-                                                                          ),
-                                                                          data.priority.isEmpty
-                                                                              ? SizedBox.shrink()
-                                                                              : Padding(
-                                                                                  padding: EdgeInsets.symmetric(
-                                                                                    horizontal:
-                                                                                        width *
-                                                                                        0.01,
-                                                                                  ),
-                                                                                  child: Container(
-                                                                                    width:
-                                                                                        width *
-                                                                                        0.03,
-                                                                                    height:
-                                                                                        height *
-                                                                                        0.03,
-                                                                                    decoration: BoxDecoration(
-                                                                                      shape: BoxShape.circle,
-                                                                                      color:
-                                                                                          data.priority ==
-                                                                                              '3'
-                                                                                          ? Colors.red
-                                                                                          : data.priority ==
-                                                                                                '2'
-                                                                                          ? Colors.orange
-                                                                                          : Colors.green,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                        ],
-                                                                      ),
-                                                                      Row(
-                                                                        children: [
-                                                                          Expanded(
-                                                                            child: Column(
-                                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                                              children: [
-                                                                                data.description.isEmpty
-                                                                                    ? SizedBox.shrink()
-                                                                                    : Text(
-                                                                                        data.description,
-                                                                                        style: TextStyle(
-                                                                                          fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                          color: Colors.grey,
-                                                                                        ),
-                                                                                        maxLines: 6,
-                                                                                        overflow: TextOverflow.ellipsis,
-                                                                                      ),
-                                                                                showDetailPrivateOrGroup(
-                                                                                      data,
-                                                                                    ).isEmpty
-                                                                                    ? SizedBox.shrink()
-                                                                                    : Text(
-                                                                                        showDetailPrivateOrGroup(
-                                                                                          data,
-                                                                                        ),
-                                                                                        style: TextStyle(
-                                                                                          fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                          color: Color(
-                                                                                            0xFF007AFF,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                Row(
-                                                                                  children: [
-                                                                                    formatDateDisplay(
-                                                                                          data.notifications,
-                                                                                          category,
-                                                                                        ).isEmpty
-                                                                                        ? SizedBox.shrink()
-                                                                                        : Container(
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width: 0.5,
-                                                                                                color: Colors.red,
-                                                                                              ),
-                                                                                              borderRadius: BorderRadius.circular(
-                                                                                                6,
-                                                                                              ),
-                                                                                            ),
-                                                                                            padding: EdgeInsets.symmetric(
-                                                                                              horizontal:
-                                                                                                  width *
-                                                                                                  0.01,
-                                                                                            ),
-                                                                                            child: Row(
-                                                                                              mainAxisSize: MainAxisSize.min,
-                                                                                              children: [
-                                                                                                SvgPicture.string(
-                                                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
-                                                                                                  width:
-                                                                                                      width *
-                                                                                                      0.04,
-                                                                                                  fit: BoxFit.contain,
-                                                                                                  color: Colors.red,
-                                                                                                ),
-                                                                                                Text(
-                                                                                                  " Due ",
-                                                                                                  style: TextStyle(
-                                                                                                    fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                    color: Colors.red,
-                                                                                                  ),
-                                                                                                ),
-                                                                                                Text(
-                                                                                                  formatDateDisplay(
-                                                                                                    data.notifications,
-                                                                                                    category,
-                                                                                                  ),
-                                                                                                  style: TextStyle(
-                                                                                                    fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                    color: Colors.red,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
-                                                                                            ),
-                                                                                          ),
-                                                                                    FutureBuilder<
-                                                                                      List<
-                                                                                        String
-                                                                                      >
-                                                                                    >(
-                                                                                      future: showTimeRemineMeBefore(
-                                                                                        data.taskId,
-                                                                                        notiTasks: data.notifications,
-                                                                                      ),
-                                                                                      builder:
-                                                                                          (
-                                                                                            context,
-                                                                                            snapshot,
-                                                                                          ) {
-                                                                                            if (snapshot.hasData &&
-                                                                                                snapshot.data!.isNotEmpty) {
-                                                                                              return Row(
-                                                                                                children: [
-                                                                                                  Padding(
-                                                                                                    padding: EdgeInsets.symmetric(
-                                                                                                      horizontal:
-                                                                                                          width *
-                                                                                                          0.01,
-                                                                                                    ),
-                                                                                                    child: SvgPicture.string(
-                                                                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
-                                                                                                      width:
-                                                                                                          width *
-                                                                                                          0.04,
-                                                                                                      fit: BoxFit.contain,
-                                                                                                      color: Colors.red,
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                  ...snapshot.data!.map(
-                                                                                                    (
-                                                                                                      time,
-                                                                                                    ) => Padding(
-                                                                                                      padding: EdgeInsets.only(
-                                                                                                        right:
-                                                                                                            width *
-                                                                                                            0.01,
-                                                                                                      ),
-                                                                                                      child: Text(
-                                                                                                        time,
-                                                                                                        style: TextStyle(
-                                                                                                          fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                          color: Colors.red,
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              );
-                                                                                            } else {
-                                                                                              return SizedBox.shrink();
-                                                                                            }
-                                                                                          },
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
+                                                  Text(
+                                                    "No tasks scheduled",
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleSmall!
+                                                          .fontSize!,
+                                                      color: Color(0xFF6B7280),
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Enjoy your free time!",
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .labelMedium!
+                                                          .fontSize!,
+                                                      color: Color(0xFF9CA3AF),
+                                                      fontWeight:
+                                                          FontWeight.normal,
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                        ]
+                                      : categoryTasks.map((data) {
+                                          return TweenAnimationBuilder(
+                                            tween: Tween<double>(
+                                              begin: 0.0,
+                                              end: 1.0,
+                                            ),
+                                            duration: Duration(
+                                              milliseconds: 400,
+                                            ),
+                                            curve: Curves.easeOutCirc,
+                                            builder: (context, value, child) {
+                                              return Transform.translate(
+                                                offset: Offset(
+                                                  0,
+                                                  (1 - value) * -30,
+                                                ),
+                                                child: Opacity(
+                                                  opacity: value.clamp(
+                                                    0.0,
+                                                    1.0,
+                                                  ),
+                                                  child: Transform.scale(
+                                                    scale: 0.8 + (value * 0.2),
+                                                    child: child,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: height * 0.003,
+                                              ),
+                                              child: Material(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  onTap: hideMenu
+                                                      ? () {
+                                                          if (selectedTaskIds
+                                                              .contains(
+                                                                data.taskId
+                                                                    .toString(),
+                                                              )) {
+                                                            selectedTaskIds
+                                                                .remove(
+                                                                  data.taskId
+                                                                      .toString(),
+                                                                );
+                                                          } else {
+                                                            selectedTaskIds.add(
+                                                              data.taskId
+                                                                  .toString(),
+                                                            );
+                                                          }
+                                                          setState(() {});
+                                                        }
+                                                      : null,
+                                                  child: Dismissible(
+                                                    key: ValueKey(data.taskId),
+                                                    direction:
+                                                        hideMenu ||
+                                                            creatingTasks[data
+                                                                    .taskId
+                                                                    .toString()] ==
+                                                                true
+                                                        ? DismissDirection.none
+                                                        : DismissDirection
+                                                              .endToStart,
+                                                    background: Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                width * 0.02,
+                                                          ),
+                                                      child: Icon(
+                                                        Icons.delete,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    confirmDismiss: (direction) async {
+                                                      return await showDialog<
+                                                        bool
+                                                      >(
+                                                        context: context,
+                                                        barrierDismissible:
+                                                            false,
+                                                        builder: (_) {
+                                                          return AlertDialog(
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                            contentPadding: EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  MediaQuery.of(
+                                                                    context,
+                                                                  ).size.width *
+                                                                  0.04,
+                                                              vertical:
+                                                                  MediaQuery.of(
+                                                                        context,
+                                                                      )
+                                                                      .size
+                                                                      .height *
+                                                                  0.02,
+                                                            ),
+                                                            content: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                Image.asset(
+                                                                  "assets/images/aleart/question.png",
+                                                                  height:
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.height *
+                                                                      0.1,
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                ),
+                                                                SizedBox(
+                                                                  height:
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.height *
+                                                                      0.02,
+                                                                ),
+                                                                Text(
+                                                                  'Do you want to delete this task?',
+                                                                  style: TextStyle(
+                                                                    fontSize: Get
+                                                                        .textTheme
+                                                                        .titleMedium!
+                                                                        .fontSize!,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                ),
+                                                                SizedBox(
+                                                                  height:
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.height *
+                                                                      0.02,
+                                                                ),
+                                                                ElevatedButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(
+                                                                        context,
+                                                                      ).pop(
+                                                                        true,
+                                                                      ),
+                                                                  style: ElevatedButton.styleFrom(
+                                                                    backgroundColor:
+                                                                        Color(
+                                                                          0xFF007AFF,
+                                                                        ),
+                                                                    shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            12,
+                                                                          ),
+                                                                    ),
+                                                                    fixedSize: Size(
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.width,
+                                                                      MediaQuery.of(
+                                                                            context,
+                                                                          ).size.height *
+                                                                          0.05,
+                                                                    ),
+                                                                  ),
+                                                                  child: Text(
+                                                                    'Confirm',
+                                                                    style: TextStyle(
+                                                                      fontSize: Get
+                                                                          .textTheme
+                                                                          .titleMedium!
+                                                                          .fontSize!,
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                ElevatedButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(
+                                                                        context,
+                                                                      ).pop(
+                                                                        false,
+                                                                      ),
+                                                                  style: ElevatedButton.styleFrom(
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .red[400],
+                                                                    shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            12,
+                                                                          ),
+                                                                    ),
+                                                                    fixedSize: Size(
+                                                                      MediaQuery.of(
+                                                                        context,
+                                                                      ).size.width,
+                                                                      MediaQuery.of(
+                                                                            context,
+                                                                          ).size.height *
+                                                                          0.05,
+                                                                    ),
+                                                                  ),
+                                                                  child: Text(
+                                                                    'Cancel',
+                                                                    style: TextStyle(
+                                                                      fontSize: Get
+                                                                          .textTheme
+                                                                          .titleMedium!
+                                                                          .fontSize!,
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    onDismissed: (direction) {
+                                                      setState(() {
+                                                        tasks.removeWhere(
+                                                          (t) =>
+                                                              t.taskId ==
+                                                              data.taskId,
+                                                        );
+                                                      });
+                                                      deleteTaskById(
+                                                        data.taskId.toString(),
+                                                        false,
+                                                      );
+                                                    },
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            vertical:
+                                                                height * 0.005,
+                                                            horizontal:
+                                                                width * 0.01,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            selectedTaskIds
+                                                                .contains(
+                                                                  data.taskId
+                                                                      .toString(),
+                                                                )
+                                                            ? Colors.black12
+                                                            : data.status ==
+                                                                      "2" &&
+                                                                  hideMenu
+                                                            ? Colors.grey[100]
+                                                            : Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                      child: Column(
+                                                        children: [
+                                                          Row(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              GestureDetector(
+                                                                onTap: !hideMenu
+                                                                    ? () =>
+                                                                          handleTaskTap(
+                                                                            data,
+                                                                          )
+                                                                    : null,
+                                                                child: !hideMenu
+                                                                    ? SvgPicture.string(
+                                                                        selectedIsArchived.contains(
+                                                                              data.taskId.toString(),
+                                                                            )
+                                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                                            : data.status ==
+                                                                                  "2"
+                                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480-292q78.47 0 133.23-54.77Q668-401.53 668-480t-54.77-133.23Q558.47-668 480-668t-133.23 54.77Q292-558.47 292-480t54.77 133.23Q401.53-292 480-292Zm.13 204q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>'
+                                                                            : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                                        height:
+                                                                            height *
+                                                                            0.04,
+                                                                        fit: BoxFit
+                                                                            .contain,
+                                                                        color:
+                                                                            creatingTasks[data.taskId.toString()] ==
+                                                                                true
+                                                                            ? Colors.grey[300]
+                                                                            : selectedIsArchived.contains(
+                                                                                data.taskId.toString(),
+                                                                              )
+                                                                            ? category ==
+                                                                                      'Past Due'
+                                                                                  ? Color(
+                                                                                      0xFFFCA5A5,
+                                                                                    )
+                                                                                  : Color(
+                                                                                      0xFF007AFF,
+                                                                                    )
+                                                                            : category ==
+                                                                                  'Past Due'
+                                                                            ? data.status ==
+                                                                                      "2"
+                                                                                  ? Color(
+                                                                                      0xFFFCA5A5,
+                                                                                    )
+                                                                                  : Color(
+                                                                                      0xFFFCA5A5,
+                                                                                    )
+                                                                            : data.status ==
+                                                                                  "2"
+                                                                            ? Color(
+                                                                                0xFF007AFF,
+                                                                              )
+                                                                            : Colors.grey,
+                                                                      )
+                                                                    : SvgPicture.string(
+                                                                        selectedTaskIds.contains(
+                                                                              data.taskId.toString(),
+                                                                            )
+                                                                            ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M9.999 13.587 7.7 11.292l-1.412 1.416 3.713 3.705 6.706-6.706-1.414-1.414z"></path></svg>'
+                                                                            : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                                                        height:
+                                                                            height *
+                                                                            0.04,
+                                                                        fit: BoxFit
+                                                                            .contain,
+                                                                        color:
+                                                                            selectedTaskIds.contains(
+                                                                              data.taskId.toString(),
+                                                                            )
+                                                                            ? Color(
+                                                                                0xFF007AFF,
+                                                                              )
+                                                                            : category ==
+                                                                                  'Past Due'
+                                                                            ? Color(
+                                                                                0xFFFCA5A5,
+                                                                              )
+                                                                            : Colors.grey,
+                                                                      ),
+                                                              ),
+                                                              SizedBox(
+                                                                width:
+                                                                    width *
+                                                                    0.01,
+                                                              ),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  children: [
+                                                                    Padding(
+                                                                      padding: EdgeInsets.only(
+                                                                        top:
+                                                                            height *
+                                                                            0.005,
+                                                                        bottom:
+                                                                            height *
+                                                                            0.005,
+                                                                        right:
+                                                                            width *
+                                                                            0.02,
+                                                                      ),
+                                                                      child: InkWell(
+                                                                        onTap:
+                                                                            !hideMenu
+                                                                            ? creatingTasks[data.taskId.toString()] ==
+                                                                                      true
+                                                                                  ? null
+                                                                                  : () async {
+                                                                                      if (!hideMenu) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            hideMenu = false;
+                                                                                            addTask = false;
+                                                                                          },
+                                                                                        );
+                                                                                      }
+                                                                                      if (focusedCategory !=
+                                                                                          null) {
+                                                                                        addTasknameFocusNodeMap[focusedCategory]!.unfocus();
+                                                                                        addDescriptionFocusNodeMap[focusedCategory]!.unfocus();
+                                                                                        await _handleTaskSubmit(
+                                                                                          focusedCategory!,
+                                                                                        );
+                                                                                      }
+
+                                                                                      Get.to(
+                                                                                        () => TasksdetailPage(
+                                                                                          taskId: data.taskId,
+                                                                                        ),
+                                                                                      );
+                                                                                    }
+                                                                            : null,
+                                                                        child: Row(
+                                                                          mainAxisAlignment:
+                                                                              MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Expanded(
+                                                                              child: Column(
+                                                                                children: [
+                                                                                  Row(
+                                                                                    children: [
+                                                                                      Expanded(
+                                                                                        child: Text(
+                                                                                          data.taskName,
+                                                                                          style: TextStyle(
+                                                                                            fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                                                                            color:
+                                                                                                creatingTasks[data.taskId.toString()] ==
+                                                                                                    true
+                                                                                                ? Colors.grey
+                                                                                                : selectedIsArchived.contains(
+                                                                                                        data.taskId.toString(),
+                                                                                                      ) ||
+                                                                                                      data.status ==
+                                                                                                          "2"
+                                                                                                ? Colors.grey
+                                                                                                : category ==
+                                                                                                      'Past Due'
+                                                                                                ? Color(
+                                                                                                    0xFF7F1D1D,
+                                                                                                  )
+                                                                                                : Colors.black,
+                                                                                          ),
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                        ),
+                                                                                      ),
+                                                                                      data.priority.isEmpty
+                                                                                          ? SizedBox.shrink()
+                                                                                          : Padding(
+                                                                                              padding: EdgeInsets.symmetric(
+                                                                                                horizontal:
+                                                                                                    width *
+                                                                                                    0.01,
+                                                                                              ),
+                                                                                              child: Container(
+                                                                                                width:
+                                                                                                    width *
+                                                                                                    0.03,
+                                                                                                height:
+                                                                                                    height *
+                                                                                                    0.03,
+                                                                                                decoration: BoxDecoration(
+                                                                                                  shape: BoxShape.circle,
+                                                                                                  color:
+                                                                                                      data.priority ==
+                                                                                                          '3'
+                                                                                                      ? Colors.red
+                                                                                                      : data.priority ==
+                                                                                                            '2'
+                                                                                                      ? Colors.orange
+                                                                                                      : Colors.green,
+                                                                                                ),
+                                                                                              ),
+                                                                                            ),
+                                                                                    ],
+                                                                                  ),
+                                                                                  Row(
+                                                                                    children: [
+                                                                                      Expanded(
+                                                                                        child: Column(
+                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                          children: [
+                                                                                            data.description.isEmpty
+                                                                                                ? SizedBox.shrink()
+                                                                                                : Text(
+                                                                                                    data.description,
+                                                                                                    style: TextStyle(
+                                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                      color:
+                                                                                                          creatingTasks[data.taskId.toString()] ==
+                                                                                                              true
+                                                                                                          ? Colors.grey
+                                                                                                          : category ==
+                                                                                                                'Past Due'
+                                                                                                          ? Color(
+                                                                                                              0xFF991B1B,
+                                                                                                            )
+                                                                                                          : Colors.grey,
+                                                                                                    ),
+                                                                                                    maxLines: 2,
+                                                                                                    overflow: TextOverflow.ellipsis,
+                                                                                                  ),
+                                                                                            showDetailPrivateOrGroup(
+                                                                                                  data,
+                                                                                                ).isEmpty
+                                                                                                ? SizedBox.shrink()
+                                                                                                : Text(
+                                                                                                    showDetailPrivateOrGroup(
+                                                                                                      data,
+                                                                                                    ),
+                                                                                                    style: TextStyle(
+                                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                      color: Color(
+                                                                                                        0xFF007AFF,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                            Row(
+                                                                                              children: [
+                                                                                                formatDateDisplay(
+                                                                                                      data.notifications,
+                                                                                                      category,
+                                                                                                    ).isEmpty
+                                                                                                    ? SizedBox.shrink()
+                                                                                                    : Container(
+                                                                                                        decoration: BoxDecoration(
+                                                                                                          border: Border.all(
+                                                                                                            width: 0.5,
+                                                                                                            color: Colors.red,
+                                                                                                          ),
+                                                                                                          borderRadius: BorderRadius.circular(
+                                                                                                            6,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        padding: EdgeInsets.symmetric(
+                                                                                                          horizontal:
+                                                                                                              width *
+                                                                                                              0.01,
+                                                                                                        ),
+                                                                                                        child: Row(
+                                                                                                          mainAxisSize: MainAxisSize.min,
+                                                                                                          children: [
+                                                                                                            SvgPicture.string(
+                                                                                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h6v-2h-4z"></path></svg>',
+                                                                                                              width:
+                                                                                                                  width *
+                                                                                                                  0.04,
+                                                                                                              fit: BoxFit.contain,
+                                                                                                              color: Colors.red,
+                                                                                                            ),
+                                                                                                            Text(
+                                                                                                              " Due ",
+                                                                                                              style: TextStyle(
+                                                                                                                fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                                color: Colors.red,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                            Text(
+                                                                                                              formatDateDisplay(
+                                                                                                                data.notifications,
+                                                                                                                category,
+                                                                                                              ),
+                                                                                                              style: TextStyle(
+                                                                                                                fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                                color: Colors.red,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ],
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                FutureBuilder<
+                                                                                                  List<
+                                                                                                    String
+                                                                                                  >
+                                                                                                >(
+                                                                                                  future: showTimeRemineMeBefore(
+                                                                                                    data,
+                                                                                                    notiTasks: data.notifications,
+                                                                                                  ),
+                                                                                                  builder:
+                                                                                                      (
+                                                                                                        context,
+                                                                                                        snapshot,
+                                                                                                      ) {
+                                                                                                        if (snapshot.hasData &&
+                                                                                                            snapshot.data!.isNotEmpty) {
+                                                                                                          return Row(
+                                                                                                            children: [
+                                                                                                              Padding(
+                                                                                                                padding: EdgeInsets.symmetric(
+                                                                                                                  horizontal:
+                                                                                                                      width *
+                                                                                                                      0.01,
+                                                                                                                ),
+                                                                                                                child: SvgPicture.string(
+                                                                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
+                                                                                                                  width:
+                                                                                                                      width *
+                                                                                                                      0.04,
+                                                                                                                  fit: BoxFit.contain,
+                                                                                                                  color: Colors.red,
+                                                                                                                ),
+                                                                                                              ),
+                                                                                                              ...snapshot.data!.map(
+                                                                                                                (
+                                                                                                                  time,
+                                                                                                                ) => Padding(
+                                                                                                                  padding: EdgeInsets.only(
+                                                                                                                    right:
+                                                                                                                        width *
+                                                                                                                        0.01,
+                                                                                                                  ),
+                                                                                                                  child: Text(
+                                                                                                                    time,
+                                                                                                                    style: TextStyle(
+                                                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                                      color: Colors.red,
+                                                                                                                    ),
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                              ),
+                                                                                                            ],
+                                                                                                          );
+                                                                                                        } else {
+                                                                                                          return SizedBox.shrink();
+                                                                                                        }
+                                                                                                      },
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          ],
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
                                 ),
-                              );
-                            }).toList(),
+                              ),
+                            ),
                             if (!hideMenu &&
                                 category != 'Past Due' &&
                                 category != 'Coming soon' &&
                                 (categoryTasks.isNotEmpty ||
                                     focusedCategory == category))
                               Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: height * 0.01,
+                                padding: EdgeInsets.only(
+                                  top: height * 0.01,
+                                  bottom: height * 0.01,
+                                  left: width * 0.04,
                                 ),
                                 key: addFormKeyMap[category],
                                 child: Column(
                                   children: [
                                     Row(
                                       children: [
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            left: width * 0.04,
-                                            right: width * 0.018,
-                                          ),
-                                          child: SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
-                                            height: height * 0.04,
-                                            fit: BoxFit.contain,
-                                            color: Colors.black12,
-                                          ),
+                                        SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#5f6368"><path d="M480.13-88q-81.31 0-152.89-30.86-71.57-30.86-124.52-83.76-52.95-52.9-83.83-124.42Q88-398.55 88-479.87q0-81.56 30.92-153.37 30.92-71.8 83.92-124.91 53-53.12 124.42-83.48Q398.67-872 479.87-872q81.55 0 153.35 30.34 71.79 30.34 124.92 83.42 53.13 53.08 83.49 124.84Q872-561.64 872-480.05q0 81.59-30.34 152.83-30.34 71.23-83.41 124.28-53.07 53.05-124.81 84Q561.7-88 480.13-88Zm-.13-66q136.51 0 231.26-94.74Q806-343.49 806-480t-94.74-231.26Q616.51-806 480-806t-231.26 94.74Q154-616.51 154-480t94.74 231.26Q343.49-154 480-154Z"/></svg>',
+                                          height: height * 0.04,
+                                          fit: BoxFit.contain,
+                                          color: Colors.black12,
                                         ),
                                         Expanded(
                                           child: Container(
                                             padding: EdgeInsets.only(
                                               top: height * 0.005,
                                               right: width * 0.05,
+                                              left: width * 0.01,
                                             ),
                                             width: width,
                                             child: TextField(
@@ -1111,9 +1329,14 @@ class AlltasksPageState extends State<AlltasksPage>
                                                       vertical: height * 0.01,
                                                     ),
                                                 border: InputBorder.none,
-                                                hintText: '',
+                                                hintText:
+                                                    addDescriptionFocusNodeMap[category]!
+                                                        .hasFocus
+                                                    ? 'Add Title'
+                                                    : '',
                                                 hintStyle: TextStyle(
-                                                  color: Colors.grey[400],
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.normal,
                                                   fontSize: Get
                                                       .textTheme
                                                       .titleSmall!
@@ -1128,59 +1351,63 @@ class AlltasksPageState extends State<AlltasksPage>
                                     if (focusedCategory == category)
                                       Row(
                                         children: [
-                                          Container(
-                                            padding: EdgeInsets.only(
-                                              left: width * 0.145,
-                                              right: width * 0.05,
-                                            ),
-                                            width: width,
-                                            child: TextField(
-                                              controller:
-                                                  addDescriptionCtlMap[category],
-                                              focusNode:
-                                                  addDescriptionFocusNodeMap[category],
-                                              keyboardType: TextInputType.text,
-                                              cursorColor: Color(0xFF007AFF),
-                                              maxLines: 6,
-                                              minLines: 1,
-                                              onEditingComplete: () async {
-                                                if (focusedCategory != null) {
-                                                  addTasknameFocusNodeMap[focusedCategory]!
-                                                      .unfocus();
-                                                  addDescriptionFocusNodeMap[focusedCategory]!
-                                                      .unfocus();
-                                                  await _handleTaskSubmit(
-                                                    focusedCategory!,
-                                                  );
-                                                }
-                                              },
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .titleSmall!
-                                                    .fontSize!,
+                                          Expanded(
+                                            child: Container(
+                                              padding: EdgeInsets.only(
+                                                left: width * 0.095,
+                                                right: width * 0.04,
                                               ),
-                                              decoration: InputDecoration(
-                                                isDense: true,
-                                                hintText: isTyping
-                                                    ? ''
-                                                    : 'Add Description',
-                                                hintStyle: TextStyle(
+                                              width: width,
+                                              child: TextField(
+                                                controller:
+                                                    addDescriptionCtlMap[category],
+                                                focusNode:
+                                                    addDescriptionFocusNodeMap[category],
+                                                keyboardType:
+                                                    TextInputType.text,
+                                                cursorColor: Color(0xFF007AFF),
+                                                maxLines: 6,
+                                                minLines: 1,
+                                                onEditingComplete: () async {
+                                                  if (focusedCategory != null) {
+                                                    addTasknameFocusNodeMap[focusedCategory]!
+                                                        .unfocus();
+                                                    addDescriptionFocusNodeMap[focusedCategory]!
+                                                        .unfocus();
+                                                    await _handleTaskSubmit(
+                                                      focusedCategory!,
+                                                    );
+                                                  }
+                                                },
+                                                style: TextStyle(
                                                   fontSize: Get
                                                       .textTheme
                                                       .titleSmall!
                                                       .fontSize!,
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Colors.grey,
                                                 ),
-                                                constraints: BoxConstraints(
-                                                  maxHeight: height * 0.18,
+                                                decoration: InputDecoration(
+                                                  isDense: true,
+                                                  hintText: isTyping
+                                                      ? ''
+                                                      : 'Add Description',
+                                                  hintStyle: TextStyle(
+                                                    fontSize: Get
+                                                        .textTheme
+                                                        .titleSmall!
+                                                        .fontSize!,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  constraints: BoxConstraints(
+                                                    maxHeight: height * 0.18,
+                                                  ),
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                        vertical: height * 0.01,
+                                                      ),
+                                                  border: InputBorder.none,
                                                 ),
-                                                contentPadding:
-                                                    EdgeInsets.symmetric(
-                                                      vertical: height * 0.01,
-                                                    ),
-                                                border: InputBorder.none,
                                               ),
                                             ),
                                           ),
@@ -1190,10 +1417,10 @@ class AlltasksPageState extends State<AlltasksPage>
                                 ),
                               ),
                           ],
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ),
@@ -1671,7 +1898,7 @@ class AlltasksPageState extends State<AlltasksPage>
   }
 
   Future<List<String>> showTimeRemineMeBefore(
-    int taskId, {
+    model.Task task, {
     required List<model.Notification> notiTasks,
   }) async {
     final appData = Provider.of<Appdata>(context, listen: false);
@@ -1684,7 +1911,7 @@ class AlltasksPageState extends State<AlltasksPage>
         // DocumentSnapshot
         final docSnapshot = await FirebaseFirestore.instance
             .collection('BoardTasks')
-            .doc(taskId.toString())
+            .doc(task.taskId.toString())
             .collection('Notifications')
             .doc(notiTask.notificationId.toString())
             .get();
@@ -1701,7 +1928,7 @@ class AlltasksPageState extends State<AlltasksPage>
             .collection('Notifications')
             .doc(box.read('userProfile')['email'])
             .collection('Tasks')
-            .where('taskID', isEqualTo: taskId)
+            .where('taskID', isEqualTo: task.taskId)
             .get();
 
         if (querySnapshot.docs.isNotEmpty) {
@@ -1832,6 +2059,12 @@ class AlltasksPageState extends State<AlltasksPage>
         isCreatingTask = true;
         addTasknameCtlMap[category]?.clear();
         addDescriptionCtlMap[category]?.clear();
+        if (addTasknameCtlMap[category] == null) {
+          addTasknameCtlMap[category] = TextEditingController();
+        }
+        if (addDescriptionCtlMap[category] == null) {
+          addDescriptionCtlMap[category] = TextEditingController();
+        }
         addTasknameFocusNodeMap[category]?.unfocus();
         addDescriptionFocusNodeMap[category]?.unfocus();
       });
@@ -2643,7 +2876,7 @@ class AlltasksPageState extends State<AlltasksPage>
               addFormKeyMap[category]!.currentContext!,
               duration: Duration(milliseconds: 200),
               curve: Curves.easeInOut,
-              alignment: 1.0,
+              alignment: 0.9,
             );
           }
         });
@@ -2777,6 +3010,8 @@ class AlltasksPageState extends State<AlltasksPage>
 
   //แสดง custom remind
   void _showCustomDateTimePicker(BuildContext context) {
+    final previousFocusedCategory = focusedCategory;
+    final previousAddTask = addTask;
     DateTime now = DateTime.now();
     DateTime tempSelectedDate = now;
     TimeOfDay tempSelectedTime = TimeOfDay.now();
@@ -2810,15 +3045,18 @@ class AlltasksPageState extends State<AlltasksPage>
                             children: [
                               TextButton(
                                 onPressed: () {
-                                  Get.back();
                                   setState(() {
-                                    addTask = true;
-                                    selectedBeforeMinutes = null;
+                                    focusedCategory = previousFocusedCategory;
+                                    addTask = previousAddTask;
                                     selectedReminder = null;
                                     customReminderDateTime = null;
+                                    selectedBeforeMinutes = null;
                                     isShowMenuRemind = false;
                                     isCustomReminderApplied = false;
                                   });
+                                  Get.back();
+                                  addTasknameFocusNodeMap[focusedCategory]
+                                      ?.requestFocus();
                                   Future.delayed(
                                     Duration(microseconds: 300),
                                     () {
@@ -2861,15 +3099,18 @@ class AlltasksPageState extends State<AlltasksPage>
                                     customReminderDateTime = selectedDateTime;
                                     isCustomReminderApplied = false;
                                     isShowMenuRemind = true;
-                                    addTask = true;
+                                    focusedCategory = previousFocusedCategory;
+                                    addTask = previousAddTask;
                                   });
+                                  Get.back();
+                                  addTasknameFocusNodeMap[focusedCategory]
+                                      ?.requestFocus();
                                   Future.delayed(
                                     Duration(microseconds: 300),
                                     () {
                                       _scrollToForm(getAllCategories().first);
                                     },
                                   );
-                                  Get.back();
                                 },
                                 child: Text(
                                   'Apply',

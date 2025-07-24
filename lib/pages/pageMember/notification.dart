@@ -292,55 +292,61 @@ class _NotificationPageState extends State<NotificationPage> {
                                       right: width * 0.03,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: Color(0xFFF2F2F6),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
-                                        data['Profile'] == 'none-url'
-                                            ? Container(
-                                                width: height * 0.05,
-                                                height: height * 0.05,
-                                                decoration: BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: Stack(
-                                                  children: [
-                                                    Container(
-                                                      height: height * 0.1,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black12,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                    ),
-                                                    Positioned(
-                                                      left: 0,
-                                                      right: 0,
-                                                      bottom: 0,
-                                                      child: SvgPicture.string(
-                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                        height: height * 0.035,
-                                                        fit: BoxFit.contain,
-                                                        color: Color(
-                                                          0xFF979595,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : Container(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black12,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: Image.network(
-                                                  data['Profile'],
+                                        ClipOval(
+                                          child: data['Profile'] == 'none-url'
+                                              ? Container(
                                                   width: height * 0.05,
                                                   height: height * 0.05,
-                                                  fit: BoxFit.cover,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Stack(
+                                                    children: [
+                                                      Container(
+                                                        height: height * 0.1,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color: Colors
+                                                                  .black12,
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                      ),
+                                                      Positioned(
+                                                        left: 0,
+                                                        right: 0,
+                                                        bottom: 0,
+                                                        child: SvgPicture.string(
+                                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                          height:
+                                                              height * 0.035,
+                                                          fit: BoxFit.contain,
+                                                          color: Color(
+                                                            0xFF979595,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                )
+                                              : Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black12,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Image.network(
+                                                    data['Profile'],
+                                                    width: height * 0.05,
+                                                    height: height * 0.05,
+                                                    fit: BoxFit.cover,
+                                                  ),
                                                 ),
-                                              ),
+                                        ),
                                         SizedBox(width: width * 0.02),
                                         Expanded(
                                           child: Column(
@@ -813,7 +819,7 @@ class _NotificationPageState extends State<NotificationPage> {
         right: width * 0.03,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFF2F2F6),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
