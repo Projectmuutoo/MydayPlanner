@@ -5,6 +5,7 @@ import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
@@ -645,6 +646,7 @@ class _LoginPageState extends State<LoginPage> {
             .doc(response.user.email)
             .get();
         String deviceName = await getDeviceName();
+        String? token = await FirebaseMessaging.instance.getToken();
         await FirebaseFirestore.instance
             .collection('usersLogin')
             .doc(response.user.email)
@@ -656,6 +658,7 @@ class _LoginPageState extends State<LoginPage> {
                   : result.data() != null
                   ? (result.data()?['changePassword'] == true)
                   : false,
+              'FMCToken': token,
             });
 
         if (response.user.role != "admin") {
@@ -853,6 +856,7 @@ class _LoginPageState extends State<LoginPage> {
       });
 
       String deviceName = await getDeviceName();
+      String? token = await FirebaseMessaging.instance.getToken();
       await FirebaseFirestore.instance
           .collection('usersLogin')
           .doc(response.user.email)
@@ -861,6 +865,7 @@ class _LoginPageState extends State<LoginPage> {
             'changePassword': response.user.role == "admin"
                 ? FieldValue.delete()
                 : true,
+            'FMCToken': token,
           });
 
       if (response.user.role != "admin") {

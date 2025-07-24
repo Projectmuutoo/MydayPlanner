@@ -5,6 +5,7 @@ import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -1044,6 +1045,7 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
           });
 
           String deviceName = await getDeviceName();
+          String? token = await FirebaseMessaging.instance.getToken();
           await FirebaseFirestore.instance
               .collection('usersLogin')
               .doc(response.user.email)
@@ -1052,6 +1054,7 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                 'changePassword': response.user.role == "admin"
                     ? FieldValue.delete()
                     : true,
+                'FMCToken': token,
               });
 
           if (response.user.role != "admin") {

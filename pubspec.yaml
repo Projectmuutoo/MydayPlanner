@@ -41,11 +41,13 @@ dependencies:
   app_links: ^6.4.0
   rxdart: ^0.28.0
   dotted_border: ^2.0.0
-  
+  url_launcher: ^6.3.2
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^19.3.1
+
   flutter_localizations:
     sdk: flutter
   lib: ^0.0.3
-  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

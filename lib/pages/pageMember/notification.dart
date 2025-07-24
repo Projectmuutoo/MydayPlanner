@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
+import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -145,6 +146,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         ),
                       );
                     }
+
                     final notifications = snapshot.data!;
                     final userUid = box
                         .read('userProfile')['userid']
@@ -704,6 +706,7 @@ class _NotificationPageState extends State<NotificationPage> {
             },
             child: _buildNotificationContent(
               context: context,
+              doc: doc,
               task: task,
               data: data,
               notificationType: notificationType,
@@ -803,6 +806,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildNotificationContent({
     required BuildContext context,
+    required QueryDocumentSnapshot doc,
     required Task task,
     required Map data,
     required String notificationType,
@@ -811,98 +815,109 @@ class _NotificationPageState extends State<NotificationPage> {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
 
-    return Container(
-      padding: EdgeInsets.only(
-        top: height * 0.01,
-        bottom: height * 0.01,
-        left: width * 0.02,
-        right: width * 0.03,
-      ),
-      decoration: BoxDecoration(
-        color: Color(0xFFF2F2F6),
+    return Material(
+      color: Color(0xFFF2F2F6),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () {
+          Get.to(() => TasksdetailPage(taskId: task.taskId));
+          _dismissNotification(doc, data, notificationType, isGroupTask);
+        },
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: height * 0.05,
-            height: height * 0.05,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isGroupTask ? Colors.blue.shade400 : Colors.black26,
-            ),
-            child: Align(
-              child: SvgPicture.string(
-                _getIconSvg(notificationType, isGroupTask),
-                width: width * 0.034,
-                height: height * 0.034,
-                fit: BoxFit.contain,
-                color: Colors.white,
-              ),
-            ),
+        child: Container(
+          padding: EdgeInsets.only(
+            top: height * 0.01,
+            bottom: height * 0.01,
+            left: width * 0.02,
+            right: width * 0.03,
           ),
-          SizedBox(width: width * 0.02),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: height * 0.05,
+                height: height * 0.05,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isGroupTask ? Colors.blue.shade400 : Colors.black26,
+                ),
+                child: Align(
+                  child: SvgPicture.string(
+                    _getIconSvg(notificationType, isGroupTask),
+                    width: width * 0.034,
+                    height: height * 0.034,
+                    fit: BoxFit.contain,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              SizedBox(width: width * 0.02),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        _getNotificationTitle(
-                          notificationType,
-                          task,
-                          isGroupTask,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _getNotificationTitle(
+                              notificationType,
+                              task,
+                              isGroupTask,
+                            ),
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
+                              fontWeight: FontWeight.w600,
+                              color: isGroupTask
+                                  ? Color(0xFF007AFF)
+                                  : Color(0xFF007AFF),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleSmall!.fontSize!,
-                          fontWeight: FontWeight.w600,
-                          color: isGroupTask
-                              ? Color(0xFF007AFF)
-                              : Color(0xFF007AFF),
+                        SizedBox(width: width * 0.05),
+                        Text(
+                          timeAgo(
+                            notificationType == 'show'
+                                ? (data['dueDateOld'] ?? data['dueDate'])
+                                      .toDate()
+                                      .toIso8601String()
+                                : (data['remindMeBeforeOld'] ??
+                                          data['remindMeBefore'])
+                                      .toDate()
+                                      .toIso8601String(),
+                          ),
+                          style: TextStyle(
+                            fontSize: Get.textTheme.labelMedium!.fontSize!,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                     ),
-                    SizedBox(width: width * 0.05),
                     Text(
-                      timeAgo(
-                        notificationType == 'show'
-                            ? (data['dueDateOld'] ?? data['dueDate'])
-                                  .toDate()
-                                  .toIso8601String()
-                            : (data['remindMeBeforeOld'] ??
-                                      data['remindMeBefore'])
-                                  .toDate()
-                                  .toIso8601String(),
+                      _getNotificationSubtitle(
+                        notificationType,
+                        task,
+                        data,
+                        isGroupTask,
                       ),
                       style: TextStyle(
                         fontSize: Get.textTheme.labelMedium!.fontSize!,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.grey.shade600,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  _getNotificationSubtitle(
-                    notificationType,
-                    task,
-                    data,
-                    isGroupTask,
-                  ),
-                  style: TextStyle(
-                    fontSize: Get.textTheme.labelMedium!.fontSize!,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -981,6 +996,7 @@ class _NotificationPageState extends State<NotificationPage> {
       'ResponderName': box.read('userProfile')['name'],
       'Responder': box.read('userProfile')['email'],
       'Response time': DateTime.now(),
+      'notiCount': false,
     });
 
     // 2. อัพเดท Response ใน InviteJoin เป็น Accept

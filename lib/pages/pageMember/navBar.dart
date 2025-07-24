@@ -7,6 +7,7 @@ import 'dart:math' show Random;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -20,6 +21,7 @@ import 'package:mydayplanner/pages/pageMember/notification.dart';
 import 'package:mydayplanner/pages/pageMember/toDay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:rxdart/rxdart.dart' as rxdart;
 import 'package:get/get.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:http/http.dart' as http;
@@ -225,6 +227,8 @@ class _NavbarPageState extends State<NavbarPage>
   Timer? _timer2;
   int? expiresIn;
   List<model.Task> tasks = [];
+  int showNoticounts = 0;
+  List<QueryDocumentSnapshot> all = [];
 
   @override
   void initState() {
@@ -241,6 +245,103 @@ class _NavbarPageState extends State<NavbarPage>
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
+  }
+
+  void showNotificationsCount() async {
+    final rawData = box.read('userDataAll');
+    final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
+    final userEmail = box.read('userProfile')['email'];
+
+    final inviteStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('InviteJoin')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    final responseStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('InviteResponse')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    final taskStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('Tasks')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    List<Stream<List<QueryDocumentSnapshot>>> taskGroupStreams = [];
+
+    for (var task in tasksData.tasks) {
+      final taskId = task.taskId.toString();
+
+      final taskNotificationStream = FirebaseFirestore.instance
+          .collection('BoardTasks')
+          .doc(taskId)
+          .collection('Notifications')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+
+      taskGroupStreams.add(taskNotificationStream);
+    }
+
+    if (taskGroupStreams.isEmpty) {
+      all = await rxdart.Rx.combineLatest3(
+        inviteStream,
+        responseStream,
+        taskStream,
+        (invites, responses, tasks) => [...invites, ...responses, ...tasks],
+      ).first;
+    } else {
+      final allTaskGroupStreams = rxdart.Rx.combineLatestList(
+        taskGroupStreams,
+      ).map((listOfLists) => listOfLists.expand((list) => list).toList());
+
+      all = await rxdart.Rx.combineLatest4(
+        inviteStream,
+        responseStream,
+        taskStream,
+        allTaskGroupStreams,
+        (invites, responses, tasks, taskGroups) => [
+          ...invites,
+          ...responses,
+          ...tasks,
+          ...taskGroups,
+        ],
+      ).first;
+    }
+
+    _updateNotificationField(all, null);
+  }
+
+  Future<void> _updateNotificationField(
+    List<QueryDocumentSnapshot> docs,
+    int? index,
+  ) async {
+    int count = 0;
+
+    for (final doc in docs) {
+      final docRef = doc.reference;
+      final snapshot = await docRef.get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+
+        if (index != null && index == 4) {
+          await docRef.update({'notiCount': true});
+        }
+        if (data['notiCount'] != null && !data['notiCount']) {
+          count++;
+        }
+      }
+    }
+
+    setState(() {
+      showNoticounts = count;
+    });
   }
 
   void checkDatasUser() async {
@@ -366,6 +467,16 @@ class _NavbarPageState extends State<NavbarPage>
     final rawData = box.read('userDataAll');
     final data = model.AllDataUserGetResponst.fromJson(rawData);
     final List<String> remindTimes = [];
+    bool tokenFMC = true;
+
+    var result = await FirebaseFirestore.instance
+        .collection('usersLogin')
+        .doc(box.read('userProfile')['email'])
+        .get();
+    final dataResult = result.data();
+    if (dataResult != null) {
+      tokenFMC = dataResult['FMCToken'].toString() != 'off';
+    }
 
     for (var notiTask in task.notifications) {
       DateTime? remindTimestamp;
@@ -394,13 +505,14 @@ class _NavbarPageState extends State<NavbarPage>
                 ) &&
                 !data['isNotiRemind']) {
               // แสดง snackbar เฉพาะเมื่อไม่ได้อยู่ในหน้า notification
-              if (selectedIndex != 4) {
+              if (!tokenFMC && selectedIndex != 4) {
                 Get.snackbar(
                   "It's almost time for your work.",
                   "You will be reminded before '${task.taskName}' starts.",
                   duration: Duration(seconds: 3),
                 );
               }
+
               // อัปเดต notification status
               var boardUsersSnapshot = await FirebaseFirestore.instance
                   .collection('Boards')
@@ -415,6 +527,7 @@ class _NavbarPageState extends State<NavbarPage>
                     .collection('Notifications')
                     .doc(notiTask.notificationId.toString())
                     .update({
+                      'notiCount': false,
                       'isNotiRemind': true,
                       'isNotiRemindShow': true,
                       'dueDateOld': FieldValue.delete(),
@@ -427,12 +540,13 @@ class _NavbarPageState extends State<NavbarPage>
                     });
               }
             }
+
             if (data['dueDate'] != null &&
                 (data['dueDate'] as Timestamp).toDate().isBefore(
                   DateTime.now(),
                 ) &&
                 !data['isSend']) {
-              if (selectedIndex != 4) {
+              if (!tokenFMC && selectedIndex != 4) {
                 Get.snackbar(
                   task.taskName,
                   showDetailPrivateOrGroup(task).isEmpty
@@ -475,20 +589,20 @@ class _NavbarPageState extends State<NavbarPage>
                         ),
                   duration: Duration(seconds: 3),
                 );
-
-                handleRecurringNotification(
-                  notificationID: notiTask.notificationId.toString(),
-                  dueDate: (data['dueDate'] as Timestamp).toDate(),
-                  remindMeBefore: data['remindMeBefore'] != null
-                      ? (data['remindMeBefore'] as Timestamp).toDate()
-                      : null,
-                  recurringPattern: data['recurringPattern'].toString(),
-                  userEmail: box.read('userProfile')['email'],
-                  taskID: data['taskID'],
-                  boardID: task.boardId.toString(),
-                  isGroup: true,
-                );
               }
+
+              handleRecurringNotification(
+                notificationID: notiTask.notificationId.toString(),
+                dueDate: (data['dueDate'] as Timestamp).toDate(),
+                remindMeBefore: data['remindMeBefore'] != null
+                    ? (data['remindMeBefore'] as Timestamp).toDate()
+                    : null,
+                recurringPattern: data['recurringPattern'].toString(),
+                userEmail: box.read('userProfile')['email'],
+                taskID: data['taskID'],
+                boardID: task.boardId.toString(),
+                isGroup: true,
+              );
             }
           }
         }
@@ -511,7 +625,7 @@ class _NavbarPageState extends State<NavbarPage>
                 DateTime.now(),
               ) &&
               !data['isNotiRemind']) {
-            if (selectedIndex != 4) {
+            if (!tokenFMC && selectedIndex != 4) {
               Get.snackbar(
                 "It's almost time for your work.",
                 "You will be reminded before '${task.taskName}' starts.",
@@ -528,6 +642,7 @@ class _NavbarPageState extends State<NavbarPage>
                 .collection('Tasks')
                 .doc(notiTask.notificationId.toString())
                 .update({
+                  'notiCount': false,
                   'isNotiRemind': true,
                   'isNotiRemindShow': true,
                   'dueDateOld': FieldValue.delete(),
@@ -541,48 +656,50 @@ class _NavbarPageState extends State<NavbarPage>
                 DateTime.now(),
               ) &&
               !data['isSend']) {
-            Get.snackbar(
-              task.taskName,
-              showDetailPrivateOrGroup(task).isEmpty
-                  ? "Today, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}"
-                  : "${showDetailPrivateOrGroup(task)}, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}",
-              titleText: task.priority.isEmpty
-                  ? Text(
-                      task.taskName,
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize!,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF007AFF),
+            if (!tokenFMC && selectedIndex != 4) {
+              Get.snackbar(
+                task.taskName,
+                showDetailPrivateOrGroup(task).isEmpty
+                    ? "Today, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}"
+                    : "${showDetailPrivateOrGroup(task)}, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}",
+                titleText: task.priority.isEmpty
+                    ? Text(
+                        task.taskName,
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize!,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF007AFF),
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: task.priority == '3'
+                                  ? Colors.red
+                                  : task.priority == '2'
+                                  ? Colors.orange
+                                  : Colors.green,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            task.taskName,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF007AFF),
+                            ),
+                          ),
+                        ],
                       ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: task.priority == '3'
-                                ? Colors.red
-                                : task.priority == '2'
-                                ? Colors.orange
-                                : Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          task.taskName,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize!,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF007AFF),
-                          ),
-                        ),
-                      ],
-                    ),
-              duration: Duration(seconds: 3),
-            );
+                duration: Duration(seconds: 3),
+              );
+            }
 
             handleRecurringNotification(
               notificationID: notiTask.notificationId.toString(),
@@ -645,6 +762,7 @@ class _NavbarPageState extends State<NavbarPage>
         'dueDateOld': FieldValue.delete(),
         'remindMeBeforeOld': FieldValue.delete(),
         'updatedAt': Timestamp.now(),
+        'notiCount': false,
       };
 
       if (isGroup && boardID != null) {
@@ -677,6 +795,7 @@ class _NavbarPageState extends State<NavbarPage>
           'isSend': false,
           'isShow': false,
           'isNotiRemind': false,
+          'notiCount': false,
         };
 
         if (nextRemindMeBefore != null) {
@@ -965,6 +1084,7 @@ class _NavbarPageState extends State<NavbarPage>
         showTimeRemineMeBefore(tasks);
       }
       checkDatasUser();
+      showNotificationsCount();
 
       final snapshot = await FirebaseFirestore.instance
           .collection('usersLogin')
@@ -1165,12 +1285,36 @@ class _NavbarPageState extends State<NavbarPage>
             label: 'Calendar',
           ),
           BottomNavigationBarItem(
-            icon: SvgPicture.string(
-              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="6" r="3"></circle><path d="M18 19H5V6h8c0-.712.153-1.387.422-2H5c-1.103 0-2 .897-2 2v13c0 1.103.897 2 2 2h13c1.103 0 2-.897 2-2v-8.422A4.962 4.962 0 0 1 18 11v8z"></path></svg>',
-              width: width * 0.07,
-              height: width * 0.07,
-              fit: BoxFit.cover,
-              color: Color(0xFF979595),
+            icon: Stack(
+              alignment: Alignment.topRight,
+              children: [
+                SvgPicture.string(
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="6" r="3"></circle><path d="M18 19H5V6h8c0-.712.153-1.387.422-2H5c-1.103 0-2 .897-2 2v13c0 1.103.897 2 2 2h13c1.103 0 2-.897 2-2v-8.422A4.962 4.962 0 0 1 18 11v8z"></path></svg>',
+                  width: width * 0.07,
+                  height: width * 0.07,
+                  fit: BoxFit.cover,
+                  color: Color(0xFF979595),
+                ),
+                if (showNoticounts != 0)
+                  Positioned(
+                    top: -3,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        showNoticounts > 99 ? '99+' : showNoticounts.toString(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             activeIcon: SvgPicture.string(
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="6" r="3"></circle><path d="M13 6c0-.712.153-1.387.422-2H6c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-7.422A4.962 4.962 0 0 1 18 11a5 5 0 0 1-5-5z"></path></svg>',
@@ -1184,6 +1328,10 @@ class _NavbarPageState extends State<NavbarPage>
         ],
         currentIndex: selectedIndex,
         onTap: (index) {
+          if (index == 4) {
+            _updateNotificationField(all, index);
+            showNoticounts = 0;
+          }
           setState(() {
             selectedIndex = index;
           });
@@ -1200,6 +1348,63 @@ class _NavbarPageState extends State<NavbarPage>
         type: BottomNavigationBarType.fixed,
       ),
       body: pageOptions[selectedIndex],
+    );
+  }
+}
+
+class NotificationService {
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  static void initialize(BuildContext context) {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@drawable/logo');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    _notificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        final payload = response.payload;
+        if (payload != null) {
+          if (payload == 'test') {
+            Get.to(() => TodayPage());
+          } else {
+            Get.to(() => TodayPage());
+          }
+        }
+      },
+    );
+  }
+
+  static void showNotification({
+    required String title,
+    required String body,
+    String payload = 'default_payload',
+  }) {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'default_channel',
+          'Default',
+          channelDescription: 'Default channel for app notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          ticker: 'ticker',
+          icon: '@drawable/logo',
+          color: Color(0xFF3B82F6),
+        );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    _notificationsPlugin.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
     );
   }
 }

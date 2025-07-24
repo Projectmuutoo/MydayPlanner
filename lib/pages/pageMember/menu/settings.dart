@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -57,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool isTyping = false;
   bool isTypingPassword = false;
   bool isCheckedPassword = false;
-  bool isTogglePushNotification = false;
+  bool isTogglePushNotification = true;
   bool isToggleEmailNotification = false;
   bool isConfirmMatched = false;
   bool hasSuccess = false;
@@ -115,6 +116,9 @@ class _SettingsPageState extends State<SettingsPage> {
     if (data != null) {
       isChangePassword = data['changePassword'] == true;
       loginWithGoogle = data['loginWithGoogle'] == true;
+      isTogglePushNotification = data['FMCToken'].toString() == 'off'
+          ? false
+          : true;
     }
     if (mounted) {
       setState(() {
@@ -777,14 +781,25 @@ class _SettingsPageState extends State<SettingsPage> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      onPressed: () {
-                                        if (!isTogglePushNotification) {
-                                          log('noti push');
-                                        }
+                                      onPressed: () async {
                                         setState(() {
                                           isTogglePushNotification =
                                               !isTogglePushNotification;
                                         });
+                                        if (!isTogglePushNotification) {
+                                          String? token =
+                                              await FirebaseMessaging.instance
+                                                  .getToken();
+                                          FirebaseFirestore.instance
+                                              .collection('usersLogin')
+                                              .doc(userEmail)
+                                              .update({'FMCToken': token});
+                                        } else {
+                                          FirebaseFirestore.instance
+                                              .collection('usersLogin')
+                                              .doc(userEmail)
+                                              .update({'FMCToken': 'off'});
+                                        }
                                       },
                                       icon: Icon(
                                         isTogglePushNotification

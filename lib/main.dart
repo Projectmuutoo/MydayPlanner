@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mydayplanner/pages/pageMember/navBar.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/firebase_options.dart';
 import 'package:mydayplanner/shared/appData.dart';
@@ -14,6 +16,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -23,6 +27,19 @@ void main() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );
+  await FirebaseMessaging.instance.requestPermission();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final title = message.notification?.title ?? '';
+    final body = message.notification?.body ?? '';
+    final payload = message.data['payload'] ?? '';
+
+    NotificationService.showNotification(
+      title: title,
+      body: body,
+      payload: payload,
+    );
+  });
   FirebaseAuth.instance.setLanguageCode('th');
   await dotenv.load(fileName: ".env");
   await GetStorage.init();
@@ -41,6 +58,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.initialize(navigatorKey.currentContext!);
+    });
     return ScreenUtilInit(
       designSize: Size(
         MediaQuery.of(context).size.width,
@@ -49,6 +69,7 @@ class MainApp extends StatelessWidget {
       minTextAdapt: true,
       builder: (_, child) {
         return GetMaterialApp(
+          navigatorKey: navigatorKey,
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           supportedLocales: [Locale('en', 'US'), Locale('th', 'TH')],
           title: 'MyDayPlanner',
@@ -62,4 +83,17 @@ class MainApp extends StatelessWidget {
       },
     );
   }
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  final title = message.notification?.title ?? '';
+  final body = message.notification?.body ?? '';
+  final payload = message.data['payload'] ?? '';
+
+  NotificationService.showNotification(
+    title: title,
+    body: body,
+    payload: payload,
+  );
 }
