@@ -76,61 +76,69 @@ class _ReportPageState extends State<ReportPage> {
       await loadNewRefreshToken();
       result = await loadAllReport();
     }
-
     if (result.statusCode == 200) {
-      AllReportAllGetResponst response = allReportAllGetResponstFromJson(
-        result.body,
-      );
-      List<Report> reports = response.reports;
+      final responseCheckNull = jsonDecode(result.body);
 
-      // หัวข้อหลักที่ต้องการ
-      List<String> mainSubjects = [
-        "Suggestions",
-        "Incorrect Information",
-        "Problems or Issues",
-        "Accessibility Issues",
-        "Notification Issues",
-        "Security Issues",
-      ];
+      if (responseCheckNull['reports'] != null) {
+        AllReportAllGetResponst response = allReportAllGetResponstFromJson(
+          result.body,
+        );
+        List<Report> reports = response.reports;
 
-      // เตรียม Map เพื่อเก็บจำนวนครั้งที่พบแต่ละ subject
-      Map<String, Map<String, dynamic>> aggregatedData = {
-        for (var subject in mainSubjects)
-          subject: {"subject": subject, "count": 0, "color": ""},
-      };
+        // หัวข้อหลักที่ต้องการ
+        List<String> mainSubjects = [
+          "Suggestions",
+          "Incorrect Information",
+          "Problems or Issues",
+          "Accessibility Issues",
+          "Notification Issues",
+          "Security Issues",
+        ];
 
-      for (var item in reports) {
-        String subject = item.category;
-        if (mainSubjects.contains(subject)) {
-          aggregatedData[subject]!['count'] += 1;
-          if ((aggregatedData[subject]!['color'] as String).isEmpty) {
-            aggregatedData[subject]!['color'] = item.color;
+        // เตรียม Map เพื่อเก็บจำนวนครั้งที่พบแต่ละ subject
+        Map<String, Map<String, dynamic>> aggregatedData = {
+          for (var subject in mainSubjects)
+            subject: {"subject": subject, "count": 0, "color": ""},
+        };
+
+        for (var item in reports) {
+          String subject = item.category;
+          if (mainSubjects.contains(subject)) {
+            aggregatedData[subject]!['count'] += 1;
+            if ((aggregatedData[subject]!['color'] as String).isEmpty) {
+              aggregatedData[subject]!['color'] = item.color;
+            }
           }
         }
-      }
 
-      int totalCount = aggregatedData.values.fold(
-        0,
-        (sum, item) => sum + item['count'] as int,
-      );
+        int totalCount = aggregatedData.values.fold(
+          0,
+          (sum, item) => sum + item['count'] as int,
+        );
 
-      List<Map<String, dynamic>> adjustedReportData = [];
-      aggregatedData.forEach((key, value) {
-        double adjustedPercentage = totalCount > 0
-            ? (value['count'] / totalCount) * 100
-            : 0.0;
-        adjustedReportData.add({
-          "Category": value['subject'],
-          "subject": value['subject'],
-          "percentage": double.parse(adjustedPercentage.toStringAsFixed(2)),
-          "Color": value['color'],
+        List<Map<String, dynamic>> adjustedReportData = [];
+        aggregatedData.forEach((key, value) {
+          double adjustedPercentage = totalCount > 0
+              ? (value['count'] / totalCount) * 100
+              : 0.0;
+          adjustedReportData.add({
+            "Category": value['subject'],
+            "subject": value['subject'],
+            "percentage": double.parse(adjustedPercentage.toStringAsFixed(2)),
+            "Color": value['color'],
+          });
         });
-      });
+        if (!mounted) return;
+        setState(() {
+          rawReportData = reports
+              .map((e) => e.toJson())
+              .toList(); // แปลงเป็น Map
+          reportData = adjustedReportData;
+        });
+      }
 
       if (!mounted) return;
       setState(() {
-        rawReportData = reports.map((e) => e.toJson()).toList(); // แปลงเป็น Map
-        reportData = adjustedReportData;
         isLoadings = false;
         showShimmer = false;
       });
@@ -401,6 +409,22 @@ class _ReportPageState extends State<ReportPage> {
                                           ),
                                         ),
                                       )
+                                    : reportData.isEmpty
+                                    ? [
+                                        Center(
+                                          child: Text(
+                                            "No information",
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ]
                                     : [
                                         ...getLatestReports().map((data) {
                                           return Padding(
@@ -532,6 +556,22 @@ class _ReportPageState extends State<ReportPage> {
                                               ),
                                             );
                                           },
+                                        ),
+                                      ]
+                                    : reportData.isEmpty
+                                    ? [
+                                        Center(
+                                          child: Text(
+                                            "No information",
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                         ),
                                       ]
                                     : [

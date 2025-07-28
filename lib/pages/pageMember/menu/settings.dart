@@ -782,10 +782,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                   children: [
                                     IconButton(
                                       onPressed: () async {
-                                        setState(() {
-                                          isTogglePushNotification =
-                                              !isTogglePushNotification;
-                                        });
                                         if (!isTogglePushNotification) {
                                           String? token =
                                               await FirebaseMessaging.instance
@@ -800,6 +796,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                               .doc(userEmail)
                                               .update({'FMCToken': 'off'});
                                         }
+                                        setState(() {
+                                          isTogglePushNotification =
+                                              !isTogglePushNotification;
+                                        });
                                       },
                                       icon: Icon(
                                         isTogglePushNotification
@@ -2298,24 +2298,26 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _performCleanup() async {
-    final userProfile = box.read('userProfile');
-    if (userProfile != null && userProfile['email'] != null) {
-      await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(userProfile['email'])
-          .update({'deviceName': FieldValue.delete()});
-    }
+    Get.back();
 
     try {
+      final userProfile = box.read('userProfile');
+      final userEmail = userProfile['email'];
+      if (userEmail == null) return;
+
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userEmail)
+          .update({'deviceName': FieldValue.delete()});
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
-      await box.remove('userDataAll');
-      await box.remove('userLogin');
-      await box.remove('userProfile');
-      await box.remove('accessToken');
-      Get.back();
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+      box.remove('userDataAll');
+      box.remove('userLogin');
+      box.remove('userProfile');
+      box.remove('accessToken');
     } catch (e) {
       Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }

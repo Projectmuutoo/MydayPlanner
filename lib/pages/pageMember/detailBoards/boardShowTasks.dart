@@ -74,8 +74,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
   double currentPage = 0.0;
   bool isLoading = false;
   StreamSubscription? combinedSubscription;
+  StreamSubscription? notificationSubscription;
   bool isBackHomepage = false;
-  Map<int, model.Task> tempTasks = {};
   List<model.Task> firebaseTasks = [];
   Set<String> deletedTaskIds = {};
 
@@ -96,7 +96,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     }
 
     loadDataAsync();
-    checkExpiresTokenBoard();
+    checkExpiresTokenBoard(
+      int.parse(context.read<Appdata>().boardDatas.idBoard),
+    );
     setState(() {
       if (appData.boardDatas.boardToken.isNotEmpty) isLoading = true;
     });
@@ -131,102 +133,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
     // ถ้ามี boardToken ให้แสดงข้อมูลจาก Firebase + temp tasks
     if (appData.boardDatas.boardToken.isNotEmpty) {
-      combinedSubscription?.cancel();
-
-      final tasksStream = FirebaseFirestore.instance
-          .collection('Boards')
-          .doc(appData.boardDatas.idBoard)
-          .collection('Tasks')
-          .snapshots();
-
-      combinedSubscription = tasksStream.listen((tasksSnapshot) async {
-        if (!mounted) return;
-
-        List<Stream<QuerySnapshot>> notificationStreams = [];
-
-        for (var doc in tasksSnapshot.docs) {
-          final data = doc.data();
-          final taskId = data['taskID'].toString();
-
-          final notificationStream = FirebaseFirestore.instance
-              .collection('BoardTasks')
-              .doc(taskId)
-              .collection('Notifications')
-              .snapshots();
-
-          notificationStreams.add(notificationStream);
-        }
-
-        // หากไม่มี Firebase tasks แต่มี temp tasks
-        if (notificationStreams.isEmpty) {
-          // รวม temp tasks เข้ากับ firebase tasks (ที่ว่างเปล่า)
-          _updateDisplayTasks([]);
-          return;
-        }
-
-        final combinedNotificationStream = rxdart.Rx.combineLatestList(
-          notificationStreams,
-        );
-
-        combinedNotificationStream.listen((notificationSnapshots) async {
-          if (!mounted) return;
-
-          List<model.Task> updatedFirebaseTasks = [];
-
-          for (int i = 0; i < tasksSnapshot.docs.length; i++) {
-            final taskDoc = tasksSnapshot.docs[i];
-            final taskData = taskDoc.data();
-
-            List<model.Notification> notifications = [];
-            if (i < notificationSnapshots.length) {
-              final notificationSnapshot = notificationSnapshots[i];
-              for (var notifDoc in notificationSnapshot.docs) {
-                final notifData = notifDoc.data() as Map<String, dynamic>;
-                notifications.add(
-                  model.Notification(
-                    createdAt: (notifData['createdAt'] as Timestamp)
-                        .toDate()
-                        .toIso8601String(),
-                    dueDate: (notifData['dueDate'] as Timestamp)
-                        .toDate()
-                        .toIso8601String(),
-                    isSend: notifData['isSend'] ?? false,
-                    notificationId: notifData['notificationID'] ?? '',
-                    recurringPattern: notifData['recurringPattern'] ?? '',
-                    taskId: notifData['taskID'] ?? '',
-                  ),
-                );
-              }
-            }
-
-            final task = model.Task(
-              assigned: taskData['assigned'] ?? [],
-              attachments: taskData['attachments'] ?? [],
-              boardId: taskData['boardId'].toString(),
-              checklists: taskData['checklists'] ?? [],
-              createBy: int.parse(taskData['createBy'].toString()),
-              createdAt: (taskData['createAt'] as Timestamp)
-                  .toDate()
-                  .toIso8601String(),
-              description: taskData['description'] == null
-                  ? ''
-                  : taskData['description'].toString(),
-              notifications: notifications,
-              priority: taskData['priority'] == null
-                  ? ''
-                  : taskData['priority'].toString(),
-              status: taskData['status'].toString(),
-              taskId: int.parse(taskData['taskID'].toString()),
-              taskName: taskData['taskName'].toString(),
-            );
-            updatedFirebaseTasks.add(task);
-          }
-
-          // อัพเดท firebase tasks และรวมกับ temp tasks
-          _updateDisplayTasks(updatedFirebaseTasks);
-        });
-      });
-      return;
+      _setupFirebaseListeners(appData);
     } else {
       // กรณี local storage
       List<model.Task> filteredTasks = tasksData.tasks
@@ -236,7 +143,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           .toList();
 
       filteredTasks = sortTasks(filteredTasks);
-      appData.showMyTasks.setTasks(filteredTasks);
       setState(() {
         tasks = filteredTasks;
         isLoading = false;
@@ -244,9 +150,154 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     }
   }
 
-  void _updateDisplayTasks(List<model.Task> firebaseTasksList) {
-    firebaseTasks = firebaseTasksList;
+  void _setupFirebaseListeners(dynamic appData) {
+    // ยกเลิก subscriptions เก่าทั้งหมด
+    combinedSubscription?.cancel();
+    notificationSubscription?.cancel();
 
+    final tasksStream = FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(appData.boardDatas.idBoard)
+        .collection('Tasks')
+        .snapshots();
+
+    combinedSubscription = tasksStream.listen((tasksSnapshot) async {
+      if (!mounted) return;
+
+      // ยกเลิก notification subscription เก่าทุกครั้ง
+      notificationSubscription?.cancel();
+
+      List<model.Task> firebaseTasks = [];
+      Map<String, Stream<QuerySnapshot>> notificationStreamsMap = {};
+
+      // เช็คการเปลี่ยนแปลงและ log เพื่อ debug
+      bool hasChanged = tasksSnapshot.docChanges.isNotEmpty;
+
+      if (hasChanged) {
+        fetchDataOnResume();
+      }
+
+      // สร้าง tasks จาก current snapshot (ไม่ใช่ docChanges)
+      for (var doc in tasksSnapshot.docs) {
+        final data = doc.data();
+        final taskId = data['taskID'].toString();
+
+        // สร้าง Task object
+        final task = model.Task(
+          assigned: data['assigned'] ?? [],
+          attachments: data['attachments'] ?? [],
+          boardId: data['boardID'].toString(),
+          checklists: data['checklists'] ?? [],
+          createBy: int.parse(data['createBy'].toString()),
+          createdAt: (data['createAt'] as Timestamp).toDate().toIso8601String(),
+          description: data['description']?.toString() ?? '',
+          notifications: [], // ยังไม่มีตอนนี้
+          priority: data['priority']?.toString() ?? '',
+          status: data['status'].toString(),
+          taskId: int.parse(taskId),
+          taskName: data['taskName'].toString(),
+        );
+
+        firebaseTasks.add(task);
+
+        // เตรียม stream ของ notifications สำหรับ task นี้
+        notificationStreamsMap[taskId] = FirebaseFirestore.instance
+            .collection('BoardTasks')
+            .doc(taskId)
+            .collection('Notifications')
+            .snapshots();
+      }
+
+      // หากไม่มี tasks หรือ notification streams
+      if (firebaseTasks.isEmpty || notificationStreamsMap.isEmpty) {
+        _updateDisplayTasks(firebaseTasks);
+        return;
+      }
+
+      List<Stream<QuerySnapshot>> notificationStreams = notificationStreamsMap
+          .values
+          .toList();
+      List<String> taskIdsOrder = notificationStreamsMap.keys.toList();
+
+      final combinedNotificationStream = rxdart.Rx.combineLatestList(
+        notificationStreams,
+      ).debounceTime(Duration(milliseconds: 200)); // ลด debounce time
+
+      // ใช้ notificationSubscription แยกจาก combinedSubscription
+      notificationSubscription = combinedNotificationStream.listen((
+        notificationSnapshots,
+      ) async {
+        if (!mounted) return;
+
+        Map<String, List<model.Notification>> taskNotificationsMap = {};
+
+        for (
+          int i = 0;
+          i < notificationSnapshots.length && i < taskIdsOrder.length;
+          i++
+        ) {
+          final taskId = taskIdsOrder[i];
+          final notificationSnapshot = notificationSnapshots[i];
+
+          List<model.Notification> notifications = [];
+
+          for (var notifDoc in notificationSnapshot.docs) {
+            final notifData = notifDoc.data() as Map<String, dynamic>;
+
+            notifications.add(
+              model.Notification(
+                createdAt: (notifData['createdAt'] as Timestamp)
+                    .toDate()
+                    .toIso8601String(),
+                dueDate: (notifData['dueDate'] as Timestamp)
+                    .toDate()
+                    .toIso8601String(),
+                isSend: notifData['isSend'] ?? false,
+                notificationId: notifData['notificationID'] ?? '',
+                recurringPattern: notifData['recurringPattern'] ?? '',
+                taskId: notifData['taskID'] ?? '',
+              ),
+            );
+          }
+
+          taskNotificationsMap[taskId] = notifications;
+        }
+
+        // เติม notifications ลงใน tasks เฉพาะ tasks ที่ยังมีอยู่
+        List<model.Task> finalTasks = [];
+
+        for (var task in firebaseTasks) {
+          String taskIdStr = task.taskId.toString();
+          List<model.Notification> notifications =
+              taskNotificationsMap[taskIdStr] ?? [];
+
+          finalTasks.add(
+            model.Task(
+              assigned: task.assigned,
+              attachments: task.attachments,
+              boardId: task.boardId,
+              checklists: task.checklists,
+              createBy: task.createBy,
+              createdAt: task.createdAt,
+              description: task.description,
+              notifications: notifications,
+              priority: task.priority,
+              status: task.status,
+              taskId: task.taskId,
+              taskName: task.taskName,
+            ),
+          );
+        }
+
+        _updateDisplayTasks(finalTasks);
+      });
+    });
+  }
+
+  void _updateDisplayTasks(List<model.Task> firebaseTasksList) {
+    if (!mounted) return;
+
+    firebaseTasks = firebaseTasksList;
     // กรอง Firebase tasks ที่ไม่อยู่ใน deletedTaskIds
     List<model.Task> filteredFirebaseTasks = firebaseTasks
         .where((task) => !deletedTaskIds.contains(task.taskId.toString()))
@@ -255,30 +306,13 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     // รวม firebase tasks กับ temp tasks
     List<model.Task> combined = [...filteredFirebaseTasks];
 
-    // เพิ่ม temp tasks ที่ยังไม่มีใน firebase และไม่ถูกลบ
-    for (var tempTask in tempTasks.values) {
-      if (!deletedTaskIds.contains(tempTask.taskId.toString())) {
-        bool existsInFirebase = filteredFirebaseTasks.any(
-          (task) => task.taskId == tempTask.taskId,
-        );
-        if (!existsInFirebase) {
-          combined.add(tempTask);
-        }
-      }
-    }
-
     // เรียงลำดับและอัพเดท UI
     combined = sortTasks(combined);
 
-    final appData = Provider.of<Appdata>(context, listen: false);
-    appData.showMyTasks.setTasks(combined);
-
-    if (mounted) {
-      setState(() {
-        tasks = combined;
-        isLoading = false;
-      });
-    }
+    setState(() {
+      tasks = combined;
+      isLoading = false;
+    });
   }
 
   @override
@@ -320,6 +354,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     _timer?.cancel();
     debounceTimer?.cancel();
     combinedSubscription?.cancel();
+    notificationSubscription?.cancel();
     mainMenuEntry?.remove();
     sortMenuEntry?.remove();
     super.dispose();
@@ -377,7 +412,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            InkWell(
+                            GestureDetector(
                               onTap: backToHomepage,
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
@@ -430,8 +465,20 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                           .isNotEmpty)
                         Row(
                           children: [
-                            InkWell(
-                              onTap: () {},
+                            GestureDetector(
+                              onTap: () {
+                                checkExpiresTokenBoard(
+                                  int.parse(
+                                    context.read<Appdata>().boardDatas.idBoard,
+                                  ),
+                                );
+                                ShareFunction().shareTask(
+                                  context,
+                                  int.parse(
+                                    context.read<Appdata>().boardDatas.idBoard,
+                                  ),
+                                );
+                              },
                               child: SvgPicture.string(
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5.5 15a3.51 3.51 0 0 0 2.36-.93l6.26 3.58a3.06 3.06 0 0 0-.12.85 3.53 3.53 0 1 0 1.14-2.57l-6.26-3.58a2.74 2.74 0 0 0 .12-.76l6.15-3.52A3.49 3.49 0 1 0 14 5.5a3.35 3.35 0 0 0 .12.85L8.43 9.6A3.5 3.5 0 1 0 5.5 15zm12 2a1.5 1.5 0 1 1-1.5 1.5 1.5 1.5 0 0 1 1.5-1.5zm0-13A1.5 1.5 0 1 1 16 5.5 1.5 1.5 0 0 1 17.5 4zm-12 6A1.5 1.5 0 1 1 4 11.5 1.5 1.5 0 0 1 5.5 10z"></path></svg>',
                                 height: height * 0.03,
@@ -444,7 +491,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                       Row(
                         children: [
                           if (!hideMenu)
-                            InkWell(
+                            GestureDetector(
                               key: iconKey,
                               onTap: () {
                                 showPopupMenuOverlay(context);
@@ -2243,19 +2290,18 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     }
   }
 
-  void checkExpiresTokenBoard() async {
-    final appData = Provider.of<Appdata>(context, listen: false);
+  void checkExpiresTokenBoard(int idBoard) async {
     url = await loadAPIEndpoint();
     final now = DateTime.now();
     final docSnapshot = await FirebaseFirestore.instance
         .collection('Boards')
-        .doc(appData.boardDatas.idBoard)
+        .doc(idBoard.toString())
         .get();
     final data = docSnapshot.data();
     if (data != null) {
       if ((data['ShareExpiresAt'] as Timestamp).toDate().isBefore(now)) {
         var response = await http.put(
-          Uri.parse("$url/board/newtoken/${appData.boardDatas.idBoard}"),
+          Uri.parse("$url/board/newtoken/$idBoard"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
@@ -2265,7 +2311,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         if (response.statusCode == 403) {
           await loadNewRefreshToken();
           response = await http.put(
-            Uri.parse("$url/board/newtoken/${appData.boardDatas.idBoard}"),
+            Uri.parse("$url/board/newtoken/$idBoard"),
             headers: {
               "Content-Type": "application/json; charset=utf-8",
               "Authorization": "Bearer ${box.read('accessToken')}",
@@ -2347,7 +2393,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         remindTimes.add(timeString);
       }
     }
-    setState(() {});
+
     return remindTimes;
   }
 
@@ -2406,6 +2452,19 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     }
   }
 
+  Future<void> finishAllSelectedTasks() async {
+    if (selectedIsArchived.isEmpty) return;
+
+    List<Future<void>> finishTasks = [];
+
+    for (var taskId in selectedIsArchived) {
+      finishTasks.add(todayTasksFinish(taskId));
+    }
+    await Future.wait(finishTasks);
+    selectedIsArchived.clear();
+    if (mounted) setState(() {});
+  }
+
   Future<void> todayTasksFinish(String id) async {
     if (!mounted) return;
 
@@ -2448,19 +2507,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         },
       );
     }
-  }
-
-  Future<void> finishAllSelectedTasks() async {
-    if (selectedIsArchived.isEmpty) return;
-
-    List<Future<void>> finishTasks = [];
-
-    for (var taskId in selectedIsArchived) {
-      finishTasks.add(todayTasksFinish(taskId));
-    }
-    await Future.wait(finishTasks);
-    selectedIsArchived.clear();
-    if (mounted) setState(() {});
   }
 
   Future<void> showArchiveTask(String id) async {
@@ -2566,9 +2612,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     if (appData.boardDatas.boardToken.isEmpty) {
       // Local storage logic (เดิม)
       for (var id in idList) {
-        appData.showMyTasks.removeTaskById(id);
-        existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
         tasks.removeWhere((t) => t.taskId.toString() == id);
+        existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
       }
       box.write('userDataAll', existingData.toJson());
     } else {
@@ -2577,42 +2622,19 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       // 1. ✅ เพิ่ม IDs เข้าไปใน deletedTaskIds เพื่อป้องกัน Firebase Stream
       for (var id in idList) {
         deletedTaskIds.add(id);
-
-        // ลบจาก tempTasks ถ้ามี
-        final tempId = int.tryParse(id);
-        if (tempId != null && tempTasks.containsKey(tempId)) {
-          tempTasks.remove(tempId);
-        }
       }
 
       // 2. 🚀 อัพเดท UI ทันที
-      _updateDisplayTasks(firebaseTasks);
+      // _updateDisplayTasks(firebaseTasks);
 
       // 3. 🔄 ลบจาก Firebase ใน background
-      _deleteFromFirebaseInBackground(idList, select, taskIdPayload)
-          .then((_) {
-            // 4. อัพเดท local storage หลังจากลบ Firebase สำเร็จ
-            for (var id in idList) {
-              existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
-            }
-            box.write('userDataAll', existingData.toJson());
-          })
-          .catchError((e) {
-            // 5. ❌ หากลบ Firebase ไม่สำเร็จ -> rollback
-            for (var id in idList) {
-              deletedTaskIds.remove(id); // ลบออกจาก deleted set
-            }
-            if (mounted) {
-              _updateDisplayTasks(firebaseTasks); // รีเฟรช UI
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('ไม่สามารถลบ task ได้ กรุณาลองใหม่อีกครั้ง'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          });
+      _deleteFromFirebaseInBackground(idList, select, taskIdPayload).then((_) {
+        // 4. อัพเดท local storage หลังจากลบ Firebase สำเร็จ
+        for (var id in idList) {
+          existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
+        }
+        box.write('userDataAll', existingData.toJson());
+      });
     }
 
     // เรียก API ลบใน background
@@ -2668,6 +2690,14 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     bool select,
     dynamic taskIdPayload,
   ) async {
+    // ลบจาก tasks และ firebaseTasks ทันที
+    if (mounted) {
+      setState(() {
+        tasks.removeWhere((t) => idList.contains(t.taskId.toString()));
+        firebaseTasks.removeWhere((t) => idList.contains(t.taskId.toString()));
+      });
+    }
+
     if (select) {
       for (var id in idList) {
         await _deleteSingleTaskFromFirebase(id);
@@ -2676,12 +2706,13 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       await _deleteSingleTaskFromFirebase(taskIdPayload.toString());
     }
 
-    // ✅ หลังจากลบจาก Firebase สำเร็จ ให้ลบออกจาก deletedTaskIds
-    // เพื่อให้ Firebase stream ทำงานปกติ
+    // ลบจาก deletedTaskIds หลังจากลบ Firebase เสร็จ
     Future.delayed(Duration(seconds: 2), () {
       for (var id in idList) {
         deletedTaskIds.remove(id);
       }
+      // อัปเดต UI
+      _updateDisplayTasks(firebaseTasks);
     });
   }
 
@@ -2855,7 +2886,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         ],
       );
 
-      appData.showMyTasks.addTask(tempTask);
+      tasks.add(tempTask);
       if (mounted) {
         setState(() {
           addTask = false;
@@ -2931,7 +2962,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       );
 
       // 1. 🚀 แสดง temp task ในทันทีให้ผู้ใช้เห็น (Optimistic Update)
-      tempTasks[tempId] = tempTask;
+      tasks.add(tempTask);
 
       // 2. ตั้งค่า creating state ก่อน update display
       if (mounted) {
@@ -2943,11 +2974,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           addDescriptionCtl.clear();
         });
       }
-
-      await _updateLocalStorage(tempTask);
-      await loadDataAsync();
-      // 3. อัพเดท display หลังจากตั้งค่า creating state แล้ว
-      _updateDisplayTasks(firebaseTasks);
 
       // 4. 🔄 สร้าง real task ใน background
       _createRealTaskInBackground(
@@ -3005,34 +3031,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     dynamic appData,
   ) async {
     // 1. ลบ temp task ทันที เพื่อป้องกัน duplicate
-    if (mounted && tempTasks.containsKey(tempId)) {
-      _updateDisplayTasks(firebaseTasks); // รีเฟรช UI ทันที
-      tempTasks.remove(tempId);
-    }
-
-    final realTask = model.Task(
-      taskName: tempTask.taskName,
-      description: tempTask.description,
-      createdAt: DateTime.now().toIso8601String(),
-      priority: tempTask.priority,
-      status: '0',
-      attachments: [],
-      checklists: [],
-      createBy: tempTask.createBy,
-      taskId: realTaskId,
-      assigned: [],
-      boardId: appData.boardDatas.idBoard.toString(),
-      notifications: [
-        model.Notification(
-          createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
-          notificationId: notificationID,
-          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
-          taskId: realTaskId,
-        ),
-      ],
-    );
+    if (!mounted) return;
+    tasks.removeWhere((t) => t.taskId.toString() == tempId.toString());
 
     // 2. สร้าง Firebase document ด้วย real ID
     await FirebaseFirestore.instance
@@ -3052,12 +3052,11 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           'updatedAt': Timestamp.now(),
         });
 
+    loadDataAsync();
     // 3. รอให้ Firebase document ถูกสร้าง
     await _waitForDocumentCreation(realTaskId, notificationID, true);
-
     // 4. ตั้งค่า notifications เบื้องหลัง
     await _setupTaskNotifications(realTaskId, notificationID, dueDate, appData);
-    await _updateLocalStorage(realTask, tempIdToRemove: tempId.toString());
 
     // 5. ✅ ลบ creating state เมื่อทำเสร็จแล้ว
     if (mounted) {
@@ -3273,8 +3272,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           });
     }
 
-    appData.showMyTasks.removeTaskById(tempId);
-    appData.showMyTasks.addTask(realTask);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
+    tasks.add(realTask);
 
     await _updateLocalStorage(realTask, tempIdToRemove: tempId);
     await loadDataAsync();
@@ -3334,8 +3333,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
   Future<void> _removeTempTask(String tempId) async {
     if (!mounted) return;
 
-    final appData = Provider.of<Appdata>(context, listen: false);
-    appData.showMyTasks.removeTaskById(tempId);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
 
     if (mounted) {
       setState(() {

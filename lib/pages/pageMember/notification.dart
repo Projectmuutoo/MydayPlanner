@@ -1028,17 +1028,6 @@ class _NotificationPageState extends State<NotificationPage> {
         },
       );
     }
-    final responseAll = await http.get(
-      Uri.parse("$url/user/data"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-    );
-    if (responseAll.statusCode == 200) {
-      final response2 = allDataUserGetResponstFromJson(responseAll.body);
-      box.write('userDataAll', response2.toJson());
-    }
   }
 
   Future<void> _handleDecline(String docId, Map data) async {

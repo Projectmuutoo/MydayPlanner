@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -65,6 +64,7 @@ class CalendarPageState extends State<CalendarPage> {
   List<String> selectedIsArchived = [];
   late String url;
   Timer? timer;
+  late PageController _pageController;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -74,10 +74,8 @@ class CalendarPageState extends State<CalendarPage> {
   @override
   void initState() {
     super.initState();
+
     loadDataAsync();
-    timer = Timer.periodic(Duration(seconds: 2), (timer) {
-      if (mounted) loadDataAsync();
-    });
   }
 
   Future<void> loadDataAsync() async {
@@ -129,11 +127,10 @@ class CalendarPageState extends State<CalendarPage> {
     );
     int startWeekday = firstDayOfMonth.weekday;
 
-    int adjustedStartWeekday = (startWeekday) % 7;
+    // ปรับ weekday ให้เริ่มจากเสาร์ (0) ถึงศุกร์ (6)
+    int adjustedStartWeekday = startWeekday == 7 ? 0 : startWeekday;
 
     // ตรวจสอบว่าต้องใช้ 6 สัปดาห์หรือไม่
-    // ถ้าเดือนมี 31 วัน และเริ่มต้นในวันศุกร์ (adjustedStartWeekday = 6) หรือ
-    // เดือนมี 30 วัน และเริ่มต้นในวันเสาร์ (adjustedStartWeekday = 0)
     bool needsSixWeeks =
         (daysInMonth == 31 && adjustedStartWeekday >= 5) ||
         (daysInMonth == 30 && adjustedStartWeekday == 6);
@@ -161,7 +158,6 @@ class CalendarPageState extends State<CalendarPage> {
       dayWidgets.add(
         GestureDetector(
           onTap: () {
-            // เปลี่ยนไปเดือนก่อนหน้าและเลือกวันนั้น
             setState(() {
               selectedDate = DateTime(
                 selectedDate.year,
@@ -171,9 +167,10 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = dayNumber;
               openSelectMonth = false;
             });
-            log("message");
           },
           child: Container(
+            width: width * 0.08,
+            height: height * 0.05,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -203,7 +200,6 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = i;
               openSelectMonth = false;
             });
-            log("message2 $selectedDay");
           },
           child: Container(
             width: width * 0.08,
@@ -218,20 +214,15 @@ class CalendarPageState extends State<CalendarPage> {
                   ? Border.all(color: Colors.grey, width: 1)
                   : null,
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Text(
-                  '$i',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize!,
-                    color: selectedDay == i ? Colors.white : Colors.black,
-                    fontWeight: selectedDay == i
-                        ? FontWeight.bold
-                        : FontWeight.w500,
-                  ),
-                ),
-              ],
+            child: Text(
+              '$i',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                color: selectedDay == i ? Colors.white : Colors.black,
+                fontWeight: selectedDay == i
+                    ? FontWeight.bold
+                    : FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -245,7 +236,6 @@ class CalendarPageState extends State<CalendarPage> {
       dayWidgets.add(
         GestureDetector(
           onTap: () {
-            // เปลี่ยนไปเดือนถัดไปและเลือกวันนั้น
             setState(() {
               selectedDate = DateTime(
                 selectedDate.year,
@@ -255,9 +245,10 @@ class CalendarPageState extends State<CalendarPage> {
               selectedDay = i;
               openSelectMonth = false;
             });
-            log("message3");
           },
           child: Container(
+            width: width * 0.08,
+            height: height * 0.05,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -277,15 +268,16 @@ class CalendarPageState extends State<CalendarPage> {
     }
 
     Widget calendarWidget;
+
     if (isCalendarExpanded) {
-      // แสดง calendar แบบเต็ม (5 หรือ 6 สัปดาห์ตามความจำเป็น)
+      // Show full calendar
       List<Widget> rows = [];
       for (int i = 0; i < totalCells; i += 7) {
         rows.add(
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: dayWidgets
-                .sublist(i, i + 7)
+                .sublist(i, (i + 7).clamp(0, dayWidgets.length))
                 .map((widget) => Expanded(child: Center(child: widget)))
                 .toList(),
           ),
@@ -293,10 +285,10 @@ class CalendarPageState extends State<CalendarPage> {
       }
       calendarWidget = Column(children: rows);
     } else {
-      // แสดงเฉพาะสัปดาห์ที่มีวันที่เลือก
+      // Show only the week containing the selected day
       int selectedWeekIndex = 0;
 
-      // หาว่าวันที่เลือกอยู่ในสัปดาห์ที่เท่าไหร่
+      // หาสัปดาห์ที่มี selectedDay
       for (int week = 0; week < totalWeeks; week++) {
         int weekStart = week * 7;
         int weekEnd = weekStart + 7;
@@ -306,7 +298,6 @@ class CalendarPageState extends State<CalendarPage> {
           dayIndex < weekEnd && dayIndex < dayWidgets.length;
           dayIndex++
         ) {
-          // ตรวจสอบว่าวันนี้เป็นวันที่เลือกหรือไม่
           int actualDay = dayIndex - adjustedStartWeekday + 1;
           if (actualDay == selectedDay &&
               actualDay > 0 &&
@@ -317,14 +308,280 @@ class CalendarPageState extends State<CalendarPage> {
         }
       }
 
-      // แสดงสัปดาห์ที่เลือก
-      int weekStart = selectedWeekIndex * 7;
-      calendarWidget = Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: dayWidgets
-            .sublist(weekStart, weekStart + 7)
-            .map((widget) => Expanded(child: Center(child: widget)))
-            .toList(),
+      // Initialize PageController if not exists or update it
+      _pageController = PageController(initialPage: selectedWeekIndex + 1);
+
+      // Animate to correct page if needed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          int currentPage = _pageController.page?.round() ?? 0;
+          if (currentPage != selectedWeekIndex + 1) {
+            _pageController.animateToPage(
+              selectedWeekIndex + 1,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
+      });
+
+      void calculateNewMonthValues(
+        DateTime newDate, {
+        bool goToLastWeek = false,
+      }) {
+        setState(() {
+          selectedDate = newDate;
+
+          // คำนวณวันที่ในเดือนใหม่
+          int newDaysInMonth = DateTime(newDate.year, newDate.month + 1, 0).day;
+
+          if (goToLastWeek) {
+            // ไปสัปดาห์สุดท้ายของเดือนก่อนหน้า
+            selectedDay = newDaysInMonth; // เลือกวันสุดท้ายของเดือน
+
+            // คำนวณสัปดาห์ที่วันสุดท้ายอยู่
+            int newStartWeekday = DateTime(
+              newDate.year,
+              newDate.month,
+              1,
+            ).weekday;
+            int newAdjustedStartWeekday = newStartWeekday == 7
+                ? 0
+                : newStartWeekday;
+
+            // คำนวณว่าต้องใช้กี่สัปดาห์
+            bool needsSixWeeks =
+                (newDaysInMonth == 31 && newAdjustedStartWeekday >= 5) ||
+                (newDaysInMonth == 30 && newAdjustedStartWeekday == 6);
+            int totalWeeksInMonth = needsSixWeeks ? 6 : 5;
+
+            // หาสัปดาห์ที่วันสุดท้ายอยู่
+            int lastDayIndex = newAdjustedStartWeekday + newDaysInMonth - 1;
+            selectedWeekIndex = (lastDayIndex / 7).floor();
+
+            // ตรวจสอบให้แน่ใจว่าไม่เกินจำนวนสัปดาห์ที่มี
+            selectedWeekIndex = selectedWeekIndex.clamp(
+              0,
+              totalWeeksInMonth - 1,
+            );
+          } else {
+            // ไปสัปดาห์แรกของเดือนถัดไป
+            selectedWeekIndex = 0;
+            selectedDay = 1;
+          }
+        });
+      }
+
+      calendarWidget = SizedBox(
+        height: height * 0.05,
+        child: PageView.builder(
+          controller: _pageController,
+          itemCount: totalWeeks + 2, // Add 2 for previous and next month
+          onPageChanged: (index) {
+            setState(() {
+              if (index == 0) {
+                // Previous month - ไปสัปดาห์สุดท้ายของเดือนก่อนหน้า
+                DateTime previousMonth = DateTime(
+                  selectedDate.year,
+                  selectedDate.month - 1,
+                  1,
+                );
+                calculateNewMonthValues(previousMonth, goToLastWeek: true);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_pageController.hasClients) {
+                    _pageController.jumpToPage(selectedWeekIndex + 1);
+                  }
+                });
+                return;
+              }
+
+              if (index == totalWeeks + 1) {
+                // Next month - ไปสัปดาห์แรกของเดือนถัดไป
+                DateTime nextMonth = DateTime(
+                  selectedDate.year,
+                  selectedDate.month + 1,
+                  1,
+                );
+                calculateNewMonthValues(nextMonth, goToLastWeek: false);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_pageController.hasClients) {
+                    _pageController.jumpToPage(
+                      1,
+                    ); // Jump to first week of next month
+                  }
+                });
+                return;
+              }
+
+              // เลื่อนภายในเดือนเดียวกัน
+              selectedWeekIndex = index - 1;
+
+              // หาวันแรกในสัปดาห์ที่เลือกที่เป็นวันในเดือนปัจจุบัน
+              int weekStart = selectedWeekIndex * 7;
+              bool foundValidDay = false;
+
+              for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+                int dayIndex = weekStart + dayOffset;
+                if (dayIndex >= 0 && dayIndex < dayWidgets.length) {
+                  int actualDay = dayIndex - adjustedStartWeekday + 1;
+                  if (actualDay > 0 && actualDay <= daysInMonth) {
+                    selectedDay = actualDay;
+                    foundValidDay = true;
+                    break;
+                  }
+                }
+              }
+
+              // ถ้าไม่เจอวันที่ถูกต้องในสัปดาห์นี้ ให้ใช้วันที่ 1
+              if (!foundValidDay) {
+                selectedDay = 1;
+              }
+            });
+          },
+          itemBuilder: (context, pageIndex) {
+            // First page: last week of previous month
+            if (pageIndex == 0) {
+              DateTime prevMonth = DateTime(
+                selectedDate.year,
+                selectedDate.month - 1,
+                1,
+              );
+              int prevMonthDays = DateTime(
+                prevMonth.year,
+                prevMonth.month + 1,
+                0,
+              ).day;
+
+              List<Widget> prevWeekDays = [];
+              int startDay = prevMonthDays - 6; // Start from the last week
+              for (int i = 0; i < 7; i++) {
+                int day = startDay + i;
+                if (day > 0 && day <= prevMonthDays) {
+                  prevWeekDays.add(
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedDate = DateTime(
+                                selectedDate.year,
+                                selectedDate.month - 1,
+                                day,
+                              );
+                              selectedDay = day;
+                            });
+                          },
+                          child: Container(
+                            width: width * 0.08,
+                            height: height * 0.05,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                            ),
+                            child: Text(
+                              '$day',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  prevWeekDays.add(Expanded(child: Container()));
+                }
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: prevWeekDays,
+              );
+            }
+
+            // Last page: first week of next month
+            if (pageIndex == totalWeeks + 1) {
+              List<Widget> nextWeekDays = [];
+              for (int i = 1; i <= 7; i++) {
+                nextWeekDays.add(
+                  Expanded(
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedDate = DateTime(
+                              selectedDate.year,
+                              selectedDate.month + 1,
+                              i,
+                            );
+                            selectedDay = i;
+                          });
+                        },
+                        child: Container(
+                          width: width * 0.08,
+                          height: height * 0.05,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.transparent,
+                          ),
+                          child: Text(
+                            '$i',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: nextWeekDays,
+              );
+            }
+
+            // Normal page: week in current month
+            int weekIndex = pageIndex - 1;
+            int startIndex = weekIndex * 7;
+            int endIndex = (startIndex + 7).clamp(0, dayWidgets.length);
+
+            if (startIndex >= dayWidgets.length) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(
+                  7,
+                  (index) => Expanded(child: Container()),
+                ),
+              );
+            }
+
+            List<Widget> weekDays = dayWidgets.sublist(startIndex, endIndex);
+
+            // เติมช่องว่างถ้าสัปดาห์ไม่ครบ 7 วัน
+            while (weekDays.length < 7) {
+              weekDays.add(Container());
+            }
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: weekDays
+                  .map((day) => Expanded(child: Center(child: day)))
+                  .toList(),
+            );
+          },
+        ),
       );
     }
 
@@ -1160,7 +1417,7 @@ class CalendarPageState extends State<CalendarPage> {
                                                                                             >
                                                                                           >(
                                                                                             future: showTimeRemineMeBefore(
-                                                                                              data.taskId,
+                                                                                              data,
                                                                                               notiTasks: data.notifications,
                                                                                             ),
                                                                                             builder:
@@ -1522,20 +1779,24 @@ class CalendarPageState extends State<CalendarPage> {
   }
 
   Future<List<String>> showTimeRemineMeBefore(
-    int taskId, {
+    model.Task task, {
     required List<model.Notification> notiTasks,
   }) async {
-    final appData = Provider.of<Appdata>(context, listen: false);
+    final rawData = box.read('userDataAll');
+    final data = model.AllDataUserGetResponst.fromJson(rawData);
     final List<String> remindTimes = [];
 
     for (var notiTask in notiTasks) {
       DateTime? remindTimestamp;
+      bool isGroup = data.boardgroup.any(
+        (b) => b.boardId.toString() == task.boardId.toString(),
+      );
 
-      if (appData.boardDatas.boardToken.isNotEmpty) {
+      if (isGroup) {
         // DocumentSnapshot
         final docSnapshot = await FirebaseFirestore.instance
             .collection('BoardTasks')
-            .doc(taskId.toString())
+            .doc(task.taskId.toString())
             .collection('Notifications')
             .doc(notiTask.notificationId.toString())
             .get();
@@ -1552,7 +1813,7 @@ class CalendarPageState extends State<CalendarPage> {
             .collection('Notifications')
             .doc(box.read('userProfile')['email'])
             .collection('Tasks')
-            .where('taskID', isEqualTo: taskId)
+            .where('taskID', isEqualTo: task.taskId)
             .get();
 
         if (querySnapshot.docs.isNotEmpty) {

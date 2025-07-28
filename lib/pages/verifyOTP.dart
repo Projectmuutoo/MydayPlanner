@@ -1044,6 +1044,11 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
             'role': response.user.role,
           });
 
+          var result = await FirebaseFirestore.instance
+              .collection('usersLogin')
+              .doc(response.user.email)
+              .get();
+          final data = result.data();
           String deviceName = await getDeviceName();
           String? token = await FirebaseMessaging.instance.getToken();
           await FirebaseFirestore.instance
@@ -1054,7 +1059,9 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
                 'changePassword': response.user.role == "admin"
                     ? FieldValue.delete()
                     : true,
-                'FMCToken': token,
+                'FMCToken': data != null && data['FMCToken'] != 'off'
+                    ? token
+                    : 'off',
               });
 
           if (response.user.role != "admin") {

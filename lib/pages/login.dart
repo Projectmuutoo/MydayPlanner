@@ -658,7 +658,10 @@ class _LoginPageState extends State<LoginPage> {
                   : result.data() != null
                   ? (result.data()?['changePassword'] == true)
                   : false,
-              'FMCToken': token,
+              'FMCToken':
+                  result.data() != null && result.data()?['FMCToken'] != 'off'
+                  ? token
+                  : 'off',
             });
 
         if (response.user.role != "admin") {
@@ -855,6 +858,11 @@ class _LoginPageState extends State<LoginPage> {
         'role': response.user.role,
       });
 
+      var result = await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(response.user.email)
+          .get();
+      final data = result.data();
       String deviceName = await getDeviceName();
       String? token = await FirebaseMessaging.instance.getToken();
       await FirebaseFirestore.instance
@@ -865,7 +873,9 @@ class _LoginPageState extends State<LoginPage> {
             'changePassword': response.user.role == "admin"
                 ? FieldValue.delete()
                 : true,
-            'FMCToken': token,
+            'FMCToken': data != null && data['FMCToken'] != 'off'
+                ? token
+                : 'off',
           });
 
       if (response.user.role != "admin") {

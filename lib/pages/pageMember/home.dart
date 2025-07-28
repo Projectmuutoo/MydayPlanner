@@ -1528,6 +1528,11 @@ class HomePageState extends State<HomePage> {
                                                                           keyId,
                                                                       grid:
                                                                           true,
+                                                                      shareToken:
+                                                                          groupFontWeight ==
+                                                                              FontWeight.w600
+                                                                          ? board.token
+                                                                          : null,
                                                                     );
                                                                   },
                                                             child: Stack(
@@ -1696,18 +1701,45 @@ class HomePageState extends State<HomePage> {
                                                                           ),
                                                                         ),
                                                                       ),
-                                                                      Text(
-                                                                        ' ${findNumberOFTasks(board)} tasks ',
-                                                                        style: TextStyle(
-                                                                          fontSize: Get
-                                                                              .textTheme
-                                                                              .labelMedium!
-                                                                              .fontSize!,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                          color:
-                                                                              Colors.black45,
+                                                                      FutureBuilder<
+                                                                        String
+                                                                      >(
+                                                                        future: findNumberOFTasks(
+                                                                          board,
                                                                         ),
+                                                                        builder:
+                                                                            (
+                                                                              context,
+                                                                              snapshot,
+                                                                            ) {
+                                                                              if (snapshot.hasData &&
+                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                return Text(
+                                                                                  ' ${snapshot.data} tasks ',
+                                                                                  style: TextStyle(
+                                                                                    fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                    fontWeight: FontWeight.w500,
+                                                                                    color: Colors.black45,
+                                                                                  ),
+                                                                                );
+                                                                              } else {
+                                                                                return Padding(
+                                                                                  padding: EdgeInsets.only(
+                                                                                    left:
+                                                                                        width *
+                                                                                        0.01,
+                                                                                  ),
+                                                                                  child: Text(
+                                                                                    'Loading...',
+                                                                                    style: TextStyle(
+                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                      fontWeight: FontWeight.w500,
+                                                                                      color: Colors.black45,
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              }
+                                                                            },
                                                                       ),
                                                                       if (groupFontWeight ==
                                                                           FontWeight
@@ -2103,6 +2135,11 @@ class HomePageState extends State<HomePage> {
                                                                           keyId,
                                                                       grid:
                                                                           false,
+                                                                      shareToken:
+                                                                          groupFontWeight ==
+                                                                              FontWeight.w600
+                                                                          ? board.token
+                                                                          : null,
                                                                     );
                                                                   },
                                                             child: Stack(
@@ -2267,18 +2304,45 @@ class HomePageState extends State<HomePage> {
                                                                           ),
                                                                         ),
                                                                       ),
-                                                                      Text(
-                                                                        ' ${findNumberOFTasks(board)} tasks ',
-                                                                        style: TextStyle(
-                                                                          fontSize: Get
-                                                                              .textTheme
-                                                                              .labelMedium!
-                                                                              .fontSize!,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                          color:
-                                                                              Colors.black45,
+                                                                      FutureBuilder<
+                                                                        String
+                                                                      >(
+                                                                        future: findNumberOFTasks(
+                                                                          board,
                                                                         ),
+                                                                        builder:
+                                                                            (
+                                                                              context,
+                                                                              snapshot,
+                                                                            ) {
+                                                                              if (snapshot.hasData &&
+                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                return Text(
+                                                                                  ' ${snapshot.data} tasks ',
+                                                                                  style: TextStyle(
+                                                                                    fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                    fontWeight: FontWeight.w500,
+                                                                                    color: Colors.black45,
+                                                                                  ),
+                                                                                );
+                                                                              } else {
+                                                                                return Padding(
+                                                                                  padding: EdgeInsets.only(
+                                                                                    left:
+                                                                                        width *
+                                                                                        0.01,
+                                                                                  ),
+                                                                                  child: Text(
+                                                                                    'Loading...',
+                                                                                    style: TextStyle(
+                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                      fontWeight: FontWeight.w500,
+                                                                                      color: Colors.black45,
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              }
+                                                                            },
                                                                       ),
                                                                       if (groupFontWeight ==
                                                                           FontWeight
@@ -2552,17 +2616,39 @@ class HomePageState extends State<HomePage> {
     return docSnapshot.docs.length.toString();
   }
 
-  String findNumberOFTasks(dynamic boards) {
+  Future<String> findNumberOFTasks(dynamic boards) async {
     final boardDataRaw = box.read('userDataAll');
     if (boardDataRaw == null) return '';
     final boardData = AllDataUserGetResponst.fromJson(boardDataRaw);
 
-    String number = boardData.tasks
-        .where((board) => board.boardId.toString() == boards.boardId.toString())
-        .toList()
-        .length
-        .toString();
-    return number;
+    if (groupFontWeight == FontWeight.w600) {
+      final boardsID = boardData.boardgroup
+          .where((t) => t.boardId.toString() == boards.boardId.toString())
+          .toList();
+
+      int totalTasks = 0;
+
+      for (var i in boardsID) {
+        var result = await FirebaseFirestore.instance
+            .collection('Boards')
+            .doc(i.boardId.toString())
+            .collection('Tasks')
+            .get();
+
+        totalTasks += result.docs.length;
+      }
+
+      return totalTasks.toString();
+    } else {
+      String number = boardData.tasks
+          .where(
+            (board) => board.boardId.toString() == boards.boardId.toString(),
+          )
+          .toList()
+          .length
+          .toString();
+      return number;
+    }
   }
 
   String findNumberOfAllTask(bool value) {
@@ -2973,7 +3059,7 @@ class HomePageState extends State<HomePage> {
               style: TextStyle(
                 fontSize: Get.textTheme.labelMedium!.fontSize!,
                 fontWeight: FontWeight.w500,
-                color: title == 'Delete List' ? Colors.red : Colors.black,
+                color: title == 'Delete board' ? Colors.red : Colors.black,
               ),
             ),
             if (trailing != null) trailing,
@@ -2983,13 +3069,14 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  showInfoMenuBoard(
+  void showInfoMenuBoard(
     BuildContext context,
     int boardId,
     String boardName,
     int createdBy, {
     required String keyId,
     required bool grid,
+    String? shareToken,
   }) {
     //horizontal left right
     double width = MediaQuery.of(context).size.width;
@@ -3060,7 +3147,7 @@ class HomePageState extends State<HomePage> {
                             focusedBoardId = null;
                           });
                         }
-                        showEditInfo(boardName, boardId);
+                        showEditInfo(boardName, boardId, shareToken ?? '');
                       },
                     ),
                     if (createdBy.toString() ==
@@ -3095,7 +3182,7 @@ class HomePageState extends State<HomePage> {
                         box.read('userProfile')['userid'].toString())
                       buildPopupItem(
                         context,
-                        title: 'Delete List',
+                        title: 'Delete board',
                         trailing: SvgPicture.string(
                           '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M5 20a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H3v2h2zM9 4h6v2H9zM8 8h9v12H7V8z"></path><path d="M9 10h2v8H9zm4 0h2v8h-2z"></path></svg>',
                           height: height * 0.02,
@@ -3296,7 +3383,7 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  showEditInfo(String boardname, int boardId) {
+  void showEditInfo(String boardname, int boardId, String boardToken) {
     boardListNameCtl.text = boardname;
     showModalBottomSheet(
       context: context,
@@ -3327,7 +3414,7 @@ class HomePageState extends State<HomePage> {
                       elevation: 0,
                       foregroundColor: Colors.black,
                       centerTitle: true,
-                      leading: InkWell(
+                      leading: GestureDetector(
                         onTap: () {
                           Get.back();
                         },
@@ -3351,7 +3438,8 @@ class HomePageState extends State<HomePage> {
                         TextButton(
                           onPressed: () {
                             Get.back();
-                            if (boardname != boardListNameCtl.text) {
+                            if (boardname != boardListNameCtl.text &&
+                                boardListNameCtl.text.isNotEmpty) {
                               updateBoardName(boardId);
                             }
                           },
@@ -3367,96 +3455,420 @@ class HomePageState extends State<HomePage> {
                         SizedBox(width: width * 0.02),
                       ],
                     ),
-                    body: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: width,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.04,
-                                vertical: height * 0.02,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Color(0xFFF2F2F6),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
+                    body: SafeArea(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: width * 0.03),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            spacing: 10,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.03,
+                                  vertical: height * 0.01,
                                 ),
-                              ),
-                              child: Column(
-                                children: [
-                                  SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M11 11h2v6h-2zm0-4h2v2h-2z"></path></svg>',
-                                    height: height * 0.1,
-                                    fit: BoxFit.contain,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF2F2F6),
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
                                   ),
-                                  SizedBox(height: height * 0.01),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
+                                ),
+                                child: Column(
+                                  children: [
+                                    if (boardToken.isNotEmpty)
+                                      GestureDetector(
+                                        onTap: () {
+                                          checkExpiresTokenBoard(boardId);
+                                          ShareFunction().shareTask(
+                                            context,
+                                            boardId,
+                                          );
+                                        },
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * 0.02,
+                                              vertical: height * 0.005,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              color: Colors.white,
+                                            ),
+                                            child: Icon(
+                                              Icons.share_outlined,
+                                              size: 20,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          left: width * 0.02,
+                                        ),
+                                        child: Text(
+                                          "Board Name",
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    child: TextField(
-                                      controller: boardListNameCtl,
-                                      focusNode: boardListNameFocusNode,
-                                      keyboardType: TextInputType.text,
-                                      cursorColor: Color(0xFF4790EB),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: Get
-                                            .textTheme
-                                            .titleMedium!
-                                            .fontSize!,
-                                        fontWeight: FontWeight.w500,
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(12),
+                                        ),
                                       ),
-                                      maxLines: 1,
-                                      decoration: InputDecoration(
-                                        hintText: 'Board List Name',
-                                        hintStyle: TextStyle(
+                                      child: TextField(
+                                        controller: boardListNameCtl,
+                                        focusNode: boardListNameFocusNode,
+                                        keyboardType: TextInputType.text,
+                                        cursorColor: Color(0xFF4790EB),
+                                        style: TextStyle(
                                           fontSize: Get
                                               .textTheme
                                               .titleMedium!
                                               .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: boardListNameCtl.text.isEmpty
-                                              ? Colors.black
-                                              : Colors.grey,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                        suffixIcon:
-                                            boardListNameFocusNode.hasFocus
-                                            ? Material(
-                                                color: Colors.transparent,
-                                                child: IconButton(
-                                                  onPressed: () {
-                                                    boardListNameCtl.clear();
-                                                  },
-                                                  icon: SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M9.172 16.242 12 13.414l2.828 2.828 1.414-1.414L13.414 12l2.828-2.828-1.414-1.414L12 10.586 9.172 7.758 7.758 9.172 10.586 12l-2.828 2.828z"></path><path d="M12 22c5.514 0 10-4.486 10-10S17.514 2 12 2 2 6.486 2 12s4.486 10 10 10zm0-18c4.411 0 8 3.589 8 8s-3.589 8-8 8-8-3.589-8-8 3.589-8 8-8z"></path></svg>',
-                                                    color: Colors.grey,
+                                        maxLines: 1,
+                                        decoration: InputDecoration(
+                                          hintText: 'Board List Name',
+                                          hintStyle: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.normal,
+                                            color: boardListNameCtl.text.isEmpty
+                                                ? Colors.black
+                                                : Colors.grey,
+                                          ),
+                                          suffixIcon:
+                                              boardListNameFocusNode.hasFocus
+                                              ? Material(
+                                                  color: Colors.transparent,
+                                                  child: IconButton(
+                                                    onPressed: () {
+                                                      boardListNameCtl.clear();
+                                                    },
+                                                    icon: SvgPicture.string(
+                                                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M9.172 16.242 12 13.414l2.828 2.828 1.414-1.414L13.414 12l2.828-2.828-1.414-1.414L12 10.586 9.172 7.758 7.758 9.172 10.586 12l-2.828 2.828z"></path><path d="M12 22c5.514 0 10-4.486 10-10S17.514 2 12 2 2 6.486 2 12s4.486 10 10 10zm0-18c4.411 0 8 3.589 8 8s-3.589 8-8 8-8-3.589-8-8 3.589-8 8-8z"></path></svg>',
+                                                      color: Colors.grey,
+                                                    ),
                                                   ),
+                                                )
+                                              : IconButton(
+                                                  onPressed: null,
+                                                  icon: Icon(Icons.edit_sharp),
                                                 ),
-                                              )
-                                            : null,
-                                        constraints: BoxConstraints(
-                                          maxHeight: height * 0.05,
+                                          constraints: BoxConstraints(
+                                            maxHeight: height * 0.05,
+                                          ),
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.04,
+                                            vertical: height * 0.01,
+                                          ),
+                                          border: InputBorder.none,
                                         ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.04,
-                                          vertical: height * 0.01,
-                                        ),
-                                        border: InputBorder.none,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.03,
+                                  vertical: height * 0.01,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF2F2F6),
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
+                                  ),
+                                ),
+                                child: Column(
+                                  spacing: 4,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Team Members",
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(
+                                              0xFF3B82F6,
+                                            ).withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '0',
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF3B82F6),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "นาย a",
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "นาย a",
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "นาย a",
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleSmall!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: width * 0.03,
+                                  vertical: height * 0.01,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFF2F2F6),
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
+                                  ),
+                                ),
+                                child: Column(
+                                  spacing: 8,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Tasks",
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(
+                                              0xFF3B82F6,
+                                            ).withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '0',
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF3B82F6),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "ToDo",
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize!,
+                                            fontWeight: groupFontWeight,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(
+                                              0xFF3B82F6,
+                                            ).withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '0',
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF3B82F6),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (boardToken.isNotEmpty)
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "InProgress",
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.orange,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * 0.02,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Color(
+                                                0xFF3B82F6,
+                                              ).withOpacity(0.1),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              '0',
+                                              style: TextStyle(
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .fontSize!,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF3B82F6),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Complete",
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleSmall!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.02,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(
+                                              0xFF3B82F6,
+                                            ).withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '10',
+                                            style: TextStyle(
+                                              fontSize: Get
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .fontSize!,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF3B82F6),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'formatFullDateTime(timestamp)',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.labelMedium!.fontSize!,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -3489,7 +3901,6 @@ class HomePageState extends State<HomePage> {
     await loadDataAsync();
 
     url = await loadAPIEndpoint();
-
     http.Response response;
     response = await http.put(
       Uri.parse("$url/board/adjust"),
@@ -4260,6 +4671,38 @@ class HomePageState extends State<HomePage> {
           ),
         ],
       );
+    }
+  }
+
+  void checkExpiresTokenBoard(int idBoard) async {
+    url = await loadAPIEndpoint();
+    final now = DateTime.now();
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(idBoard.toString())
+        .get();
+    final data = docSnapshot.data();
+    if (data != null) {
+      if ((data['ShareExpiresAt'] as Timestamp).toDate().isBefore(now)) {
+        var response = await http.put(
+          Uri.parse("$url/board/newtoken/$idBoard"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+
+        if (response.statusCode == 403) {
+          await loadNewRefreshToken();
+          response = await http.put(
+            Uri.parse("$url/board/newtoken/$idBoard"),
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Bearer ${box.read('accessToken')}",
+            },
+          );
+        }
+      }
     }
   }
 }

@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
@@ -211,17 +214,14 @@ class _NavbaradminPageState extends State<NavbaradminPage>
     super.initState();
     pageOptions = [ReportPage(), AdminhomePage(), UserPage()];
 
-    homePage();
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
   }
 
-  void homePage() {}
-
-  checkExpiresRefreshToken() async {
+  void checkExpiresRefreshToken() async {
     final userProfile = box.read('userProfile');
-    if (userProfile == null || userProfile is! Map) return;
+    if (userProfile == null) return;
 
     await FirebaseFirestore.instance
         .collection('refreshTokens')
@@ -327,27 +327,39 @@ class _NavbaradminPageState extends State<NavbaradminPage>
     });
   }
 
-  checkInSystem() async {
+  Future<String> getDeviceName() async {
+    final deviceInfoPlugin = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+      final model = androidInfo.model;
+      final id = androidInfo.id;
+      return '${model}_$id';
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfoPlugin.iosInfo;
+      final model = iosInfo.modelName;
+      final id = iosInfo.identifierForVendor!;
+      return '${model}_$id';
+    } else {
+      return 'Unknown_${Random().nextInt(100000000)}';
+    }
+  }
+
+  void checkInSystem() async {
     final userProfile = box.read('userProfile');
     final userLogin = box.read('userLogin');
-    if (userProfile == null ||
-        userLogin == null ||
-        userProfile is! Map ||
-        userLogin is! Map) {
-      return;
-    }
+    if (userProfile == null || userLogin == null) return;
+    String deviceName = await getDeviceName();
 
-    _timer2 = Timer.periodic(Duration(seconds: 5), (_) async {
+    _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
       final snapshot = await FirebaseFirestore.instance
           .collection('usersLogin')
           .doc(userProfile['email'])
           .get();
-
-      final serverdeviceName = snapshot.data()?['deviceName'];
-      final localdeviceName = userLogin['deviceName'];
-
-      if (serverdeviceName != null && localdeviceName != null) {
-        if (serverdeviceName != localdeviceName) {
+      final data = snapshot.data();
+      if (data != null) {
+        final serverdeviceName = data['deviceName'].toString();
+        if ((serverdeviceName != deviceName)) {
           _timer2?.cancel();
 
           Get.defaultDialog(
@@ -372,9 +384,9 @@ class _NavbaradminPageState extends State<NavbaradminPage>
                   Text(
                     'Warning!!',
                     style: TextStyle(
-                      fontSize: Get.textTheme.headlineSmall!.fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF007AFF),
+                      fontSize: Get.textTheme.titleLarge!.fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
                     ),
                   ),
                   Text(
@@ -415,7 +427,7 @@ class _NavbaradminPageState extends State<NavbaradminPage>
                 child: Text(
                   'Login',
                   style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
                     color: Colors.white,
                   ),
                 ),

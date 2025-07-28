@@ -1444,16 +1444,18 @@ class _AdminhomePageState extends State<AdminhomePage> {
   }
 
   Future<void> _performCleanup() async {
-    final userProfile = box.read('userProfile');
-    if (userProfile != null && userProfile['email'] != null) {
+    try {
+      final userProfile = box.read('userProfile');
+      final userEmail = userProfile['email'];
+      if (userEmail == null) return;
+
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+
       await FirebaseFirestore.instance
           .collection('usersLogin')
-          .doc(userProfile['email'])
+          .doc(userEmail)
           .update({'deviceName': FieldValue.delete()});
-    }
 
-    try {
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();

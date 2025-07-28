@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
@@ -102,6 +101,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> loadNewRefreshToken() async {
+    if (!mounted) return;
     url = await loadAPIEndpoint();
     var value = await storage.read(key: 'refreshToken');
     var loadtoketnew = await http.post(
@@ -339,139 +339,25 @@ class _NavbarPageState extends State<NavbarPage>
       }
     }
 
-    setState(() {
-      showNoticounts = count;
-    });
-  }
-
-  void checkDatasUser() async {
-    bool hasFetched = false;
-
-    final rawData = box.read('userDataAll');
-    final data = model.AllDataUserGetResponst.fromJson(rawData);
-
-    final groups = data.boardgroup
-        .where((b) => b.boardId.toString().isNotEmpty)
-        .toList();
-
-    for (var g in groups) {
-      if (hasFetched) return;
-
-      final localTasks = data.tasks
-          .where((t) => t.boardId.toString() == g.boardId.toString())
-          .toList();
-
-      final boardDoc = await FirebaseFirestore.instance
-          .collection('Boards')
-          .doc(g.boardId.toString())
-          .get();
-
-      if (!boardDoc.exists) continue;
-
-      final tasksSnapshot = await FirebaseFirestore.instance
-          .collection('Boards')
-          .doc(g.boardId.toString())
-          .collection('Tasks')
-          .get();
-
-      final firebaseTasks = tasksSnapshot.docs;
-      final localTaskMap = {for (var t in localTasks) t.taskId.toString(): t};
-      final firebaseTaskMap = {for (var d in firebaseTasks) d.id.toString(): d};
-
-      final localTaskIds = localTaskMap.keys.toSet();
-      final firebaseTaskIds = firebaseTaskMap.keys.toSet();
-
-      final missingInFirebase = localTaskIds.difference(firebaseTaskIds);
-      final newInFirebase = firebaseTaskIds.difference(localTaskIds);
-      final commonIds = localTaskIds.intersection(firebaseTaskIds);
-
-      if (missingInFirebase.isNotEmpty || newInFirebase.isNotEmpty) {
-        if (!hasFetched) {
-          hasFetched = true;
-          await fetchDataOnResume();
-        }
-        return;
-      }
-
-      for (var taskId in commonIds) {
-        if (hasFetched) return;
-
-        final localTask = localTaskMap[taskId]!;
-        final firebaseTask = firebaseTaskMap[taskId]!;
-        final dataFB = firebaseTask.data();
-
-        if (dataFB['taskName']?.toString().trim() !=
-            localTask.taskName.trim()) {
-          hasFetched = true;
-          await fetchDataOnResume();
-          return;
-        }
-        if (dataFB['description']?.toString().trim() !=
-            localTask.description.trim()) {
-          hasFetched = true;
-          await fetchDataOnResume();
-          return;
-        }
-        if (dataFB['priority']?.toString() != localTask.priority.toString()) {
-          hasFetched = true;
-          await fetchDataOnResume();
-          return;
-        }
-        if (dataFB['status']?.toString() != localTask.status.toString()) {
-          hasFetched = true;
-          await fetchDataOnResume();
-          return;
-        }
-
-        final boardTaskDocRef = FirebaseFirestore.instance
-            .collection('BoardTasks')
-            .doc(taskId);
-
-        final notificationsSnapshot = await boardTaskDocRef
-            .collection('Notifications')
-            .get();
-
-        final localNotificationCount = localTask.notifications.length;
-        final firebaseNotificationCount = notificationsSnapshot.docs.length;
-
-        if (localNotificationCount != firebaseNotificationCount) {
-          hasFetched = true;
-          await fetchDataOnResume();
-          return;
-        }
-
-        for (var doc in notificationsSnapshot.docChanges) {
-          if (hasFetched) return;
-
-          final notificationData = doc.doc;
-          final change = doc.type;
-
-          final localNotification = localTask.notifications.firstWhere(
-            (n) => n.notificationId.toString() == notificationData.id,
-          );
-
-          if (change == DocumentChangeType.added ||
-              change == DocumentChangeType.removed ||
-              change == DocumentChangeType.modified ||
-              localNotification == null) {
-            hasFetched = true;
-            await fetchDataOnResume();
-            return;
-          }
-        }
-      }
+    if (mounted) {
+      setState(() {
+        showNoticounts = count;
+      });
     }
   }
 
   Future<List> showTimeRemineMeBefore(model.Task task) async {
     final rawData = box.read('userDataAll');
+    final userProfile = box.read('userProfile');
+    final userEmail = userProfile['email'];
+    if (rawData == null || userEmail == null) return [];
     final data = model.AllDataUserGetResponst.fromJson(rawData);
     final List<String> remindTimes = [];
     bool tokenFMC = true;
 
     var result = await FirebaseFirestore.instance
         .collection('usersLogin')
-        .doc(box.read('userProfile')['email'])
+        .doc(userEmail)
         .get();
     final dataResult = result.data();
     if (dataResult != null) {
@@ -1078,92 +964,98 @@ class _NavbarPageState extends State<NavbarPage>
     String deviceName = await getDeviceName();
 
     _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
-      final rawData = box.read('userDataAll');
-      final data = model.AllDataUserGetResponst.fromJson(rawData);
-      for (var tasks in data.tasks) {
-        showTimeRemineMeBefore(tasks);
-      }
-      checkDatasUser();
+      final userDataAll = box.read('userDataAll');
+      if (userDataAll == null) return;
+      final rawData = model.AllDataUserGetResponst.fromJson(userDataAll);
+
+      // for (var tasks in rawData.tasks) {
+      //   showTimeRemineMeBefore(tasks);
+      // }
       showNotificationsCount();
 
       final snapshot = await FirebaseFirestore.instance
           .collection('usersLogin')
           .doc(userProfile['email'])
           .get();
-      if (snapshot.data() == null) return;
-      final serverdeviceName = snapshot['deviceName'].toString();
-      if ((serverdeviceName != deviceName)) {
-        _timer2?.cancel();
+      final data = snapshot.data();
+      if (data != null) {
+        final serverdeviceName = data['deviceName'].toString();
+        if ((serverdeviceName != deviceName)) {
+          _timer2?.cancel();
 
-        Get.defaultDialog(
-          title: '',
-          titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          barrierDismissible: false,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width * 0.04,
-            vertical: MediaQuery.of(context).size.height * 0.02,
-          ),
-          content: WillPopScope(
-            onWillPop: () async => false,
-            child: Column(
-              children: [
-                Image.asset(
-                  "assets/images/aleart/warning.png",
-                  height: MediaQuery.of(context).size.height * 0.1,
-                  fit: BoxFit.contain,
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                Text(
-                  'Warning!!',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleLarge!.fontSize,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
+          Get.defaultDialog(
+            title: '',
+            titlePadding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            barrierDismissible: false,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
+            content: WillPopScope(
+              onWillPop: () async => false,
+              child: Column(
+                children: [
+                  Image.asset(
+                    "assets/images/aleart/warning.png",
+                    height: MediaQuery.of(context).size.height * 0.1,
+                    fit: BoxFit.contain,
                   ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                  Text(
+                    'Warning!!',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleLarge!.fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Text(
+                    'Detected login from another device.',
+                    style: TextStyle(
+                      fontSize: Get.textTheme.titleMedium!.fontSize,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () async {
+                  await box.remove('userProfile');
+                  await box.remove('userLogin');
+                  await googleSignIn.signOut();
+                  await FirebaseAuth.instance.signOut();
+                  await storage.deleteAll();
+                  Get.offAll(
+                    () => SplashPage(),
+                    arguments: {'fromLogout': true},
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color(0xFF007AFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
                 ),
-                Text(
-                  'Detected login from another device.',
+                child: Text(
+                  'Login',
                   style: TextStyle(
                     fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                await box.remove('userProfile');
-                await box.remove('userLogin');
-                await googleSignIn.signOut();
-                await FirebaseAuth.instance.signOut();
-                await storage.deleteAll();
-                Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Color(0xFF007AFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 1,
-              ),
-              child: Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.white,
                 ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
       }
     });
   }
@@ -1330,7 +1222,6 @@ class _NavbarPageState extends State<NavbarPage>
         onTap: (index) {
           if (index == 4) {
             _updateNotificationField(all, index);
-            showNoticounts = 0;
           }
           setState(() {
             selectedIndex = index;

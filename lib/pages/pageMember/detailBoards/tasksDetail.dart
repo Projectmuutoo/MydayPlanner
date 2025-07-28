@@ -57,8 +57,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   final FlutterSecureStorage storage = FlutterSecureStorage();
   final GoogleSignIn googleSignIn = GoogleSignIn();
 
-  StreamSubscription<Map<String, dynamic>>? _groupDataSubscription;
-
   String? selectedReminder;
   DateTime? customReminderDateTime;
 
@@ -149,9 +147,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           _descriptionController.text = foundTask.description ?? '';
           appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
 
-          // log(
-          //   'Current task is now: ${appData.showDetailTask.currentTask?.toJson()}',
-          // );
+          log(
+            'Current task is now: ${appData.showDetailTask.currentTask?.toJson()}',
+          );
         } catch (_) {
           // หากไม่พบ ให้ค้นหาใน Group Board
           try {
@@ -201,9 +199,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         _taskNameController.text = foundTask.taskName ?? '';
         _descriptionController.text = foundTask.description ?? '';
         appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
-        // log(
-        //   'Current task is now: ${appData.showDetailTask.currentTask?.toJson()}',
-        // );
+        log(
+          'Current task is now: ${appData.showDetailTask.currentTask?.toJson()}',
+        );
         // log('Task ไม่มี boardId กำหนดเป็น "Today"');
       }
     } catch (e) {
@@ -240,19 +238,22 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     boardDocRef.snapshots().listen((snapshot) {
       combinedData['board'] = snapshot.data();
       onData({...combinedData});
-      log('Combined data updated with board: ${combinedData['board']}');
+      // log('Combined data updated with board: ${combinedData['board']}');
     });
 
     boardDocRef.collection('BoardUsers').snapshots().listen((querySnapshot) {
       combinedData['boardUsers'] = querySnapshot.docs
           .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
+      log(
+        'Combined data updated with boardUsers: ${combinedData['boardUsers']}',
+      );
       onData({...combinedData});
     });
 
     taskDocRef.snapshots().listen((snapshot) {
       combinedData['task'] = snapshot.data();
-      log('Combined data updated with task: ${combinedData['task']}');
+      // log('Combined data updated with task: ${combinedData['task']}');
       onData({...combinedData});
     });
 
@@ -283,9 +284,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       combinedData['notifications'] = snapshot.docs
           .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
-      log(
-        'Combined data updated with notification: ${combinedData['notifications']}',
-      );
+      // log('Combined data updated with notification: ${combinedData['notifications']}');
       onData({...combinedData});
     });
   }
@@ -332,28 +331,44 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                           ),
                           const SizedBox(width: 8),
 
-                          // Title
+                          // Title - แก้ไข Layout ของ Column
                           Expanded(
-                            child: Text(
-                              _getHeaderTitle(),
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _getHeaderTitle(),
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                                Text(
+                                  _getPathTaskTitle(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 10),
+
+                          // Share button for group tasks
                           if (isGroupTask)
                             IconButton(
                               onPressed: () {
                                 _shareTask();
                               },
-                              icon: Icon(Icons.share, color: Colors.blue),
+                              icon: const Icon(Icons.share, color: Colors.blue),
                             ),
 
-                          // ปุ่ม3จุด
+                          // ปุ่ม 3 จุด
                           Builder(
                             builder: (context) {
                               double height = MediaQuery.of(
@@ -387,112 +402,196 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                       bottom: 20,
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ชื่องาน
-                        Row(
-                          children: [
-                            Text(
-                              'Name : ',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        // กรอบครอบส่วนที่ต้องการ
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color.fromARGB(
+                                255,
+                                96,
+                                96,
+                                97,
+                              ).withValues(alpha: 0.1),
+                              width: 2,
                             ),
-                            Expanded(
-                              child: TextField(
-                                controller: _taskNameController,
-                                focusNode: _taskNameFocusNode,
-                                style: const TextStyle(fontSize: 20),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                ),
-                                onChanged: (value) {},
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withValues(alpha: 0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                            if (_isEditingTaskName)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.check,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  _confirmTaskNameEdit(isGroupTask);
-                                },
-                              ),
-                            if (!_isEditingTaskName)
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blue,
-                                ),
-                                onPressed: () {
-                                  _taskNameFocusNode.requestFocus();
-                                },
-                              ),
-                          ],
-                        ),
-                        const Divider(),
-                        const SizedBox(height: 8),
-                        // ปุ่ม status งาน
-                        Row(
-                          spacing: 10,
-                          children: [
-                            _buildStatusButton(
-                              Icons.check,
-                              'Success',
-                              isGroupTask,
-                            ),
-                            _buildStatusButton(
-                              Icons.arrow_forward,
-                              'Priority',
-                              isGroupTask,
-                            ),
-                            if (isGroupTask)
-                              _buildStatusButton(
-                                Icons.arrow_forward,
-                                'progress',
-                                isGroupTask,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        if (isGroupTask)
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // ชื่องาน
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Name : ',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _taskNameController,
+                                      focusNode: _taskNameFocusNode,
+                                      style: const TextStyle(fontSize: 20),
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        // ไม่ต้องทำอะไรตรงนี้ก็ได้ ถ้ายังไม่ใช้
+                                      },
+                                      onSubmitted: (value) {
+                                        // เมื่อผู้ใช้กด Enter เพื่อยืนยัน
+                                        _confirmTaskNameEdit(isGroupTask);
+                                        setState(() {
+                                          _isEditingTaskName = false;
+                                        });
+                                        FocusScope.of(context).unfocus();
+                                      },
+                                    ),
+                                  ),
+                                  if (_isEditingTaskName)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.check,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () {
+                                        _confirmTaskNameEdit(isGroupTask);
+                                        setState(() {
+                                          _isEditingTaskName = false;
+                                        });
+                                        FocusScope.of(
+                                          context,
+                                        ).unfocus(); // ยกเลิก focus
+                                      },
+                                    ),
+                                  if (!_isEditingTaskName)
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isEditingTaskName = true;
+                                        });
+                                        _taskNameFocusNode
+                                            .requestFocus(); // กำหนดให้ TextField ได้ focus
+                                      },
+                                    ),
+                                ],
+                              ),
+
+                              const Divider(),
+                              const SizedBox(height: 8),
+
+                              // ปุ่ม status งาน
+                              Row(
+                                children: [
+                                  Flexible(
+                                    flex: 1,
+                                    child: _buildStatusButton(
+                                      Icons.check,
+                                      'Success',
+                                      isGroupTask,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6), // ลดจาก 8 เป็น 6
+                                  Flexible(
+                                    flex: 1,
+                                    child: _buildStatusButton(
+                                      Icons.priority_high,
+                                      'Priority',
+                                      isGroupTask,
+                                    ),
+                                  ),
+                                  if (isGroupTask) ...[
+                                    const SizedBox(width: 6), // ลดจาก 8 เป็น 6
+                                    Flexible(
+                                      flex: 1,
+                                      child: _buildStatusButton(
+                                        Icons.trending_up,
+                                        'Progress',
+                                        isGroupTask,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Group task specific buttons
+                              if (isGroupTask) ...[
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    _buildFullWidthButton(
+                                      Icons.person_add,
+                                      'Add assignees',
+                                      isGroupTask,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+
+                              // Due date button
                               _buildFullWidthButton(
-                                Icons.person_add,
-                                'Add assignees',
+                                Icons.calendar_today,
+                                'Set due date',
                                 isGroupTask,
                               ),
                             ],
                           ),
-                        const SizedBox(height: 8),
-                        _buildFullWidthButton(
-                          Icons.calendar_today,
-                          'Set due date',
-                          isGroupTask,
                         ),
-                        const SizedBox(height: 8),
+
+                        // ส่วนที่อยู่นอกกรอบ
                         // แท็ป Description, Checklist, File
                         Row(
                           children: [
-                            _buildTabButton('Description', 0),
-                            _buildTabButton('Checklist', 1),
-                            _buildTabButton('File', 2),
+                            Expanded(child: _buildTabButton('Description', 0)),
+                            Expanded(child: _buildTabButton('Checklist', 1)),
+                            Expanded(child: _buildTabButton('File', 2)),
                           ],
                         ),
                         const SizedBox(height: 16),
+
+                        // Tab content
                         _buildTabContent(),
                         const SizedBox(height: 16),
-                        // footer
+
+                        // Footer
                         Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Text(
-                              _getFooterTitle(),
-                              style: const TextStyle(color: Colors.grey),
+                            Expanded(
+                              child: Text(
+                                _getFooterTitle(),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -518,6 +617,58 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     }
 
     return currentTask?.taskName ?? 'กำลังโหลดข้อมูล...';
+  }
+
+  String _getPathTaskTitle() {
+    final appData = Provider.of<Appdata>(context, listen: false);
+    final currentTask = appData.showDetailTask.currentTask;
+
+    if (currentTask == null) {
+      return 'กำลังโหลดข้อมูล...';
+    }
+
+    // ========== กรณี Group Task (Firestore) ==========
+    if (appData.showDetailTask.isGroupTask) {
+      final taskName = combinedData['task']?['taskName'] ?? 'ไม่มีชื่อ Task';
+      final boardName = combinedData['board']?['BoardName'] ?? 'ไม่มีชื่อบอร์ด';
+      return '$boardName > $taskName';
+    }
+
+    // ========== กรณี Task Today ==========
+    if (currentTask.boardId == 'Today') {
+      return 'Today > ${currentTask.taskName}';
+    }
+
+    // ========== กรณี Individual Task ==========
+    final boardId = currentTask.boardId;
+    String boardName = 'ไม่พบชื่อบอร์ด';
+
+    if (boardId != null) {
+      final int? boardIdInt = boardId is int
+          ? boardId
+          : int.tryParse(boardId.toString());
+
+      if (boardIdInt != null) {
+        final board = appData.showMyBoards.createdBoards.firstWhere(
+          (b) => b.boardId == boardIdInt,
+          orElse: () => data.Board(
+            boardId: boardIdInt,
+            boardName: 'ไม่พบชื่อบอร์ด',
+            createdAt: '',
+            createdBy: 0,
+            createdByUser: data.CreatedByUser(
+              email: '',
+              name: '',
+              profile: '',
+              userId: 0,
+            ),
+          ),
+        );
+        boardName = board.boardName;
+      }
+    }
+
+    return '$boardName > ${currentTask.taskName}';
   }
 
   // สร้างหัวข้อที่ footer
@@ -549,14 +700,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        final board = combinedData['board'] as Map<String, dynamic>? ?? {};
-        final boarduser = combinedData['boardUsers'] as List<dynamic>? ?? [];
-
-        final boardid = board['BoardID'].toString();
-        checkAndHandleExpire(board['ShareExpiresAt'], boardid);
-        final shareToken = board['ShareToken'] as String? ?? '';
-
-        final shareUrl = 'myapp://mydayplanner-app/source?join=$shareToken';
         return DraggableScrollableSheet(
           initialChildSize: 0.85,
           minChildSize: 0.5,
@@ -565,6 +708,18 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           builder: (context, scrollController) {
             return StatefulBuilder(
               builder: (BuildContext context, StateSetter setModalState) {
+                final board =
+                    combinedData['board'] as Map<String, dynamic>? ?? {};
+                final boarduser =
+                    combinedData['boardUsers'] as List<dynamic>? ?? [];
+                final boardid = board['BoardID'].toString();
+                checkAndHandleExpire(board['ShareExpiresAt'], boardid);
+                final shareToken = board['ShareToken'] as String? ?? '';
+                bool userIsownerboard = userIsgroup();
+                // log(userIsownerboard.toString());
+
+                final shareUrl =
+                    'myapp://mydayplanner-app/source?join=$shareToken';
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -693,6 +848,10 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                 final userProfile = user['Profile'] as String?;
                                 final userEmail =
                                     user['Email'] as String? ?? '';
+                                final userId = user['UserID'].toString();
+                                final currentId = box.read(
+                                  'userProfile',
+                                )['userid'];
 
                                 return Container(
                                   margin: EdgeInsets.only(bottom: 8),
@@ -773,6 +932,62 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                         ),
                                       ),
                                       const SizedBox(width: 20),
+                                      // แสดง delete icon กับทุกคน ยกเว้นเจ้าของบอร์ด
+                                      if (userIsownerboard &&
+                                          userId !=
+                                              combinedData['board']['CreatedBy']
+                                                  .toString())
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.delete,
+                                            color: Colors.red[400],
+                                          ),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext dialogContext) {
+                                                return AlertDialog(
+                                                  title: const Text(
+                                                    'Confirm Deletion',
+                                                  ),
+                                                  content: const Text(
+                                                    'Are you sure you want to remove this user from the board?',
+                                                  ),
+                                                  actions: <Widget>[
+                                                    TextButton(
+                                                      child: const Text(
+                                                        'Cancel',
+                                                      ),
+                                                      onPressed: () {
+                                                        Navigator.of(
+                                                          dialogContext,
+                                                        ).pop(); // Close dialog
+                                                      },
+                                                    ),
+                                                    TextButton(
+                                                      child: const Text(
+                                                        'Delete',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                      onPressed: () {
+                                                        Navigator.of(
+                                                          dialogContext,
+                                                        ).pop(); // Close dialog
+                                                        deleteUserAssigned(
+                                                          userId,
+                                                          boardid,
+                                                          setModalState,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
                                     ],
                                   ),
                                 );
@@ -844,9 +1059,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   // เช็คเวลาหมดอายุของลิ้งค์แชร์
   void checkAndHandleExpire(dynamic shareExpiresAt, String boardid) async {
     DateTime? expireDate;
-    log(
-      '🔍 ตรวจสอบ Token ของ BoardID: $boardid',
-    ); // <== log ตรงนี้เพื่อดู boardid
     if (shareExpiresAt is Timestamp) {
       expireDate = shareExpiresAt.toDate(); // แปลงจาก Firestore Timestamp
     }
@@ -876,12 +1088,76 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
         }
 
+        if (response.statusCode == 200) {
+          loadDataAsync();
+        }
+
         log('⏳ Token หมดอายุแล้ว');
       } else {
         log('✅ Token ยังไม่หมดอายุ');
       }
     } else {
       log('⚠️ ไม่พบวันหมดอายุ');
+    }
+  }
+
+  bool userIsgroup() {
+    final boardcreatedby = combinedData['board']['CreatedBy'];
+    final userId = box.read('userProfile')['userid'];
+    if (boardcreatedby == userId) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<void> deleteUserAssigned(
+    String? userid,
+    String? boardid,
+    StateSetter setModalState,
+  ) async {
+    if (userid == null) return;
+
+    log('🗑 Removing userID: $userid');
+    log('🗑 Removing boardid: $boardid');
+
+    url = await loadAPIEndpoint();
+    final body = jsonEncode({"board_id": boardid, "user_id": userid});
+
+    var response = await http.delete(
+      Uri.parse("$url/board/boarduser"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+      body: body,
+    );
+
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      response = await http.delete(
+        Uri.parse("$url/board/boarduser"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+        body: body,
+      );
+    }
+
+    if (response.statusCode == 200) {
+      // ลบ user ออกจาก combinedData ทันที
+      combinedData['boardUsers'] = (combinedData['boardUsers'] as List)
+          .where((user) => user['UserID'].toString() != userid)
+          .toList();
+
+      // อัปเดต modal UI
+      setModalState(() {});
+
+      // โหลดข้อมูลใหม่จาก server (optional - เพื่อ sync ข้อมูล)
+      await loadDataAsync();
+    } else {
+      log('error delete boarduser${response.statusCode}');
     }
   }
 
@@ -1042,7 +1318,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         // ถ้า Response เป็น Waiting หรือ Decline ยังส่งได้
         return response == 'Decline' || response == 'Waiting';
       } catch (e) {
-        print('Error checking invitation status: $e');
+        log('Error checking invitation status: $e');
         return false;
       }
     }
@@ -1103,9 +1379,10 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     }
 
     // เลือกuser
-    Future<void> onUserSelected(
+    Future<void> onUserSelectedWithReset(
       Map<String, dynamic> user,
       BuildContext dialogContext,
+      StateSetter dialogSetState,
     ) async {
       if (!isDialogMounted || isControllerDisposed) return;
 
@@ -1138,15 +1415,41 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         // ✅ ดำเนินการเพิ่มผู้ใช้
         await addUserToBoard(user, dialogContext);
 
+        // ✅ รีเซ็ต UI และแสดงข้อความสำเร็จ
         if (isDialogMounted && dialogContext.mounted && !isControllerDisposed) {
-          cleanupResources();
-          Navigator.of(dialogContext).pop(true);
+          // แสดง success message
+          ScaffoldMessenger.of(dialogContext).showSnackBar(
+            SnackBar(
+              content: Text('User ${user['name']} added successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // เคลียร์และรีเซ็ต UI
+          // emailController.clear();
+          // dialogSetState(() {
+          //   searchResults.clear();
+          //   hasSearched = false;
+          // });
+
+          // Focus กลับไปที่ search field
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!isControllerDisposed &&
+                isDialogMounted &&
+                searchFocusNode.canRequestFocus) {
+              searchFocusNode.requestFocus();
+            }
+          });
         }
       } catch (e) {
         log('Error adding user: $e');
         if (isDialogMounted && dialogContext.mounted && !isControllerDisposed) {
           ScaffoldMessenger.of(dialogContext).showSnackBar(
-            SnackBar(content: Text('ไม่สามารถเพิ่มผู้ใช้ได้: $e')),
+            SnackBar(
+              content: Text('ไม่สามารถเพิ่มผู้ใช้ได้: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -1156,6 +1459,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     Widget buildUserItem(
       Map<String, dynamic> user,
       BuildContext dialogContext,
+      StateSetter dialogSetState, // เพิ่มพารามิเตอร์นี้
     ) {
       final String userName = user['name'] ?? '';
       final String userEmail = user['email'] ?? '';
@@ -1240,7 +1544,12 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
               onTap: () async {
                 if (!isDialogMounted || isControllerDisposed) return;
                 try {
-                  await onUserSelected(user, dialogContext);
+                  // ✅ เรียก onUserSelected แล้วรีเซ็ต UI หลังจากเสร็จ
+                  await onUserSelectedWithReset(
+                    user,
+                    dialogContext,
+                    dialogSetState,
+                  );
                 } catch (e) {
                   log('Error in onUserSelected: $e');
                 }
@@ -1315,7 +1624,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       return ListView.builder(
         itemCount: searchResults.length,
         itemBuilder: (context, index) {
-          return buildUserItem(searchResults[index], dialogContext);
+          return buildUserItem(
+            searchResults[index],
+            dialogContext,
+            dialogSetState, // ✅ ส่ง dialogSetState ไปด้วย
+          );
         },
       );
     }
@@ -1466,6 +1779,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     final newTaskName = _taskNameController.text.trim();
     String? oldName;
     int? taskId;
+    bool hasChanges = false; // เพิ่มตัวแปรเช็คการเปลี่ยนแปลง
 
     try {
       if (isgroup) {
@@ -1475,11 +1789,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           oldName = taskData['taskName'];
           taskId = taskData['taskID'];
           if (newTaskName != currentTaskName) {
-            setState(() {
-              combinedData['task']['taskName'] = newTaskName;
-              _isEditingTaskName = false;
-              FocusScope.of(context).unfocus();
-            });
+            combinedData['task']['taskName'] = newTaskName;
+            hasChanges = true; // มีการเปลี่ยนแปลง
           } else {
             log("ไม่มีการเปลี่ยนแปลงชื่อ task");
           }
@@ -1490,15 +1801,23 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           oldName = currentTaskName;
           taskId = currentTask.taskId;
           if (newTaskName != currentTaskName) {
-            setState(() {
-              currentTask.taskName = newTaskName;
-              _isEditingTaskName = false;
-              FocusScope.of(context).unfocus();
-            });
+            currentTask.taskName = newTaskName;
+            hasChanges = true; // มีการเปลี่ยนแปลง
           } else {
             log("ไม่มีการเปลี่ยนแปลงชื่อ task");
           }
         }
+      }
+
+      // ออกจาก focus เสมอไม่ว่าจะมีการเปลี่ยนแปลงหรือไม่
+      setState(() {
+        _isEditingTaskName = false;
+        FocusScope.of(context).unfocus();
+      });
+
+      // ถ้าไม่มีการเปลี่ยนแปลงให้หยุดทำงานที่นี่
+      if (!hasChanges) {
+        return;
       }
 
       if (currentTask != null) {
@@ -1594,39 +1913,46 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     bool isCompleted = currentStatus == '2';
     bool isInProgress = currentStatus == '1';
 
-    // แก้ไข: เปลี่ยนการแสดงผลตามสถานะ
-    bool isCurrentStatus = (label == 'Success' && isCompleted);
+    // กำหนดสีและสถานะของปุ่ม
+    Color backgroundColor;
+    Color textColor;
+    IconData displayIcon;
     String displayLabel = label;
 
     if (label == 'Success') {
-      displayLabel = (currentStatus == '2') ? 'Complete' : 'Success';
-    } else {
-      displayLabel = label;
-    }
-
-    // สีและไอคอนสำหรับ status และ priority
-    final Map<String, Map<String, dynamic>> optionStyles = {
-      'status': {
-        '0': Icons.radio_button_unchecked,
-        '1': Icons.autorenew,
-        '2': Icons.check_circle,
-      },
-      'priority': {'1': Colors.green, '2': Colors.orange, '3': Colors.red},
-    };
-
-    // ดึง icon หรือสีตามประเภท
-    dynamic getOptionStyle() {
-      if (label == 'progress') {
-        return optionStyles['status']?[currentStatus];
-      } else if (label == 'Priority') {
-        return optionStyles['priority']?[currentPriority];
+      if (isCompleted) {
+        backgroundColor = Colors.green;
+        textColor = Colors.white;
+        displayIcon = Icons.check;
+        displayLabel = 'Success';
+      } else {
+        backgroundColor = Colors.grey[200]!;
+        textColor = Colors.grey[600]!;
+        displayIcon = icon;
       }
-      return null;
+    } else if (label == 'Progress') {
+      // Progress button styling
+      Map<String, dynamic> progressStyle = _getProgressStyle(currentStatus);
+      backgroundColor = progressStyle['backgroundColor'];
+      textColor = progressStyle['textColor'];
+      displayIcon = progressStyle['icon'];
+      displayLabel = progressStyle['label'];
+    } else if (label == 'Priority') {
+      // Priority button styling with color indicators
+      Map<String, dynamic> priorityStyle = _getPriorityStyle(currentPriority);
+      backgroundColor = priorityStyle['backgroundColor'];
+      textColor = priorityStyle['textColor'];
+      displayIcon = priorityStyle['icon'];
+      displayLabel = priorityStyle['label'];
+    } else {
+      backgroundColor = Colors.grey[200]!;
+      textColor = Colors.grey[600]!;
+      displayIcon = icon;
     }
 
     return GestureDetector(
       onTapDown: (TapDownDetails details) {
-        if (label == 'progress' || label == 'Priority') {
+        if (label == 'Progress' || label == 'Priority') {
           _showStatusDropdown(
             context,
             label,
@@ -1636,7 +1962,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       },
       onTap: () {
-        if (label != 'progress' && label != 'Priority') {
+        if (label != 'Progress' && label != 'Priority') {
           log('Status button "$displayLabel" clicked for task: $taskName');
           switch (label) {
             case 'Success':
@@ -1655,48 +1981,44 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: isCurrentStatus ? Colors.green : Colors.grey[300]!,
-            width: isCurrentStatus ? 2 : 1,
-          ),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
-          color: isCurrentStatus ? Colors.green.withOpacity(0.2) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isCurrentStatus ? Icons.check_circle : icon,
-              size: 16,
-              color: isCurrentStatus ? Colors.green[700] : null,
-            ),
+            Icon(displayIcon, size: 16, color: textColor),
             const SizedBox(width: 4),
-            Text(
-              displayLabel, // ใช้ displayLabel แทน label เดิม
-              style: TextStyle(
-                fontSize: 12,
-                color: isCurrentStatus ? Colors.green[700] : null,
-                fontWeight: isCurrentStatus ? FontWeight.bold : null,
+            Flexible(
+              child: Text(
+                displayLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: textColor,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (label == 'progress') ...[
-              const SizedBox(width: 6),
-              Icon(
-                getOptionStyle() ?? Icons.help_outline,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-            ],
+            // แสดง priority indicator สำหรับ Priority button
             if (label == 'Priority') ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Container(
-                width: 10,
-                height: 10,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: getOptionStyle() ?? Colors.grey,
+                  color: _getPriorityIndicatorColor(currentPriority),
                 ),
               ),
             ],
@@ -1704,6 +2026,88 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         ),
       ),
     );
+  }
+
+  // Helper method สำหรับ Progress styling
+  Map<String, dynamic> _getProgressStyle(String currentStatus) {
+    switch (currentStatus) {
+      case '0': // Not started
+        return {
+          'backgroundColor': Colors.grey[200]!,
+          'textColor': Colors.grey[600]!,
+          'icon': Icons.radio_button_unchecked,
+          'label': 'Todo',
+        };
+      case '1': // In progress
+        return {
+          'backgroundColor': Colors.orange[100]!,
+          'textColor': Colors.orange[700]!,
+          'icon': Icons.autorenew,
+          'label': 'In Progress',
+        };
+      case '2': // Completed
+        return {
+          'backgroundColor': Colors.green[100]!,
+          'textColor': Colors.green[700]!,
+          'icon': Icons.check_circle,
+          'label': 'Completed',
+        };
+      default:
+        return {
+          'backgroundColor': Colors.grey[200]!,
+          'textColor': Colors.grey[600]!,
+          'icon': Icons.help_outline,
+          'label': 'Progress',
+        };
+    }
+  }
+
+  // Helper method สำหรับ Priority styling
+  Map<String, dynamic> _getPriorityStyle(String currentPriority) {
+    switch (currentPriority) {
+      case '1': // Low priority
+        return {
+          'backgroundColor': Colors.green[50]!,
+          'textColor': Colors.green[700]!,
+          'icon': Icons.keyboard_arrow_down,
+          'label': 'Low',
+        };
+      case '2': // Medium priority
+        return {
+          'backgroundColor': Colors.orange[50]!,
+          'textColor': Colors.orange[700]!,
+          'icon': Icons.remove,
+          'label': 'Medium',
+        };
+      case '3': // High priority
+        return {
+          'backgroundColor': Colors.red[50]!,
+          'textColor': Colors.red[700]!,
+          'icon': Icons.keyboard_arrow_up,
+          'label': 'High',
+        };
+      default:
+        return {
+          'backgroundColor': Colors.grey[200]!,
+          'textColor': Colors.grey[600]!,
+          'icon': Icons.priority_high,
+          'label': 'Priority',
+        };
+    }
+  }
+
+  // Helper method สำหรับสี indicator ของ Priority
+  Color _getPriorityIndicatorColor(String currentPriority) {
+    switch (currentPriority) {
+      case '1': // Low priority
+        return Colors.green;
+      case '2': // Medium priority
+        return Colors.orange;
+      case '3': // High priority
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   // dropdown priority กับ progress
@@ -1715,25 +2119,31 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   ) {
     List<Map<String, dynamic>> options = [];
 
-    if (type == 'progress') {
+    if (type == 'Progress') {
       options = [
         {
-          'label': 'Todo',
-          'value': 'todo',
+          'label': 'Not Started',
+          'value': 'not_started',
           'icon': Icons.radio_button_unchecked,
           'statusValue': '0',
+          'color': Colors.grey[600],
+          'backgroundColor': Colors.grey[50],
         },
         {
           'label': 'In Progress',
           'value': 'in_progress',
           'icon': Icons.autorenew,
           'statusValue': '1',
+          'color': Colors.orange[700],
+          'backgroundColor': Colors.orange[50],
         },
         {
-          'label': 'Success',
-          'value': 'success',
+          'label': 'Completed',
+          'value': 'completed',
           'icon': Icons.check_circle,
           'statusValue': '2',
+          'color': Colors.green[700],
+          'backgroundColor': Colors.green[50],
         },
       ];
     } else if (type == 'Priority') {
@@ -1742,19 +2152,28 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           'label': 'Low',
           'value': 'low',
           'icon': Icons.keyboard_arrow_down,
-          'priorityValue': '1',
+          'priorityValue': '1', // แก้ไขจาก '1' เป็น '0'
+          'color': Colors.green[700],
+          'backgroundColor': Colors.green[50],
+          'indicatorColor': Colors.green,
         },
         {
           'label': 'Medium',
           'value': 'medium',
           'icon': Icons.remove,
-          'priorityValue': '2',
+          'priorityValue': '2', // แก้ไขจาก '2' เป็น '1'
+          'color': Colors.orange[700],
+          'backgroundColor': Colors.orange[50],
+          'indicatorColor': Colors.orange,
         },
         {
           'label': 'High',
           'value': 'high',
           'icon': Icons.keyboard_arrow_up,
-          'priorityValue': '3',
+          'priorityValue': '3', // แก้ไขจาก '3' เป็น '2'
+          'color': Colors.red[700],
+          'backgroundColor': Colors.red[50],
+          'indicatorColor': Colors.red,
         },
       ];
     }
@@ -1764,23 +2183,51 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       position: RelativeRect.fromLTRB(
         buttonPosition.dx,
         buttonPosition.dy + 20, // ปรับตำแหน่งให้อยู่ใต้ปุ่ม
-        buttonPosition.dx + 150,
+        buttonPosition.dx + 180, // เพิ่มความกว้างเล็กน้อย
         buttonPosition.dy + 200,
       ),
       items: options.map((option) {
         return PopupMenuItem(
           value: option['value'],
-          child: Row(
-            children: [
-              Icon(option['icon'], size: 16, color: Colors.grey[600]),
-              SizedBox(width: 8),
-              Text(option['label']),
-            ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            decoration: BoxDecoration(
+              color: option['backgroundColor'],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(option['icon'], size: 18, color: option['color']),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    option['label'],
+                    style: TextStyle(
+                      color: option['color'],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                // แสดง priority indicator สำหรับ Priority dropdown
+                if (type == 'Priority') ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: option['indicatorColor'],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       }).toList(),
       elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
     ).then((selectedValue) {
       if (selectedValue != null) {
         if (type == 'Priority') {
@@ -1789,7 +2236,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
             (option) => option['value'] == selectedValue,
           );
           _updateTaskPriority(isGroupTask, selectedOption['priorityValue']);
-        } else if (type == 'progress') {
+        } else if (type == 'Progress') {
           // หาค่า statusValue ที่ตรงกับ selectedValue
           final selectedOption = options.firstWhere(
             (option) => option['value'] == selectedValue,
@@ -2106,7 +2553,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     // แก้ไขการแสดงผลสำหรับ Set due date
     if (label == 'Set due date' && notification.isNotEmpty) {
       final firstNotification = notification.first;
-      log('notification first ${firstNotification.toString()}');
       bool isSend;
       DateTime? dueDate;
       log(firstNotification.toString());
@@ -2123,19 +2569,13 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   (timestamp.nanoseconds / 1000000).round(),
             );
           }
-          log('duedate handle ${dueDate.toString()}');
         }
       } else {
         // สำหรับ Individual Task
         isSend = firstNotification['IsSend'] ?? true;
         if (firstNotification['DueDate'] != null) {
-          log('issend ${isSend.toString()}');
-          log('firstNotification DueDate ${firstNotification['DueDate']}');
-
           // แปลงจาก UTC เป็น local time
           dueDate = DateTime.parse(firstNotification['DueDate']).toLocal();
-
-          log('duedate handle ${dueDate.toString()}');
         }
       }
 
@@ -3719,7 +4159,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       if (userDataJson == null) return;
 
       final appData = Provider.of<Appdata>(context, listen: false);
+
+      // อ่านข้อมูลครั้งเดียวและเก็บไว้ใช้ต่อ
       var existingData = data.AllDataUserGetResponst.fromJson(userDataJson);
+
+      // เก็บข้อมูลเดิมไว้สำหรับ rollback (deep copy)
+      final originalDataJson = json.encode(existingData.toJson());
+      final originalData = data.AllDataUserGetResponst.fromJson(
+        json.decode(originalDataJson),
+      );
 
       final currentTask = appData.showDetailTask.currentTask;
       bool isGroupTask = appData.showDetailTask.isGroupTask;
@@ -3748,9 +4196,16 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           return;
         }
       }
+
       index = _findIndexCurrentTask(currentTask!);
       if (index == null) {
         log('Error: Cannot find current task index');
+        return;
+      }
+
+      // ตรวจสอบว่า notification มีอยู่จริง
+      if (existingData.tasks[index].notifications.isEmpty) {
+        log('Error: No notifications found for this task');
         return;
       }
 
@@ -3765,30 +4220,73 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         dueDate = DateTime.now();
       }
 
-      // บันทึกลงlocal
-      log(index.toString());
-      existingData = data.AllDataUserGetResponst.fromJson(userDataJson);
-      var tempNotification = data.Notification(
-        createdAt: DateTime.now().toUtc().toIso8601String(),
-        dueDate: dueDate.toUtc().toIso8601String(),
-        isSend: dueDate.isAfter(DateTime.now()) ? false : true,
-        notificationId:
-            DateTime.now().millisecondsSinceEpoch, // สร้าง ID ชั่วคราว
-        recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
-        taskId: taskId,
-      );
-      existingData.tasks[index].notifications.add(tempNotification);
+      log("New dueDate to set: ${dueDate.toString()}");
+      log(dueDate.toUtc().toIso8601String().toString());
+
+      // อัพเดทข้อมูลใน existingData
+      final newDueDateString = dueDate.toUtc().toIso8601String();
+      final newIsSend = dueDate.isAfter(DateTime.now()) ? false : true;
+      final newRecurringPattern = (selectedRepeat ?? 'Onetime').toLowerCase();
+
+      // 1. อัพเดท local storage
+      existingData.tasks[index].notifications[0].dueDate = newDueDateString;
+      existingData.tasks[index].notifications[0].isSend = newIsSend;
+      existingData.tasks[index].notifications[0].recurringPattern =
+          newRecurringPattern;
       box.write('userDataAll', existingData.toJson());
 
+      // 2. อัพเดท currentTask ใน showDetailTask
+      if (!isGroupTask && currentTask != null) {
+        // สร้าง Task object ใหม่ที่มีข้อมูลอัปเดท
+        final updatedTask = data.Task(
+          assigned: currentTask.assigned,
+          attachments: currentTask.attachments,
+          boardId: currentTask.boardId,
+          checklists: currentTask.checklists,
+          createBy: currentTask.createBy,
+          createdAt: currentTask.createdAt,
+          description: currentTask.description,
+          notifications: currentTask.notifications.map((notification) {
+            if (notification.notificationId == notificationId) {
+              return data.Notification(
+                createdAt: notification.createdAt,
+                dueDate: newDueDateString,
+                isSend: newIsSend,
+                notificationId: notification.notificationId,
+                recurringPattern: newRecurringPattern,
+                taskId: notification.taskId,
+              );
+            }
+            return notification;
+          }).toList(),
+          priority: currentTask.priority,
+          status: currentTask.status,
+          taskId: currentTask.taskId,
+          taskName: currentTask.taskName,
+        );
+
+        // อัพเดท currentTask ใน provider
+        appData.showDetailTask.setCurrentTask(
+          updatedTask,
+          isGroup: isGroupTask,
+        );
+      }
+
+      log("✅ currentTask updated for individual task");
+      log("✅ Local data updated - New dueDate: $newDueDateString");
+      log("✅ Local data updated - New isSend: $newIsSend");
+
+      // อัพเดท UI ทันที
       setState(() {
-        // ปรับ UI เช่น แสดงวันที่ใหม่ ถ้ามี
+        // UI จะแสดงข้อมูลใหม่ทันที
       });
 
+      // ส่ง API request
       final url = await loadAPIEndpoint();
       var requestBody = {
-        "due_date": dueDate.toUtc().toIso8601String(),
+        "due_date": newDueDateString,
         "recurring_pattern": (selectedRepeat ?? 'Onetime').toLowerCase(),
-        "is_send": dueDate.isAfter(DateTime.now()) ? false : true,
+        "is_send": newIsSend,
       };
 
       var headers = {
@@ -3796,27 +4294,35 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         "Authorization": "Bearer ${box.read('accessToken')}",
       };
 
+      log("Sending API request with body: ${json.encode(requestBody)}");
+
       var response = await http.put(
         Uri.parse("$url/notification/update/$taskId"),
         headers: headers,
         body: json.encode(requestBody),
       );
 
+      // Handle token refresh
       if (response.statusCode == 403) {
+        log("Token expired, refreshing...");
         await loadNewRefreshToken();
         headers["Authorization"] = "Bearer ${box.read('accessToken')}";
 
-        response = await http.post(
-          Uri.parse("$url/notification/add"),
+        response = await http.put(
+          Uri.parse("$url/notification/update/$taskId"),
           headers: headers,
           body: json.encode(requestBody),
         );
       }
 
-      var responseData = json.decode(response.body);
+      log("API Response Status: ${response.statusCode}");
+      log("API Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
-        loadDataAsync();
+        // API สำเร็จ
+        log("✅ API request successful");
+
+        // Setup notification
         _setupTaskNotifications(
           taskId,
           notificationId!,
@@ -3825,8 +4331,94 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           isGroupTask,
           boardId!,
         );
-      } else {}
-    } catch (e) {}
+
+        // แสดง success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Due date updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        // *** ไม่เรียก loadDataAsync() ทันที เพื่อป้องกันการเขียนทับ ***
+        // หากจำเป็นต้อง sync ข้อมูลอื่น ให้ delay หรือทำแบบ selective sync
+      } else {
+        // API ล้มเหลว - Rollback
+        log("❌ API request failed: ${response.statusCode}");
+        log("Rolling back local data...");
+
+        // Rollback ข้อมูล local
+        box.write('userDataAll', originalData.toJson());
+
+        // Rollback currentTask ใน showDetailTask
+        if (!isGroupTask && currentTask != null) {
+          // สร้าง Task object เดิมกลับคืนมา
+          final originalTask = originalData.tasks[index];
+          appData.showDetailTask.setCurrentTask(
+            originalTask,
+            isGroup: isGroupTask,
+          );
+        }
+
+        setState(() {
+          // Rollback UI
+        });
+
+        // แสดง error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update due date. Changes reverted.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      log('❌ Exception in _updateDueDate: $e');
+      log('Stack trace: $stackTrace');
+
+      // Rollback ในกรณี exception
+      try {
+        final userDataJson = box.read('userDataAll');
+        if (userDataJson != null) {
+          // อ่านข้อมูลล่าสุดจาก storage
+          final currentData = data.AllDataUserGetResponst.fromJson(
+            userDataJson,
+          );
+          // หรือใช้ข้อมูล backup ที่เตรียมไว้
+
+          // Rollback currentTask หาก exception เกิดขึ้นหลังจากอัปเดท
+          final appData = Provider.of<Appdata>(context, listen: false);
+          final currentTask = appData.showDetailTask.currentTask;
+          bool isGroupTask = appData.showDetailTask.isGroupTask;
+
+          if (!isGroupTask && currentTask != null) {
+            final index = _findIndexCurrentTask(currentTask);
+            if (index != null && index < currentData.tasks.length) {
+              final originalTask = currentData.tasks[index];
+              appData.showDetailTask.setCurrentTask(
+                originalTask,
+                isGroup: isGroupTask,
+              );
+            }
+          }
+        }
+      } catch (rollbackError) {
+        log('Error during rollback: $rollbackError');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _setupTaskNotifications(
@@ -3949,6 +4541,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   // สร้างปุ่ม description, checklist, file
   Widget _buildTabButton(String title, int index) {
     bool isSelected = selectedTabIndex == index;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -3956,20 +4549,23 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
               color: isSelected ? Colors.blue : Colors.transparent,
-              width: 2,
+              width: 3, // เพิ่มความหนาของเส้นใต้
             ),
           ),
         ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.blue : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? Colors.blue : Colors.grey[600],
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 15,
+            ),
           ),
         ),
       ),
@@ -4450,7 +5046,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         title: Text('Add Checklist Item'),
         content: TextField(
           controller: checklistController,
-          autofocus: true,
+          // autofocus: true,
           decoration: InputDecoration(
             hintText: 'Enter checklist item',
             border: OutlineInputBorder(),
@@ -5966,14 +6562,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   onPressed: selectedFilePath.isEmpty
                       ? null
                       : () {
-                          // ทำการอัปโหลดไฟล์ที่นี่
-                          _handleFileUpload(
-                            fileName: fileNameController.text,
-                            filePath: selectedFilePath,
-                            isgroupTask: isgroupTask,
-                          );
-
                           Navigator.of(context).pop();
+                          // ทำการอัปโหลดไฟล์ที่นี่
+                          Future.microtask(() {
+                            _handleFileUpload(
+                              fileName: fileNameController.text,
+                              filePath: selectedFilePath,
+                              isgroupTask: isgroupTask,
+                            );
+                          });
                         },
                   child: Text('Upload'),
                   style: ElevatedButton.styleFrom(
@@ -6227,13 +6824,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   onPressed: selectedImagePath.isEmpty
                       ? null
                       : () {
-                          // อัปโหลดภาพ
-                          _handleImageUpload(
-                            imageName: pictureNameController.text,
-                            imagePath: selectedImagePath,
-                            isgroupTask: isgroupTask,
-                          );
                           Navigator.of(context).pop();
+                          // อัปโหลดภาพ
+                          Future.microtask(() {
+                            _handleImageUpload(
+                              imageName: pictureNameController.text,
+                              imagePath: selectedImagePath,
+                              isgroupTask: isgroupTask,
+                            );
+                          });
                         },
                   child: Text('Upload'),
                   style: ElevatedButton.styleFrom(
@@ -6507,11 +7106,13 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
                 try {
                   // ส่งข้อมูลไปบันทึกในฐานข้อมูล
-                  await _saveFileToDatabase(
-                    fileName: linkNameController.text.trim(),
-                    filePath: url,
-                    fileType: 'link', // กำหนดประเภทเป็น 'link'
-                  );
+                  Future.microtask(() {
+                    _saveFileToDatabase(
+                      fileName: linkNameController.text.trim(),
+                      filePath: url,
+                      fileType: 'link', // กำหนดประเภทเป็น 'link'
+                    );
+                  });
 
                   Navigator.of(context).pop(); // ปิด popup
                 } catch (e) {}

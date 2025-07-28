@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,9 +18,8 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
-import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
-import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart' as rxdart;
 
 class AlltasksPage extends StatefulWidget {
   const AlltasksPage({super.key});
@@ -66,10 +66,9 @@ class AlltasksPageState extends State<AlltasksPage>
   int? selectedBeforeMinutes;
   String? selectedRepeat;
   Timer? debounceTimer;
-  StreamSubscription<DocumentSnapshot>? boardSubscription;
-  Timer? timer;
-  bool isFirstSnapshot = true;
   Map<String, bool> creatingTasks = {};
+  StreamSubscription? combinedSubscription;
+  StreamSubscription? notificationSubscription;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -82,9 +81,6 @@ class AlltasksPageState extends State<AlltasksPage>
     WidgetsBinding.instance.addObserver(this);
 
     loadDataAsync();
-    timer = Timer.periodic(Duration(seconds: 2), (timer) {
-      if (mounted) loadDataAsync();
-    });
 
     for (final category in getAllCategories()) {
       addTasknameCtlMap.putIfAbsent(category, () => TextEditingController());
@@ -105,9 +101,187 @@ class AlltasksPageState extends State<AlltasksPage>
 
     final rawData = box.read('userDataAll');
     final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
-    final appData = Provider.of<Appdata>(context, listen: false);
 
-    List<model.Task> filteredTasks = tasksData.tasks
+    // กรอง tasks จาก local storage
+    List<model.Task> localTasks = tasksData.tasks
+        .where(
+          (task) => (showArchived
+              ? ['0', '1', '2'].contains(task.status)
+              : task.status != '2'),
+        )
+        .toList();
+    // ตั้งค่า Firebase listeners
+    Future.delayed(Duration(milliseconds: 300), () {
+      _setupFirebaseListeners(localTasks);
+    });
+  }
+
+  void _setupFirebaseListeners(List<model.Task> localTasks) {
+    // ยกเลิก subscriptions เก่าทั้งหมด
+    combinedSubscription?.cancel();
+    notificationSubscription?.cancel();
+
+    List<Stream<QuerySnapshot>> boardStreams = [];
+
+    // สร้าง stream สำหรับแต่ละ board
+    Set<String> uniqueBoardIds = localTasks
+        .map((task) => task.boardId.toString())
+        .toSet();
+    for (var boardId in uniqueBoardIds) {
+      final tasksStream = FirebaseFirestore.instance
+          .collection('Boards')
+          .doc(boardId)
+          .collection('Tasks')
+          .snapshots();
+      boardStreams.add(tasksStream);
+    }
+
+    final combinedTasksStream = rxdart.Rx.combineLatestList(boardStreams);
+
+    combinedSubscription = combinedTasksStream.listen((taskSnapshots) async {
+      if (!mounted) return;
+
+      // ยกเลิก notification subscription เก่าก่อน
+      notificationSubscription?.cancel();
+
+      List<model.Task> allFirebaseTasks = [];
+      Map<String, Stream<QuerySnapshot>> notificationStreamsMap = {};
+
+      // รวม tasks จากทุก board
+      for (var tasksSnapshot in taskSnapshots) {
+        for (var doc in tasksSnapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final taskId = data['taskID'].toString();
+          final status = data['status'].toString();
+
+          // กรองตาม showArchived
+          if (!showArchived && status == '2') continue;
+
+          // สร้าง Task object
+          final firebaseTask = model.Task(
+            assigned: data['assigned'] ?? [],
+            attachments: data['attachments'] ?? [],
+            boardId: data['boardID'].toString(),
+            checklists: data['checklists'] ?? [],
+            createBy: int.parse(data['createBy'].toString()),
+            createdAt: (data['createAt'] as Timestamp)
+                .toDate()
+                .toIso8601String(),
+            description: data['description']?.toString() ?? '',
+            notifications: [], // จะเติมจาก notifications stream
+            priority: data['priority']?.toString() ?? '',
+            status: status,
+            taskId: int.parse(taskId),
+            taskName: data['taskName'].toString(),
+          );
+
+          allFirebaseTasks.add(firebaseTask);
+
+          // เตรียม notification stream สำหรับ task นี้
+          notificationStreamsMap[taskId] = FirebaseFirestore.instance
+              .collection('BoardTasks')
+              .doc(taskId)
+              .collection('Notifications')
+              .snapshots();
+        }
+      }
+
+      // หากไม่มี Firebase tasks ให้แสดงเฉพาะ Local
+      if (allFirebaseTasks.isEmpty) {
+        _updateDisplayTasks([]);
+        return;
+      }
+
+      // หากไม่มี notification streams
+      if (notificationStreamsMap.isEmpty) {
+        _updateDisplayTasks(allFirebaseTasks);
+        return;
+      }
+
+      // รวม notification streams
+      List<Stream<QuerySnapshot>> notificationStreams = notificationStreamsMap
+          .values
+          .toList();
+      List<String> taskIdsOrder = notificationStreamsMap.keys.toList();
+
+      final combinedNotificationStream = rxdart.Rx.combineLatestList(
+        notificationStreams,
+      );
+
+      // ใช้ notificationSubscription แยกจาก combinedSubscription
+      notificationSubscription = combinedNotificationStream.listen((
+        notificationSnapshots,
+      ) async {
+        if (!mounted) return;
+
+        // สร้าง Map สำหรับเก็บ notifications ของแต่ละ task
+        Map<String, List<model.Notification>> taskNotificationsMap = {};
+
+        for (
+          int i = 0;
+          i < notificationSnapshots.length && i < taskIdsOrder.length;
+          i++
+        ) {
+          String taskId = taskIdsOrder[i];
+          List<model.Notification> notifications = [];
+
+          final notificationSnapshot = notificationSnapshots[i];
+          for (var notifDoc in notificationSnapshot.docs) {
+            final notifData = notifDoc.data() as Map<String, dynamic>;
+            notifications.add(
+              model.Notification(
+                createdAt: (notifData['createdAt'] as Timestamp)
+                    .toDate()
+                    .toIso8601String(),
+                dueDate: (notifData['dueDate'] as Timestamp)
+                    .toDate()
+                    .toIso8601String(),
+                isSend: notifData['isSend'] ?? false,
+                notificationId: notifData['notificationID'] ?? '',
+                recurringPattern: notifData['recurringPattern'] ?? '',
+                taskId: notifData['taskID'] ?? '',
+              ),
+            );
+          }
+
+          taskNotificationsMap[taskId] = notifications;
+        }
+
+        // อัพเดท Firebase tasks ด้วย notifications
+        List<model.Task> finalFirebaseTasks = allFirebaseTasks.map((task) {
+          String taskIdStr = task.taskId.toString();
+          List<model.Notification> notifications =
+              taskNotificationsMap[taskIdStr] ?? [];
+
+          return model.Task(
+            assigned: task.assigned,
+            attachments: task.attachments,
+            boardId: task.boardId,
+            checklists: task.checklists,
+            createBy: task.createBy,
+            createdAt: task.createdAt,
+            description: task.description,
+            notifications: notifications,
+            priority: task.priority,
+            status: task.status,
+            taskId: task.taskId,
+            taskName: task.taskName,
+          );
+        }).toList();
+
+        _updateDisplayTasks(finalFirebaseTasks);
+      });
+    });
+  }
+
+  void _updateDisplayTasks(List<model.Task> firebaseTasksList) {
+    if (!mounted) return;
+
+    final rawData = box.read('userDataAll');
+    final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
+
+    // กรองข้อมูล Local Tasks
+    List<model.Task> localTasks = tasksData.tasks
         .where(
           (task) => (showArchived
               ? ['0', '1', '2'].contains(task.status)
@@ -115,10 +289,33 @@ class AlltasksPageState extends State<AlltasksPage>
         )
         .toList();
 
-    appData.showMyTasks.setTasks(filteredTasks);
+    // สร้าง Set ของ taskId ที่มีใน Firebase
+    Set<int> firebaseTaskIds = firebaseTasksList.map((t) => t.taskId).toSet();
+
+    // กรอง Local Tasks ให้เหลือเฉพาะที่ไม่มีใน Firebase
+    List<model.Task> filteredLocalTasks = localTasks
+        .where((localTask) => !firebaseTaskIds.contains(localTask.taskId))
+        .toList();
+
+    // รวม Firebase Tasks (มี priority สูงสุด) + Local Tasks ที่ไม่ซ้ำ
+    List<model.Task> combinedTasks = [
+      ...firebaseTasksList, // Firebase tasks ก่อน (realtime)
+      ...filteredLocalTasks, // Local tasks ที่ไม่ซ้ำกับ Firebase
+    ];
+
+    // เรียงลำดับตาม createdAt
+    combinedTasks.sort((a, b) {
+      try {
+        DateTime dateA = DateTime.parse(a.createdAt);
+        DateTime dateB = DateTime.parse(b.createdAt);
+        return dateA.compareTo(dateB);
+      } catch (e) {
+        return 0;
+      }
+    });
 
     setState(() {
-      tasks = filteredTasks;
+      tasks = combinedTasks;
     });
   }
 
@@ -154,8 +351,8 @@ class AlltasksPageState extends State<AlltasksPage>
     mainMenuEntry?.remove();
     mainMenuEntry = null;
     debounceTimer?.cancel();
-    timer?.cancel();
-    boardSubscription?.cancel();
+    combinedSubscription?.cancel();
+    notificationSubscription?.cancel();
     for (var controller in addTasknameCtlMap.values) {
       controller.dispose();
     }
@@ -468,6 +665,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                                         customReminderDateTime =
                                                             null;
                                                       });
+                                                      log("message");
                                                     }
                                                   : null
                                             : null,
@@ -816,13 +1014,6 @@ class AlltasksPageState extends State<AlltasksPage>
                                                       );
                                                     },
                                                     onDismissed: (direction) {
-                                                      setState(() {
-                                                        tasks.removeWhere(
-                                                          (t) =>
-                                                              t.taskId ==
-                                                              data.taskId,
-                                                        );
-                                                      });
                                                       deleteTaskById(
                                                         data.taskId.toString(),
                                                         false,
@@ -1487,7 +1678,10 @@ class AlltasksPageState extends State<AlltasksPage>
                                   setState(() {
                                     isCustomReminderApplied = true;
                                   });
-                                  _showCustomDateTimePicker(context);
+                                  _showCustomDateTimePicker(
+                                    context,
+                                    focusedCategory!,
+                                  );
                                 },
                                 borderRadius: BorderRadius.circular(8),
                                 child: Container(
@@ -1900,13 +2094,17 @@ class AlltasksPageState extends State<AlltasksPage>
     model.Task task, {
     required List<model.Notification> notiTasks,
   }) async {
-    final appData = Provider.of<Appdata>(context, listen: false);
+    final rawData = box.read('userDataAll');
+    final data = model.AllDataUserGetResponst.fromJson(rawData);
     final List<String> remindTimes = [];
 
     for (var notiTask in notiTasks) {
       DateTime? remindTimestamp;
+      bool isGroup = data.boardgroup.any(
+        (b) => b.boardId.toString() == task.boardId.toString(),
+      );
 
-      if (appData.boardDatas.boardToken.isNotEmpty) {
+      if (isGroup) {
         // DocumentSnapshot
         final docSnapshot = await FirebaseFirestore.instance
             .collection('BoardTasks')
@@ -2049,8 +2247,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
 
     if (mounted) {
-      final appData = Provider.of<Appdata>(context, listen: false);
-      appData.showMyTasks.addTask(tempTask);
+      tasks.add(tempTask);
 
       setState(() {
         addTask = false;
@@ -2187,7 +2384,6 @@ class AlltasksPageState extends State<AlltasksPage>
   ) async {
     if (!mounted) return;
 
-    // model แสดง task จริงหาก taskId,notificationID ได้รับจาก api
     final realTask = model.Task(
       taskName: tempTask.taskName,
       description: tempTask.description,
@@ -2211,8 +2407,10 @@ class AlltasksPageState extends State<AlltasksPage>
         ),
       ],
     );
+
     await _waitForDocumentCreation(realId, notificationID);
-    FirebaseFirestore.instance
+
+    await FirebaseFirestore.instance
         .collection('Notifications')
         .doc(box.read('userProfile')['email'])
         .collection('Tasks')
@@ -2222,12 +2420,13 @@ class AlltasksPageState extends State<AlltasksPage>
               ? false
               : FieldValue.delete(),
         });
+
     if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
       DateTime notificationDateTime = calculateNotificationTime(
         dueDate,
         selectedBeforeMinutes,
       );
-      FirebaseFirestore.instance
+      await FirebaseFirestore.instance
           .collection('Notifications')
           .doc(box.read('userProfile')['email'])
           .collection('Tasks')
@@ -2240,16 +2439,10 @@ class AlltasksPageState extends State<AlltasksPage>
           });
     }
 
-    final appData = Provider.of<Appdata>(context, listen: false);
-    appData.showMyTasks.removeTaskById(tempId);
-    appData.showMyTasks.addTask(realTask);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
+    tasks.add(realTask);
 
     await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
-    await loadDataAsync();
-    if (mounted) {
-      creatingTasks.remove(tempId);
-      isCreatingTask = creatingTasks.isNotEmpty;
-    }
   }
 
   Future<void> _waitForDocumentCreation(int realId, int notificationID) async {
@@ -2286,8 +2479,7 @@ class AlltasksPageState extends State<AlltasksPage>
   Future<void> _removeTempTask(String tempId) async {
     if (!mounted) return;
 
-    final appData = Provider.of<Appdata>(context, listen: false);
-    appData.showMyTasks.removeTaskById(tempId);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
 
     if (mounted) {
       setState(() {
@@ -2316,13 +2508,27 @@ class AlltasksPageState extends State<AlltasksPage>
 
     final existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
 
+    // ลบ temp task ถ้ามี
     if (tempIdToRemove != null) {
       existingData.tasks.removeWhere(
         (t) => t.taskId.toString() == tempIdToRemove,
       );
     }
 
-    existingData.tasks.add(task);
+    // ตรวจสอบว่า task นี้มีอยู่ใน local storage แล้วหรือไม่
+    final existingIndex = existingData.tasks.indexWhere(
+      (t) => t.taskId == task.taskId,
+    );
+
+    if (existingIndex >= 0) {
+      // ถ้ามีอยู่แล้ว ให้อัพเดท
+      existingData.tasks[existingIndex] = task;
+    } else {
+      // ถ้าไม่มี ให้เพิ่มใหม่
+      existingData.tasks.add(task);
+    }
+
+    // บันทึกกลับไปยัง storage
     box.write('userDataAll', existingData.toJson());
   }
 
@@ -2646,42 +2852,71 @@ class AlltasksPageState extends State<AlltasksPage>
   }
 
   void handleTaskTap(model.Task data) async {
-    if (!mounted) return;
+    final userDataJson = box.read('userDataAll');
+    if (userDataJson == null) return;
+    var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
     final taskId = data.taskId;
+
+    bool isGroup = existingData.boardgroup.any(
+      (b) => b.boardId.toString() == data.boardId.toString(),
+    );
+
+    final board = tasks.firstWhere(
+      (b) => b.taskId.toString() == taskId.toString(),
+    );
+
+    final boardID = board.boardId.toString();
     setState(() => hideMenu = false);
 
-    if (data.status == "2") {
-      await showArchiveTask(taskId.toString());
-      selectedIsArchived.clear();
-      if (mounted) {
-        setState(() {});
-      }
-      return;
-    }
-
+    // กดเลือก task
     if (selectedIsArchived.contains(taskId.toString())) {
       selectedIsArchived.remove(taskId.toString());
     } else {
       selectedIsArchived.add(taskId.toString());
     }
 
-    if (showArchived) {
-      await finishAllSelectedTasks();
-      selectedIsArchived.clear();
+    // หากกดเลือก task ที่เสร็จแล้ว
+    if (data.status == "2") {
+      if (isGroup) {
+        await FirebaseFirestore.instance
+            .collection('Boards')
+            .doc(boardID)
+            .collection('Tasks')
+            .doc(taskId.toString())
+            .update({'status': '0'});
+        await showArchiveTask(taskId.toString());
+        selectedIsArchived.clear();
+      } else {
+        selectedIsArchived.clear();
+        await showArchiveTask(taskId.toString());
+      }
+      setState(() {});
       return;
     }
 
-    debounceTimer?.cancel();
+    // ถ้ายังไม่เสร็จ
+    if (isGroup) {
+      await FirebaseFirestore.instance
+          .collection('Boards')
+          .doc(boardID)
+          .collection('Tasks')
+          .doc(taskId.toString())
+          .update({'status': '2'});
+      await todayTasksFinish(taskId.toString());
+      selectedIsArchived.clear();
+    } else {
+      debounceTimer?.cancel();
+      if (selectedIsArchived.isEmpty) return;
 
-    if (selectedIsArchived.isEmpty) return;
-    debounceTimer = Timer(Duration(seconds: 1), () async {
-      if (selectedIsArchived.isNotEmpty && !isFinishing) {
-        isFinishing = true;
-        await finishAllSelectedTasks();
-        selectedIsArchived.clear();
-        isFinishing = false;
-      }
-    });
+      debounceTimer = Timer(Duration(seconds: 1), () async {
+        if (selectedIsArchived.isNotEmpty && !isFinishing) {
+          isFinishing = true;
+          await finishAllSelectedTasks();
+          selectedIsArchived.clear();
+          isFinishing = false;
+        }
+      });
+    }
   }
 
   Future<void> finishAllSelectedTasks() async {
@@ -2704,7 +2939,6 @@ class AlltasksPageState extends State<AlltasksPage>
     if (userDataJson == null) return;
 
     var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     final index = existingData.tasks.indexWhere(
       (t) => t.taskId.toString() == id,
@@ -2715,7 +2949,6 @@ class AlltasksPageState extends State<AlltasksPage>
     box.write('userDataAll', existingData.toJson());
 
     if (!showArchived) {
-      appData.showMyTasks.removeTaskById(id);
       tasks.removeWhere((t) => t.taskId.toString() == id);
     } else {
       await loadDataAsync();
@@ -2758,6 +2991,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
     if (index == -1) return;
 
+    // อัพเดทสถานะใน local storage
     existingData.tasks[index].status = '0';
     box.write('userDataAll', existingData.toJson());
 
@@ -2766,7 +3000,6 @@ class AlltasksPageState extends State<AlltasksPage>
     if (mounted) setState(() {});
 
     url = await loadAPIEndpoint();
-
     var response = await http.put(
       Uri.parse("$url/updatestatus/$id"),
       headers: {
@@ -2798,7 +3031,6 @@ class AlltasksPageState extends State<AlltasksPage>
     if (userDataJson == null) return;
 
     var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     if (ids is String) {
       idList = [ids];
@@ -2810,18 +3042,34 @@ class AlltasksPageState extends State<AlltasksPage>
       throw ArgumentError("Invalid ids parameter");
     }
 
+    Map<String, String> taskIdToBoardId = {};
+
     for (var id in idList) {
-      appData.showMyTasks.removeTaskById(id);
-      existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
+      final task = tasks.firstWhereOrNull((t) => t.taskId.toString() == id);
+      if (task != null && task.boardId != 'Today') {
+        taskIdToBoardId[id] = task.boardId;
+      }
+
       tasks.removeWhere((t) => t.taskId.toString() == id);
+      existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
     }
     box.write('userDataAll', existingData.toJson());
 
-    if (mounted) setState(() {});
+    setState(() {
+      tasks = List.from(tasks);
+    });
+
+    await _deleteFromFirebaseInBackground(taskIdToBoardId);
 
     final endpoint = select ? "deltask" : "deltask/$taskIdPayload";
     final requestBody = select ? {"task_id": taskIdPayload} : null;
     await deleteWithRetry(endpoint, requestBody);
+
+    if (mounted) {
+      setState(() {
+        tasks = List.from(tasks);
+      });
+    }
   }
 
   Future<http.Response> deleteWithRetry(
@@ -2863,6 +3111,44 @@ class AlltasksPageState extends State<AlltasksPage>
     }
 
     return response;
+  }
+
+  Future<void> _deleteFromFirebaseInBackground(
+    Map<String, String> taskIdToBoardId,
+  ) async {
+    for (var entry in taskIdToBoardId.entries) {
+      await _deleteSingleTaskFromFirebase(entry.value, entry.key);
+    }
+  }
+
+  Future<void> _deleteSingleTaskFromFirebase(
+    String boardId,
+    String taskId,
+  ) async {
+    // ลบจาก Boards collection
+    await FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(boardId)
+        .collection('Tasks')
+        .doc(taskId)
+        .delete();
+
+    // ลบจาก BoardTasks collection
+    final taskDocRef = FirebaseFirestore.instance
+        .collection('BoardTasks')
+        .doc(taskId);
+
+    final notificationsSnapshot = await taskDocRef
+        .collection('Notifications')
+        .get();
+
+    // ลบ notifications ทั้งหมด
+    final deleteNotificationsFutures = notificationsSnapshot.docs.map(
+      (doc) => doc.reference.delete(),
+    );
+    await Future.wait(deleteNotificationsFutures);
+
+    await taskDocRef.delete();
   }
 
   void _scrollToForm(String category) {
@@ -3008,11 +3294,11 @@ class AlltasksPageState extends State<AlltasksPage>
   }
 
   //แสดง custom remind
-  void _showCustomDateTimePicker(BuildContext context) {
+  void _showCustomDateTimePicker(BuildContext context, String category) {
     final previousFocusedCategory = focusedCategory;
     final previousAddTask = addTask;
-    DateTime now = DateTime.now();
-    DateTime tempSelectedDate = now;
+    DateTime? selectedDateTime = parseDateFromCategory(category);
+    DateTime tempSelectedDate = selectedDateTime!;
     TimeOfDay tempSelectedTime = TimeOfDay.now();
 
     showModalBottomSheet(
