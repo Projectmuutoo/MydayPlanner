@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1694,7 +1695,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     if (snapshot.docs.isNotEmpty) {
       final data = snapshot.docs.first.data();
-      final remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+      final remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
 
       if (remindTimestamp.isAfter(DateTime.now())) {
         return "${remindTimestamp.hour.toString().padLeft(2, '0')}:${remindTimestamp.minute.toString().padLeft(2, '0')}";
@@ -2352,7 +2353,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   }
 
   // ฟังก์ชันตรวจสอบว่าเวลาแจ้งเตือนสมเหตุสมผลหรือไม่
-  bool isValidNotificationTime(DateTime dueDate, int? selectedBeforeMinutes) {
+  bool _isValidNotificationTime(DateTime dueDate, int? selectedBeforeMinutes) {
     if (selectedBeforeMinutes == null || selectedBeforeMinutes == 0) {
       return true; // Never หรือ ไม่ได้เลือก = ใช้ dueDate
     }
@@ -2780,6 +2781,11 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       dueDate = DateTime.now();
     }
 
+    DateTime? beforeDueDate;
+    if (_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    }
+
     //หาก title เป็นว่างและ description ไม่ว่างจะบันทึก title => Untitled
     final titleToSave = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle;
     final descriptionToSave = trimmedDescription;
@@ -2800,9 +2806,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       boardId: "Today",
       notifications: [
         model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+          isSend: '0',
           notificationId: tempId,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: tempId,
@@ -2832,6 +2841,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       descriptionToSave,
       userEmail,
       dueDate,
+      beforeDueDate,
     );
 
     if (success['success']) {
@@ -2845,6 +2855,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         tempTask,
         userId,
         dueDate,
+        beforeDueDate,
       );
     } else {
       //หากเกิดข้อผิดพลาดให้ลบ TempTask ออก
@@ -2872,6 +2883,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     String description,
     String email,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
 
@@ -2888,6 +2900,10 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
           status: '0',
           priority: selectedPriority == null ? '' : selectedPriority.toString(),
           reminder: Reminder(
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
             dueDate: dueDate.toUtc().toIso8601String(),
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
@@ -2912,6 +2928,10 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                 ? ''
                 : selectedPriority.toString(),
             reminder: Reminder(
+              beforeDueDate:
+                  selectedBeforeMinutes != null && beforeDueDate != null
+                  ? beforeDueDate.toUtc().toIso8601String()
+                  : '',
               dueDate: dueDate.toUtc().toIso8601String(),
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
@@ -2942,6 +2962,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     model.Task tempTask,
     int userId,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
     final appData = Provider.of<Appdata>(context, listen: false);
@@ -2961,9 +2982,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       boardId: "Today",
       notifications: [
         model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+          isSend: '0',
           notificationId: notificationID,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: realId,
@@ -2980,24 +3004,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
           'isShow': dueDate.isAfter(DateTime.now())
               ? false
               : FieldValue.delete(),
+          'isNotiRemind': false,
         });
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      DateTime notificationDateTime = calculateNotificationTime(
-        dueDate,
-        selectedBeforeMinutes,
-      );
-      FirebaseFirestore.instance
-          .collection('Notifications')
-          .doc(box.read('userProfile')['email'])
-          .collection('Tasks')
-          .doc(notificationID.toString())
-          .update({
-            'isNotiRemind': false,
-            'remindMeBefore': selectedBeforeMinutes == null
-                ? FieldValue.delete()
-                : notificationDateTime,
-          });
-    }
 
     appData.showMyTasks.removeTaskById(tempId);
     appData.showMyTasks.addTask(realTask);

@@ -4219,13 +4219,18 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       } else {
         dueDate = DateTime.now();
       }
+      DateTime beforeDueDate = calculateNotificationTime(
+        dueDate,
+        selectedBeforeMinutes,
+      );
 
       log("New dueDate to set: ${dueDate.toString()}");
       log(dueDate.toUtc().toIso8601String().toString());
 
       // อัพเดทข้อมูลใน existingData
       final newDueDateString = dueDate.toUtc().toIso8601String();
-      final newIsSend = dueDate.isAfter(DateTime.now()) ? false : true;
+      final newBeforeDueDateString = beforeDueDate.toUtc().toIso8601String();
+      final newIsSend = '0';
       final newRecurringPattern = (selectedRepeat ?? 'Onetime').toLowerCase();
 
       // 1. อัพเดท local storage
@@ -4249,6 +4254,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           notifications: currentTask.notifications.map((notification) {
             if (notification.notificationId == notificationId) {
               return data.Notification(
+                beforeDueDate: newBeforeDueDateString,
                 createdAt: notification.createdAt,
                 dueDate: newDueDateString,
                 isSend: newIsSend,

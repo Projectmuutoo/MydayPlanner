@@ -170,13 +170,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       List<model.Task> firebaseTasks = [];
       Map<String, Stream<QuerySnapshot>> notificationStreamsMap = {};
 
-      // เช็คการเปลี่ยนแปลงและ log เพื่อ debug
-      bool hasChanged = tasksSnapshot.docChanges.isNotEmpty;
-
-      if (hasChanged) {
-        fetchDataOnResume();
-      }
-
       // สร้าง tasks จาก current snapshot (ไม่ใช่ docChanges)
       for (var doc in tasksSnapshot.docs) {
         final data = doc.data();
@@ -246,13 +239,18 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
             notifications.add(
               model.Notification(
+                beforeDueDate: notifData['beforeDueDate'] != null
+                    ? (notifData['beforeDueDate'] as Timestamp)
+                          .toDate()
+                          .toIso8601String()
+                    : '',
                 createdAt: (notifData['createdAt'] as Timestamp)
                     .toDate()
                     .toIso8601String(),
                 dueDate: (notifData['dueDate'] as Timestamp)
                     .toDate()
                     .toIso8601String(),
-                isSend: notifData['isSend'] ?? false,
+                isSend: notifData['isSend'].toString(),
                 notificationId: notifData['notificationID'] ?? '',
                 recurringPattern: notifData['recurringPattern'] ?? '',
                 taskId: notifData['taskID'] ?? '',
@@ -2366,8 +2364,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
-          if (data != null && data['remindMeBefore'] != null) {
-            remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+          if (data != null && data['beforeDueDate'] != null) {
+            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
           }
         }
       } else {
@@ -2381,8 +2379,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
         if (querySnapshot.docs.isNotEmpty) {
           final data = querySnapshot.docs.first.data();
-          if (data['remindMeBefore'] != null) {
-            remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+          if (data['beforeDueDate'] != null) {
+            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
           }
         }
       }
@@ -2855,6 +2853,11 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       dueDate = DateTime.now();
     }
 
+    DateTime? beforeDueDate;
+    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    }
+
     //หาก title เป็นว่างและ description ไม่ว่างจะบันทึก title => Untitled
     final titleToSave = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle;
     final descriptionToSave = trimmedDescription;
@@ -2876,9 +2879,13 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
             createdAt: DateTime.now().toIso8601String(),
             dueDate: dueDate.toUtc().toIso8601String(),
-            isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+            isSend: '0',
             notificationId: tempId,
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             taskId: tempId,
@@ -2905,6 +2912,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         descriptionToSave,
         userEmail,
         dueDate,
+        beforeDueDate,
       );
 
       if (success['success']) {
@@ -2917,6 +2925,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           tempTask,
           userId,
           dueDate,
+          beforeDueDate,
         );
       } else {
         await _removeTempTask(tempId.toString());
@@ -2951,9 +2960,13 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
             createdAt: DateTime.now().toIso8601String(),
             dueDate: dueDate.toUtc().toIso8601String(),
-            isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+            isSend: '0',
             notificationId: tempId,
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             taskId: tempId,
@@ -2982,6 +2995,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         descriptionToSave,
         userEmail,
         dueDate,
+        beforeDueDate,
         userId,
         tempTask,
         appData,
@@ -2995,6 +3009,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     String descriptionToSave,
     String userEmail,
     DateTime dueDate,
+    DateTime? beforeDueDate,
     int userId,
     model.Task tempTask,
     dynamic appData,
@@ -3005,6 +3020,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       descriptionToSave,
       userEmail,
       dueDate,
+      beforeDueDate,
     );
 
     if (success['success']) {
@@ -3091,26 +3107,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           'isShow': dueDate.isAfter(DateTime.now())
               ? false
               : FieldValue.delete(),
+          'isNotiRemind': false,
         });
-
-    // ตั้งค่า reminder notification
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      DateTime notificationDateTime = calculateNotificationTime(
-        dueDate,
-        selectedBeforeMinutes,
-      );
-      await FirebaseFirestore.instance
-          .collection('BoardTasks')
-          .doc(realTaskId.toString())
-          .collection('Notifications')
-          .doc(notificationID.toString())
-          .update({
-            'isNotiRemind': false,
-            'remindMeBefore': selectedBeforeMinutes == null
-                ? FieldValue.delete()
-                : notificationDateTime,
-          });
-    }
 
     // ตั้งค่า user notifications
     var boardUsersSnapshot = await FirebaseFirestore.instance
@@ -3139,6 +3137,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     String description,
     String email,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
     final appData = Provider.of<Appdata>(context, listen: false);
@@ -3157,6 +3156,10 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           status: '0',
           priority: selectedPriority == null ? '' : selectedPriority.toString(),
           reminder: Reminder(
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
             dueDate: dueDate.toUtc().toIso8601String(),
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
@@ -3182,6 +3185,10 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                 ? ''
                 : selectedPriority.toString(),
             reminder: Reminder(
+              beforeDueDate:
+                  selectedBeforeMinutes != null && beforeDueDate != null
+                  ? beforeDueDate.toUtc().toIso8601String()
+                  : '',
               dueDate: dueDate.toUtc().toIso8601String(),
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
@@ -3212,6 +3219,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     model.Task tempTask,
     int userId,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
 
@@ -3231,9 +3239,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       boardId: appData.boardDatas.idBoard.toString(),
       notifications: [
         model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+          isSend: '0',
           notificationId: notificationID,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: realId,
@@ -3252,25 +3263,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           'isShow': dueDate.isAfter(DateTime.now())
               ? false
               : FieldValue.delete(),
+          'isNotiRemind': false,
         });
-
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      DateTime notificationDateTime = calculateNotificationTime(
-        dueDate,
-        selectedBeforeMinutes,
-      );
-      FirebaseFirestore.instance
-          .collection('Notifications')
-          .doc(box.read('userProfile')['email'])
-          .collection('Tasks')
-          .doc(notificationID.toString())
-          .update({
-            'isNotiRemind': false,
-            'remindMeBefore': selectedBeforeMinutes == null
-                ? FieldValue.delete()
-                : notificationDateTime,
-          });
-    }
 
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);

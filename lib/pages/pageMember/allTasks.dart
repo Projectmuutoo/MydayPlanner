@@ -230,13 +230,18 @@ class AlltasksPageState extends State<AlltasksPage>
             final notifData = notifDoc.data() as Map<String, dynamic>;
             notifications.add(
               model.Notification(
+                beforeDueDate: notifData['beforeDueDate'] != null
+                    ? (notifData['beforeDueDate'] as Timestamp)
+                          .toDate()
+                          .toIso8601String()
+                    : '',
                 createdAt: (notifData['createdAt'] as Timestamp)
                     .toDate()
                     .toIso8601String(),
                 dueDate: (notifData['dueDate'] as Timestamp)
                     .toDate()
                     .toIso8601String(),
-                isSend: notifData['isSend'] ?? false,
+                isSend: notifData['isSend'].toString(),
                 notificationId: notifData['notificationID'] ?? '',
                 recurringPattern: notifData['recurringPattern'] ?? '',
                 taskId: notifData['taskID'] ?? '',
@@ -2115,8 +2120,8 @@ class AlltasksPageState extends State<AlltasksPage>
 
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
-          if (data != null && data['remindMeBefore'] != null) {
-            remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+          if (data != null && data['beforeDueDate'] != null) {
+            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
           }
         }
       } else {
@@ -2130,8 +2135,8 @@ class AlltasksPageState extends State<AlltasksPage>
 
         if (querySnapshot.docs.isNotEmpty) {
           final data = querySnapshot.docs.first.data();
-          if (data['remindMeBefore'] != null) {
-            remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+          if (data['beforeDueDate'] != null) {
+            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
           }
         }
       }
@@ -2218,6 +2223,11 @@ class AlltasksPageState extends State<AlltasksPage>
       dueDate = DateTime.now();
     }
 
+    DateTime? beforeDueDate;
+    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    }
+
     final titleToSave = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle;
     final descriptionToSave = trimmedDescription;
 
@@ -2236,9 +2246,12 @@ class AlltasksPageState extends State<AlltasksPage>
       boardId: "Today",
       notifications: [
         model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+          isSend: '0',
           notificationId: tempId,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: tempId,
@@ -2273,6 +2286,7 @@ class AlltasksPageState extends State<AlltasksPage>
       descriptionToSave,
       userEmail,
       dueDate,
+      beforeDueDate,
     );
 
     if (success['success']) {
@@ -2285,6 +2299,7 @@ class AlltasksPageState extends State<AlltasksPage>
         tempTask,
         userId,
         dueDate,
+        beforeDueDate,
       );
     } else {
       await _removeTempTask(tempId.toString());
@@ -2311,6 +2326,7 @@ class AlltasksPageState extends State<AlltasksPage>
     String description,
     String email,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
 
@@ -2327,6 +2343,10 @@ class AlltasksPageState extends State<AlltasksPage>
           status: '0',
           priority: selectedPriority == null ? '' : selectedPriority.toString(),
           reminder: Reminder(
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
             dueDate: dueDate.toUtc().toIso8601String(),
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
@@ -2351,6 +2371,10 @@ class AlltasksPageState extends State<AlltasksPage>
                 ? ''
                 : selectedPriority.toString(),
             reminder: Reminder(
+              beforeDueDate:
+                  selectedBeforeMinutes != null && beforeDueDate != null
+                  ? beforeDueDate.toUtc().toIso8601String()
+                  : '',
               dueDate: dueDate.toUtc().toIso8601String(),
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
@@ -2381,6 +2405,7 @@ class AlltasksPageState extends State<AlltasksPage>
     model.Task tempTask,
     int userId,
     DateTime dueDate,
+    DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
 
@@ -2398,9 +2423,12 @@ class AlltasksPageState extends State<AlltasksPage>
       boardId: "Today",
       notifications: [
         model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
           createdAt: DateTime.now().toIso8601String(),
           dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: dueDate.isAfter(DateTime.now()) ? false : true,
+          isSend: '0',
           notificationId: notificationID,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           taskId: realId,
@@ -2419,25 +2447,8 @@ class AlltasksPageState extends State<AlltasksPage>
           'isShow': dueDate.isAfter(DateTime.now())
               ? false
               : FieldValue.delete(),
+          'isNotiRemind': false,
         });
-
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      DateTime notificationDateTime = calculateNotificationTime(
-        dueDate,
-        selectedBeforeMinutes,
-      );
-      await FirebaseFirestore.instance
-          .collection('Notifications')
-          .doc(box.read('userProfile')['email'])
-          .collection('Tasks')
-          .doc(notificationID.toString())
-          .update({
-            'isNotiRemind': false,
-            'remindMeBefore': selectedBeforeMinutes == null
-                ? FieldValue.delete()
-                : notificationDateTime,
-          });
-    }
 
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);

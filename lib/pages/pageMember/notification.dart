@@ -84,7 +84,7 @@ class _NotificationPageState extends State<NotificationPage> {
                         //     .collection('Tasks')
                         //     .doc(1963.toString())
                         //     .update({
-                        //       'remindMeBefore': Timestamp.fromDate(
+                        //       'beforeDueDate': Timestamp.fromDate(
                         //         DateTime(
                         //           DateTime.now().year,
                         //           DateTime.now().month,
@@ -888,7 +888,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       .toDate()
                                       .toIso8601String()
                                 : (data['remindMeBeforeOld'] ??
-                                          data['remindMeBefore'])
+                                          data['beforeDueDate'])
                                       .toDate()
                                       .toIso8601String(),
                           ),
@@ -1226,7 +1226,7 @@ class _NotificationPageState extends State<NotificationPage> {
           aData['Response time'] ??
           aData['dueDate'] ??
           aData['dueDateOld'] ??
-          aData['remindMeBefore'] ??
+          aData['beforeDueDate'] ??
           aData['remindMeBeforeOld'];
 
       final bTime =
@@ -1235,7 +1235,7 @@ class _NotificationPageState extends State<NotificationPage> {
           bData['Response time'] ??
           bData['dueDate'] ??
           bData['dueDateOld'] ??
-          bData['remindMeBefore'] ??
+          bData['beforeDueDate'] ??
           bData['remindMeBeforeOld'];
 
       return (bTime as Timestamp).compareTo(aTime as Timestamp);

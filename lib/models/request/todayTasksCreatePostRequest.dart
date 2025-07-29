@@ -45,17 +45,24 @@ class TodayTasksCreatePostRequest {
 
 class Reminder {
   String dueDate;
+  String beforeDueDate;
   String recurringPattern;
 
-  Reminder({required this.dueDate, required this.recurringPattern});
+  Reminder({
+    required this.dueDate,
+    required this.beforeDueDate,
+    required this.recurringPattern,
+  });
 
   factory Reminder.fromJson(Map<String, dynamic> json) => Reminder(
     dueDate: json["due_date"],
+    beforeDueDate: json["before_due_date"],
     recurringPattern: json["recurring_pattern"],
   );
 
   Map<String, dynamic> toJson() => {
     "due_date": dueDate,
+    "before_due_date": beforeDueDate,
     "recurring_pattern": recurringPattern,
   };
 }

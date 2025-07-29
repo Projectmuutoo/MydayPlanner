@@ -310,14 +310,16 @@ class Checklist {
 }
 
 class Notification {
+  String beforeDueDate;
   String createdAt;
   String dueDate;
-  bool isSend;
+  String isSend;
   int notificationId;
   String recurringPattern;
   int taskId;
 
   Notification({
+    required this.beforeDueDate,
     required this.createdAt,
     required this.dueDate,
     required this.isSend,
@@ -327,6 +329,7 @@ class Notification {
   });
 
   factory Notification.fromJson(Map<String, dynamic> json) => Notification(
+    beforeDueDate: json["BeforeDueDate"],
     createdAt: json["CreatedAt"],
     dueDate: json["DueDate"],
     isSend: json["IsSend"],
@@ -336,6 +339,7 @@ class Notification {
   );
 
   Map<String, dynamic> toJson() => {
+    "BeforeDueDate": beforeDueDate,
     "CreatedAt": createdAt,
     "DueDate": dueDate,
     "IsSend": isSend,

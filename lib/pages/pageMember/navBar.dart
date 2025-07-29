@@ -382,11 +382,11 @@ class _NavbarPageState extends State<NavbarPage>
         if (docSnapshot.exists) {
           final data = docSnapshot.data();
           if (data != null) {
-            if (data['remindMeBefore'] != null) {
-              remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+            if (data['beforeDueDate'] != null) {
+              remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
             }
-            if (data['remindMeBefore'] != null &&
-                (data['remindMeBefore'] as Timestamp).toDate().isBefore(
+            if (data['beforeDueDate'] != null &&
+                (data['beforeDueDate'] as Timestamp).toDate().isBefore(
                   DateTime.now(),
                 ) &&
                 !data['isNotiRemind']) {
@@ -480,8 +480,8 @@ class _NavbarPageState extends State<NavbarPage>
               handleRecurringNotification(
                 notificationID: notiTask.notificationId.toString(),
                 dueDate: (data['dueDate'] as Timestamp).toDate(),
-                remindMeBefore: data['remindMeBefore'] != null
-                    ? (data['remindMeBefore'] as Timestamp).toDate()
+                remindMeBefore: data['beforeDueDate'] != null
+                    ? (data['beforeDueDate'] as Timestamp).toDate()
                     : null,
                 recurringPattern: data['recurringPattern'].toString(),
                 userEmail: box.read('userProfile')['email'],
@@ -503,11 +503,11 @@ class _NavbarPageState extends State<NavbarPage>
 
         if (querySnapshot.docs.isNotEmpty) {
           final data = querySnapshot.docs.first.data();
-          if (data['remindMeBefore'] != null) {
-            remindTimestamp = (data['remindMeBefore'] as Timestamp).toDate();
+          if (data['beforeDueDate'] != null) {
+            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
           }
-          if (data['remindMeBefore'] != null &&
-              (data['remindMeBefore'] as Timestamp).toDate().isBefore(
+          if (data['beforeDueDate'] != null &&
+              (data['beforeDueDate'] as Timestamp).toDate().isBefore(
                 DateTime.now(),
               ) &&
               !data['isNotiRemind']) {
@@ -590,8 +590,8 @@ class _NavbarPageState extends State<NavbarPage>
             handleRecurringNotification(
               notificationID: notiTask.notificationId.toString(),
               dueDate: (data['dueDate'] as Timestamp).toDate(),
-              remindMeBefore: data['remindMeBefore'] != null
-                  ? (data['remindMeBefore'] as Timestamp).toDate()
+              remindMeBefore: data['beforeDueDate'] != null
+                  ? (data['beforeDueDate'] as Timestamp).toDate()
                   : null,
               recurringPattern: data['recurringPattern'].toString(),
               userEmail: box.read('userProfile')['email'],
@@ -685,7 +685,7 @@ class _NavbarPageState extends State<NavbarPage>
         };
 
         if (nextRemindMeBefore != null) {
-          updateData['remindMeBefore'] = Timestamp.fromDate(nextRemindMeBefore);
+          updateData['beforeDueDate'] = Timestamp.fromDate(nextRemindMeBefore);
         }
 
         if (isGroup && boardID != null) {
