@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
@@ -7,7 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -20,6 +20,7 @@ import 'package:mydayplanner/pages/pageMember/notification.dart';
 import 'package:mydayplanner/pages/pageMember/toDay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 import 'package:get/get.dart';
 import 'package:mydayplanner/splash.dart';
@@ -28,8 +29,7 @@ import 'package:http/http.dart' as http;
 mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   StreamSubscription<DocumentSnapshot>? _statusSubscription;
   final box = GetStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final storage = FlutterSecureStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   late String url;
 
   Future<String> loadAPIEndpoint() async {
@@ -77,6 +77,7 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
   void logout() async {
     url = await loadAPIEndpoint();
 
+    await googleSignIn.initialize();
     await googleSignIn.signOut();
     await FirebaseAuth.instance.signOut();
 
@@ -89,111 +90,13 @@ mixin RealtimeUserStatusMixin<T extends StatefulWidget> on State<T> {
     );
 
     if (responseLogout.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       await http.post(
         Uri.parse("$url/auth/signout"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
-      );
-    }
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    if (!mounted) return;
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403 ||
-        loadtoketnew.statusCode == 401) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage());
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
       );
     }
   }
@@ -247,7 +150,7 @@ class _NavbarPageState extends State<NavbarPage>
     startRealtimeMonitoring();
   }
 
-  void showNotificationsCount() async {
+  void showNotificationsCount() {
     final rawData = box.read('userDataAll');
     final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
     final userEmail = box.read('userProfile')['email'];
@@ -288,19 +191,21 @@ class _NavbarPageState extends State<NavbarPage>
       taskGroupStreams.add(taskNotificationStream);
     }
 
+    Stream<List<QueryDocumentSnapshot>> combinedStream;
+
     if (taskGroupStreams.isEmpty) {
-      all = await rxdart.Rx.combineLatest3(
+      combinedStream = rxdart.Rx.combineLatest3(
         inviteStream,
         responseStream,
         taskStream,
         (invites, responses, tasks) => [...invites, ...responses, ...tasks],
-      ).first;
+      );
     } else {
       final allTaskGroupStreams = rxdart.Rx.combineLatestList(
         taskGroupStreams,
       ).map((listOfLists) => listOfLists.expand((list) => list).toList());
 
-      all = await rxdart.Rx.combineLatest4(
+      combinedStream = rxdart.Rx.combineLatest4(
         inviteStream,
         responseStream,
         taskStream,
@@ -311,10 +216,12 @@ class _NavbarPageState extends State<NavbarPage>
           ...tasks,
           ...taskGroups,
         ],
-      ).first;
+      );
     }
 
-    _updateNotificationField(all, null);
+    combinedStream.listen((all) {
+      _updateNotificationField(all, null);
+    });
   }
 
   Future<void> _updateNotificationField(
@@ -329,12 +236,33 @@ class _NavbarPageState extends State<NavbarPage>
 
       if (snapshot.exists) {
         final data = snapshot.data() as Map<String, dynamic>;
-
-        if (index != null && index == 4) {
-          await docRef.update({'notiCount': true});
-        }
         if (data['notiCount'] != null && !data['notiCount']) {
           count++;
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        all = docs;
+        showNoticounts = count;
+      });
+    }
+  }
+
+  Future<void> _updateNotificationField2(
+    List<QueryDocumentSnapshot> docs,
+    int? index,
+  ) async {
+    int count = 0;
+
+    for (final doc in docs) {
+      final docRef = doc.reference;
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        if (index != null && index == 4) {
+          docRef.update({'notiCount': true});
+          continue;
         }
       }
     }
@@ -413,6 +341,7 @@ class _NavbarPageState extends State<NavbarPage>
                     .collection('Notifications')
                     .doc(notiTask.notificationId.toString())
                     .update({
+                      'isSend': '1',
                       'notiCount': false,
                       'isNotiRemind': true,
                       'isNotiRemindShow': true,
@@ -431,7 +360,7 @@ class _NavbarPageState extends State<NavbarPage>
                 (data['dueDate'] as Timestamp).toDate().isBefore(
                   DateTime.now(),
                 ) &&
-                !data['isSend']) {
+                data['isSend'].toString() == '0') {
               if (!tokenFMC && selectedIndex != 4) {
                 Get.snackbar(
                   task.taskName,
@@ -528,6 +457,7 @@ class _NavbarPageState extends State<NavbarPage>
                 .collection('Tasks')
                 .doc(notiTask.notificationId.toString())
                 .update({
+                  'isSend': '1',
                   'notiCount': false,
                   'isNotiRemind': true,
                   'isNotiRemindShow': true,
@@ -541,7 +471,7 @@ class _NavbarPageState extends State<NavbarPage>
               (data['dueDate'] as Timestamp).toDate().isBefore(
                 DateTime.now(),
               ) &&
-              !data['isSend']) {
+              data['isSend'].toString() == '0') {
             if (!tokenFMC && selectedIndex != 4) {
               Get.snackbar(
                 task.taskName,
@@ -643,7 +573,7 @@ class _NavbarPageState extends State<NavbarPage>
 
     if (recurringPattern == 'onetime') {
       Map<String, dynamic> updateData = {
-        'isSend': true,
+        'isSend': '2',
         'isShow': true,
         'dueDateOld': FieldValue.delete(),
         'remindMeBeforeOld': FieldValue.delete(),
@@ -678,7 +608,7 @@ class _NavbarPageState extends State<NavbarPage>
           'updatedAt': Timestamp.now(),
           'dueDateOld': dueDate,
           'remindMeBeforeOld': remindMeBefore,
-          'isSend': false,
+          'isSend': '2',
           'isShow': false,
           'isNotiRemind': false,
           'notiCount': false,
@@ -721,12 +651,12 @@ class _NavbarPageState extends State<NavbarPage>
       body: jsonEncode({
         'due_date': nextDueDate?.toUtc().toIso8601String(),
         'recurring_pattern': recurringPattern,
-        'is_send': dueDate.isAfter(DateTime.now()) ? false : true,
+        'is_send': '0',
       }),
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/notification/update/$taskID"),
         headers: {
@@ -736,7 +666,7 @@ class _NavbarPageState extends State<NavbarPage>
         body: jsonEncode({
           'due_date': nextDueDate?.toUtc().toIso8601String(),
           'recurring_pattern': recurringPattern,
-          'is_send': dueDate.isAfter(DateTime.now()) ? false : true,
+          'is_send': '0',
         }),
       );
     }
@@ -909,6 +839,7 @@ class _NavbarPageState extends State<NavbarPage>
                 }
                 await box.remove('userProfile');
                 await box.remove('userLogin');
+                await googleSignIn.initialize();
                 await googleSignIn.signOut();
                 await FirebaseAuth.instance.signOut();
                 await storage.deleteAll();
@@ -966,7 +897,7 @@ class _NavbarPageState extends State<NavbarPage>
     _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
       final userDataAll = box.read('userDataAll');
       if (userDataAll == null) return;
-      final rawData = model.AllDataUserGetResponst.fromJson(userDataAll);
+      // final rawData = model.AllDataUserGetResponst.fromJson(userDataAll);
 
       // for (var tasks in rawData.tasks) {
       //   showTimeRemineMeBefore(tasks);
@@ -1026,6 +957,7 @@ class _NavbarPageState extends State<NavbarPage>
                 onPressed: () async {
                   await box.remove('userProfile');
                   await box.remove('userLogin');
+                  await googleSignIn.initialize();
                   await googleSignIn.signOut();
                   await FirebaseAuth.instance.signOut();
                   await storage.deleteAll();
@@ -1086,7 +1018,7 @@ class _NavbarPageState extends State<NavbarPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.get(
         Uri.parse("$url/user/data"),
         headers: {
@@ -1221,7 +1153,10 @@ class _NavbarPageState extends State<NavbarPage>
         currentIndex: selectedIndex,
         onTap: (index) {
           if (index == 4) {
-            _updateNotificationField(all, index);
+            setState(() {
+              showNoticounts = 0;
+            });
+            _updateNotificationField2(all, index);
           }
           setState(() {
             selectedIndex = index;
@@ -1258,11 +1193,21 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         final payload = response.payload;
+
         if (payload != null) {
+          log(payload.toString());
           if (payload == 'test') {
             Get.to(() => TodayPage());
           } else {
-            Get.to(() => TodayPage());
+            final data = jsonDecode(payload) as Map<String, dynamic>;
+            log(data.toString());
+            final timestamp = data['timestamp'];
+            final boardid = data['boardid'];
+            final taskid = data['taskid'];
+
+            log('timestamp: $timestamp');
+            log('boardid: $boardid');
+            log('taskid: $taskid');
           }
         }
       },

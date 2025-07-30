@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,12 +34,16 @@ void main() async {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     final title = message.notification?.title ?? '';
     final body = message.notification?.body ?? '';
-    final payload = message.data['payload'] ?? '';
+    final payloadData = {
+      'timestamp': message.data['timestamp'],
+      'boardid': message.data['boardid'],
+      'taskid': message.data['taskid'],
+    };
 
     NotificationService.showNotification(
       title: title,
       body: body,
-      payload: payload,
+      payload: message.data['payload'] ?? jsonEncode(payloadData),
     );
   });
   FirebaseAuth.instance.setLanguageCode('th');

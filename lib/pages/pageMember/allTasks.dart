@@ -3,14 +3,11 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/todayTasksCreatePostRequest.dart';
@@ -18,7 +15,7 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
-import 'package:mydayplanner/splash.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 
 class AlltasksPage extends StatefulWidget {
@@ -31,8 +28,6 @@ class AlltasksPage extends StatefulWidget {
 class AlltasksPageState extends State<AlltasksPage>
     with WidgetsBindingObserver {
   // 📦 Storage
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final FlutterSecureStorage storage = FlutterSecureStorage();
   var box = GetStorage();
   final GlobalKey iconKey = GlobalKey();
   final ScrollController scrollController = ScrollController();
@@ -110,10 +105,19 @@ class AlltasksPageState extends State<AlltasksPage>
               : task.status != '2'),
         )
         .toList();
-    // ตั้งค่า Firebase listeners
-    Future.delayed(Duration(milliseconds: 300), () {
-      _setupFirebaseListeners(localTasks);
+
+    localTasks.sort((a, b) {
+      DateTime dateA = DateTime.parse(a.createdAt);
+      DateTime dateB = DateTime.parse(b.createdAt);
+      return dateA.compareTo(dateB);
     });
+
+    setState(() {
+      tasks = localTasks;
+    });
+
+    // ตั้งค่า Firebase listeners
+    _setupFirebaseListeners(localTasks);
   }
 
   void _setupFirebaseListeners(List<model.Task> localTasks) {
@@ -310,13 +314,9 @@ class AlltasksPageState extends State<AlltasksPage>
 
     // เรียงลำดับตาม createdAt
     combinedTasks.sort((a, b) {
-      try {
-        DateTime dateA = DateTime.parse(a.createdAt);
-        DateTime dateB = DateTime.parse(b.createdAt);
-        return dateA.compareTo(dateB);
-      } catch (e) {
-        return 0;
-      }
+      DateTime dateA = DateTime.parse(a.createdAt);
+      DateTime dateB = DateTime.parse(b.createdAt);
+      return dateA.compareTo(dateB);
     });
 
     setState(() {
@@ -1683,6 +1683,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                   setState(() {
                                     isCustomReminderApplied = true;
                                   });
+
                                   _showCustomDateTimePicker(
                                     context,
                                     focusedCategory!,
@@ -2355,7 +2356,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
 
     if (responseCreate.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       responseCreate = await http.post(
         Uri.parse("$url/todaytasks/create"),
         headers: {
@@ -2437,8 +2438,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
 
     await _waitForDocumentCreation(realId, notificationID);
-
-    await FirebaseFirestore.instance
+    FirebaseFirestore.instance
         .collection('Notifications')
         .doc(box.read('userProfile')['email'])
         .collection('Tasks')
@@ -2762,7 +2762,6 @@ class AlltasksPageState extends State<AlltasksPage>
       if (month == 0) return null;
 
       DateTime now = DateTime.now();
-
       DateTime date = DateTime(now.year, month, day, now.hour, now.minute);
 
       return date;
@@ -2978,7 +2977,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/taskfinish/$id"),
         headers: {
@@ -3021,7 +3020,7 @@ class AlltasksPageState extends State<AlltasksPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/updatestatus/$id"),
         headers: {
@@ -3114,7 +3113,7 @@ class AlltasksPageState extends State<AlltasksPage>
     var response = await sendRequest(token);
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       final newToken = box.read('accessToken');
       if (newToken != null) {
         response = await sendRequest(newToken);
@@ -3308,7 +3307,15 @@ class AlltasksPageState extends State<AlltasksPage>
   void _showCustomDateTimePicker(BuildContext context, String category) {
     final previousFocusedCategory = focusedCategory;
     final previousAddTask = addTask;
-    DateTime? selectedDateTime = parseDateFromCategory(category);
+
+    DateTime? selectedDateTime;
+    if (category == 'Today') {
+      selectedDateTime = DateTime.now();
+    } else if (category == 'Tomorrow') {
+      selectedDateTime = DateTime.now().add(Duration(days: 1));
+    } else {
+      selectedDateTime = parseDateFromCategory(category);
+    }
     DateTime tempSelectedDate = selectedDateTime!;
     TimeOfDay tempSelectedTime = TimeOfDay.now();
 
@@ -3937,100 +3944,5 @@ class AlltasksPageState extends State<AlltasksPage>
         parentSetState(() {});
       }
     });
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
   }
 }

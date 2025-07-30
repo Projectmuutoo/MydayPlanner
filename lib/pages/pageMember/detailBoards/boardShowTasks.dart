@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
@@ -32,8 +31,7 @@ class BoardshowtasksPage extends StatefulWidget {
 class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     with WidgetsBindingObserver {
   var box = GetStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final storage = FlutterSecureStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   late String url;
   List<model.Task> tasks = [];
   final GlobalKey iconKey = GlobalKey();
@@ -470,7 +468,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                     context.read<Appdata>().boardDatas.idBoard,
                                   ),
                                 );
-                                ShareFunction().shareTask(
+                                AppDataShareBoardFunction().shareTask(
                                   context,
                                   int.parse(
                                     context.read<Appdata>().boardDatas.idBoard,
@@ -3253,7 +3251,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     await _waitForDocumentCreation(realId, notificationID, false);
-
     FirebaseFirestore.instance
         .collection('Notifications')
         .doc(box.read('userProfile')['email'])
@@ -4470,6 +4467,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
               box.remove('userLogin');
               box.remove('userProfile');
               box.remove('accessToken');
+              await googleSignIn.initialize();
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();

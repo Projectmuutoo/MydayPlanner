@@ -1,18 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/sendReportPostRequest.dart';
-import 'package:mydayplanner/splash.dart';
+import 'package:mydayplanner/shared/appData.dart';
 
 class MenureportPage extends StatefulWidget {
   const MenureportPage({super.key});
@@ -24,8 +19,6 @@ class MenureportPage extends StatefulWidget {
 class _MenureportPageState extends State<MenureportPage> {
   bool openSubject = false;
   var box = GetStorage();
-  final storage = FlutterSecureStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
 
   String? selectedSubject;
   int selectedIndex = 0;
@@ -311,268 +304,64 @@ class _MenureportPageState extends State<MenureportPage> {
                                     ),
                                     child: Column(
                                       children: [
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject = 'Suggestions';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M9 20h6v2H9zm7.906-6.288C17.936 12.506 19 11.259 19 9c0-3.859-3.141-7-7-7S5 5.141 5 9c0 2.285 1.067 3.528 2.101 4.73.358.418.729.851 1.084 1.349.144.206.38.996.591 1.921H8v2h8v-2h-.774c.213-.927.45-1.719.593-1.925.352-.503.726-.94 1.087-1.363zm-2.724.213c-.434.617-.796 2.075-1.006 3.075h-2.351c-.209-1.002-.572-2.463-1.011-3.08a20.502 20.502 0 0 0-1.196-1.492C7.644 11.294 7 10.544 7 9c0-2.757 2.243-5 5-5s5 2.243 5 5c0 1.521-.643 2.274-1.615 3.413-.373.438-.796.933-1.203 1.512z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Suggestions",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                        ...selectSubject().asMap().entries.map((
+                                          value,
+                                        ) {
+                                          final data = value.value;
+                                          return Column(
+                                            children: [
+                                              Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  onTap: () {
+                                                    setState(() {
+                                                      selectedSubject =
+                                                          data['label'];
+                                                      openSubject = false;
+                                                    });
+                                                  },
+                                                  child: Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal:
+                                                              width * 0.04,
+                                                          vertical:
+                                                              height * 0.01,
+                                                        ),
+                                                    child: Row(
+                                                      children: [
+                                                        SvgPicture.string(
+                                                          data['icon'],
+                                                          width: width * 0.025,
+                                                          height:
+                                                              height * 0.025,
+                                                          fit: BoxFit.contain,
+                                                        ),
+                                                        SizedBox(
+                                                          width: width * 0.01,
+                                                        ),
+                                                        Text(
+                                                          data['label'],
+                                                          style: TextStyle(
+                                                            fontSize: Get
+                                                                .textTheme
+                                                                .titleSmall!
+                                                                .fontSize!,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
-                                                ],
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                        Divider(height: 10, thickness: 1),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject =
-                                                    'Incorrect Information';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Incorrect Information",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Divider(height: 10, thickness: 1),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject =
-                                                    'Problems or Issues';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.001 10h2v5h-2zM11 16h2v2h-2z"></path><path d="M13.768 4.2C13.42 3.545 12.742 3.138 12 3.138s-1.42.407-1.768 1.063L2.894 18.064a1.986 1.986 0 0 0 .054 1.968A1.984 1.984 0 0 0 4.661 21h14.678c.708 0 1.349-.362 1.714-.968a1.989 1.989 0 0 0 .054-1.968L13.768 4.2zM4.661 19 12 5.137 19.344 19H4.661z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Problems or Issues",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Divider(height: 10, thickness: 1),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject =
-                                                    'Accessibility Issues';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="4" r="2"></circle><path d="m17.836 12.014-4.345.725 3.29-4.113a1 1 0 0 0-.227-1.457l-6-4a.999.999 0 0 0-1.262.125l-4 4 1.414 1.414 3.42-3.42 2.584 1.723-2.681 3.352a5.913 5.913 0 0 0-5.5.752l1.451 1.451A3.972 3.972 0 0 1 8 12c2.206 0 4 1.794 4 4 0 .739-.216 1.425-.566 2.02l1.451 1.451A5.961 5.961 0 0 0 14 16c0-.445-.053-.878-.145-1.295L17 14.181V20h2v-7a.998.998 0 0 0-1.164-.986zM8 20c-2.206 0-4-1.794-4-4 0-.739.216-1.425.566-2.02l-1.451-1.451A5.961 5.961 0 0 0 2 16c0 3.309 2.691 6 6 6 1.294 0 2.49-.416 3.471-1.115l-1.451-1.451A3.972 3.972 0 0 1 8 20z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Accessibility Issues",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Divider(height: 10, thickness: 1),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject =
-                                                    'Notification Issues';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 22a2.98 2.98 0 0 0 2.818-2H9.182A2.98 2.98 0 0 0 12 22zm9-4v-2a.996.996 0 0 0-.293-.707L19 13.586V10c0-3.217-2.185-5.927-5.145-6.742C13.562 2.52 12.846 2 12 2s-1.562.52-1.855 1.258c-1.323.364-2.463 1.128-3.346 2.127L3.707 2.293 2.293 3.707l18 18 1.414-1.414-1.362-1.362A.993.993 0 0 0 21 18zM12 5c2.757 0 5 2.243 5 5v4c0 .266.105.52.293.707L19 16.414V17h-.586L8.207 6.793C9.12 5.705 10.471 5 12 5zm-5.293 9.707A.996.996 0 0 0 7 14v-2.879L5.068 9.189C5.037 9.457 5 9.724 5 10v3.586l-1.707 1.707A.996.996 0 0 0 3 16v2a1 1 0 0 0 1 1h10.879l-2-2H5v-.586l1.707-1.707z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Notification Issues",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Divider(height: 10, thickness: 1),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedSubject =
-                                                    'Security Issues';
-                                                openSubject = false;
-                                              });
-                                            },
-                                            child: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: width * 0.04,
-                                                vertical: height * 0.01,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  SvgPicture.string(
-                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20.995 6.9a.998.998 0 0 0-.548-.795l-8-4a1 1 0 0 0-.895 0l-8 4a1.002 1.002 0 0 0-.547.795c-.011.107-.961 10.767 8.589 15.014a.987.987 0 0 0 .812 0c9.55-4.247 8.6-14.906 8.589-15.014zM12 19.897V12H5.51a15.473 15.473 0 0 1-.544-4.365L12 4.118V12h6.46c-.759 2.74-2.498 5.979-6.46 7.897z"></path></svg>',
-                                                    width: width * 0.025,
-                                                    height: height * 0.025,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                  SizedBox(width: width * 0.01),
-                                                  Text(
-                                                    "Security Issues",
-                                                    style: TextStyle(
-                                                      fontSize: Get
-                                                          .textTheme
-                                                          .titleSmall!
-                                                          .fontSize!,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                              Divider(height: 10, thickness: 1),
+                                            ],
+                                          );
+                                        }),
                                       ],
                                     ),
                                   ),
@@ -590,6 +379,41 @@ class _MenureportPageState extends State<MenureportPage> {
         ),
       ),
     );
+  }
+
+  List<Map<String, dynamic>> selectSubject() {
+    return [
+      {
+        'label': 'Suggestions',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M9 20h6v2H9zm7.906-6.288C17.936 12.506 19 11.259 19 9c0-3.859-3.141-7-7-7S5 5.141 5 9c0 2.285 1.067 3.528 2.101 4.73.358.418.729.851 1.084 1.349.144.206.38.996.591 1.921H8v2h8v-2h-.774c.213-.927.45-1.719.593-1.925.352-.503.726-.94 1.087-1.363zm-2.724.213c-.434.617-.796 2.075-1.006 3.075h-2.351c-.209-1.002-.572-2.463-1.011-3.08a20.502 20.502 0 0 0-1.196-1.492C7.644 11.294 7 10.544 7 9c0-2.757 2.243-5 5-5s5 2.243 5 5c0 1.521-.643 2.274-1.615 3.413-.373.438-.796.933-1.203 1.512z"></path></svg>',
+      },
+      {
+        'label': 'Incorrect Information',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.953 2C6.465 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.493 2 11.953 2zM12 20c-4.411 0-8-3.589-8-8s3.567-8 7.953-8C16.391 4 20 7.589 20 12s-3.589 8-8 8z"></path><path d="M11 7h2v7h-2zm0 8h2v2h-2z"></path></svg>',
+      },
+      {
+        'label': 'Problems or Issues',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M11.001 10h2v5h-2zM11 16h2v2h-2z"></path><path d="M13.768 4.2C13.42 3.545 12.742 3.138 12 3.138s-1.42.407-1.768 1.063L2.894 18.064a1.986 1.986 0 0 0 .054 1.968A1.984 1.984 0 0 0 4.661 21h14.678c.708 0 1.349-.362 1.714-.968a1.989 1.989 0 0 0 .054-1.968L13.768 4.2zM4.661 19 12 5.137 19.344 19H4.661z"></path></svg>',
+      },
+      {
+        'label': 'Accessibility Issues',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><circle cx="18" cy="4" r="2"></circle><path d="m17.836 12.014-4.345.725 3.29-4.113a1 1 0 0 0-.227-1.457l-6-4a.999.999 0 0 0-1.262.125l-4 4 1.414 1.414 3.42-3.42 2.584 1.723-2.681 3.352a5.913 5.913 0 0 0-5.5.752l1.451 1.451A3.972 3.972 0 0 1 8 12c2.206 0 4 1.794 4 4 0 .739-.216 1.425-.566 2.02l1.451 1.451A5.961 5.961 0 0 0 14 16c0-.445-.053-.878-.145-1.295L17 14.181V20h2v-7a.998.998 0 0 0-1.164-.986zM8 20c-2.206 0-4-1.794-4-4 0-.739.216-1.425.566-2.02l-1.451-1.451A5.961 5.961 0 0 0 2 16c0 3.309 2.691 6 6 6 1.294 0 2.49-.416 3.471-1.115l-1.451-1.451A3.972 3.972 0 0 1 8 20z"></path></svg>',
+      },
+      {
+        'label': 'Notification Issues',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 22a2.98 2.98 0 0 0 2.818-2H9.182A2.98 2.98 0 0 0 12 22zm9-4v-2a.996.996 0 0 0-.293-.707L19 13.586V10c0-3.217-2.185-5.927-5.145-6.742C13.562 2.52 12.846 2 12 2s-1.562.52-1.855 1.258c-1.323.364-2.463 1.128-3.346 2.127L3.707 2.293 2.293 3.707l18 18 1.414-1.414-1.362-1.362A.993.993 0 0 0 21 18zM12 5c2.757 0 5 2.243 5 5v4c0 .266.105.52.293.707L19 16.414V17h-.586L8.207 6.793C9.12 5.705 10.471 5 12 5zm-5.293 9.707A.996.996 0 0 0 7 14v-2.879L5.068 9.189C5.037 9.457 5 9.724 5 10v3.586l-1.707 1.707A.996.996 0 0 0 3 16v2a1 1 0 0 0 1 1h10.879l-2-2H5v-.586l1.707-1.707z"></path></svg>',
+      },
+      {
+        'label': 'Security Issues',
+        'icon':
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20.995 6.9a.998.998 0 0 0-.548-.795l-8-4a1 1 0 0 0-.895 0l-8 4a1.002 1.002 0 0 0-.547.795c-.011.107-.961 10.767 8.589 15.014a.987.987 0 0 0 .812 0c9.55-4.247 8.6-14.906 8.589-15.014zM12 19.897V12H5.51a15.473 15.473 0 0 1-.544-4.365L12 4.118V12h6.46c-.759 2.74-2.498 5.979-6.46 7.897z"></path></svg>',
+      },
+    ];
   }
 
   void loadingDialog() {
@@ -652,8 +476,7 @@ class _MenureportPageState extends State<MenureportPage> {
     Get.back();
 
     if (responseSendReport.statusCode == 403) {
-      loadingDialog();
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       responseSendReport = await http.post(
         Uri.parse("$url/report/send"),
         headers: {
@@ -667,7 +490,6 @@ class _MenureportPageState extends State<MenureportPage> {
           ),
         ),
       );
-      Get.back();
     }
 
     if (responseSendReport.statusCode == 200) {
@@ -732,103 +554,6 @@ class _MenureportPageState extends State<MenureportPage> {
               'Ok!',
               style: TextStyle(
                 fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    loadingDialog();
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    Get.back();
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
                 color: Colors.white,
               ),
             ),

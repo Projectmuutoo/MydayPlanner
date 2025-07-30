@@ -16,6 +16,17 @@ import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/splash.dart';
 
+Map<String, dynamic> combinedData = {};
+var box = GetStorage();
+final FlutterSecureStorage storage = FlutterSecureStorage();
+final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+late String url;
+
+Future<String> loadAPIEndpoint() async {
+  var config = await Configuration.getConfig();
+  return config['apiEndpoint'];
+}
+
 class Appdata with ChangeNotifier {
   KeepIdBoard boardDatas = KeepIdBoard();
   KeepSubjectReportPageAdmin subject = KeepSubjectReportPageAdmin();
@@ -187,18 +198,7 @@ class ChangeMyProfileProvider extends ChangeNotifier {
   }
 }
 
-class ShareFunction {
-  Map<String, dynamic> combinedData = {};
-  var box = GetStorage();
-  late String url;
-  final FlutterSecureStorage storage = FlutterSecureStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-
-  Future<String> loadAPIEndpoint() async {
-    var config = await Configuration.getConfig();
-    return config['apiEndpoint'];
-  }
-
+class AppDataShareBoardFunction {
   void shareTask(BuildContext context, int boardId) async {
     var result = await FirebaseFirestore.instance
         .collection('Boards')
@@ -665,6 +665,7 @@ class ShareFunction {
         final user = SearchUserModel.fromMap(selectedUser);
         final boardId = combinedData['task']['boardID'];
         final boardName = combinedData['board']['BoardName'];
+
         try {
           // ตรวจสอบก่อนส่ง
           if (!await canSendInvitation(
@@ -695,6 +696,8 @@ class ShareFunction {
                 'Inviter': box.read('userProfile')['email'],
                 'Response': 'Waiting',
                 'Invitation time': DateTime.now(),
+                'notiCount': false,
+                'updatedAt': Timestamp.now(),
               });
         } catch (e) {
           Get.snackbar(
@@ -706,6 +709,7 @@ class ShareFunction {
         }
         log(user.email);
       } catch (e) {
+        log(e.toString());
         // Handle error
       }
     }
@@ -1177,6 +1181,7 @@ class ShareFunction {
               box.remove('userLogin');
               box.remove('userProfile');
               box.remove('accessToken');
+              await googleSignIn.initialize();
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
@@ -1187,6 +1192,101 @@ class ShareFunction {
                 MediaQuery.of(context).size.width,
                 MediaQuery.of(context).size.height * 0.05,
               ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Login',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+}
+
+class AppDataLoadNewRefreshToken {
+  Future<void> loadNewRefreshToken() async {
+    url = await loadAPIEndpoint();
+    var value = await storage.read(key: 'refreshToken');
+    var loadtokennew = await http.post(
+      Uri.parse("$url/auth/newaccesstoken"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer $value",
+      },
+    );
+
+    if (loadtokennew.statusCode == 200) {
+      var reponse = jsonDecode(loadtokennew.body);
+      box.write('accessToken', reponse['accessToken']);
+    } else if (loadtokennew.statusCode == 403 ||
+        loadtokennew.statusCode == 401) {
+      Get.defaultDialog(
+        title: '',
+        titlePadding: EdgeInsets.zero,
+        backgroundColor: Colors.white,
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        content: WillPopScope(
+          onWillPop: () async => false,
+          child: Column(
+            children: [
+              Image.asset(
+                "assets/images/aleart/warning.png",
+                height: 80,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Waring!!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+              ),
+              Text(
+                'The system has expired. Please log in again.',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleSmall!.fontSize!,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              final currentUserProfile = box.read('userProfile');
+              final userEmail = currentUserProfile['email'];
+              if (userEmail == null) return;
+
+              await FirebaseFirestore.instance
+                  .collection('usersLogin')
+                  .doc(userEmail)
+                  .update({'deviceName': FieldValue.delete()});
+              box.remove('userDataAll');
+              box.remove('userLogin');
+              box.remove('userProfile');
+              box.remove('accessToken');
+              await googleSignIn.initialize();
+              await googleSignIn.signOut();
+              await FirebaseAuth.instance.signOut();
+              await storage.deleteAll();
+              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(double.maxFinite, 15),
               backgroundColor: Color(0xFF007AFF),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

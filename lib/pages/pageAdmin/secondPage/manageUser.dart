@@ -3,13 +3,10 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:marquee/marquee.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -19,7 +16,6 @@ import 'package:mydayplanner/models/response/allUserGetResponse.dart';
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/verifyOTP.dart';
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -33,11 +29,9 @@ class ManageuserPage extends StatefulWidget {
 class _ManageuserPageState extends State<ManageuserPage> {
   // 📦 Storage
   var box = GetStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
 
   // 📊 Integer Variables
   int itemCount = 1;
-  final storage = FlutterSecureStorage();
   // 🔤 String Variables
   String textNotification = '';
   String warning = '';
@@ -99,7 +93,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
     var result = await loadAllUser();
 
     if (result.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       result = await loadAllUser();
     }
 
@@ -1374,7 +1368,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
             Get.back();
             if (responseDelete.statusCode == 403) {
               loadingDialog();
-              await loadNewRefreshToken();
+              await AppDataLoadNewRefreshToken().loadNewRefreshToken();
               responseDelete = await http.put(
                 Uri.parse("$url/admin/deleteaccount/$userid"),
                 headers: {
@@ -1911,7 +1905,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
             Get.back();
             if (responseDisable.statusCode == 403) {
               loadingDialog();
-              await loadNewRefreshToken();
+              await AppDataLoadNewRefreshToken().loadNewRefreshToken();
               responseDisable = await http.put(
                 Uri.parse("$url/admin/disableactive/$userid"),
                 headers: {
@@ -2465,101 +2459,5 @@ class _ManageuserPageState extends State<ManageuserPage> {
         );
       },
     );
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF007AFF),
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
   }
 }

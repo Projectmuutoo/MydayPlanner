@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -28,8 +27,6 @@ class _SplashPageState extends State<SplashPage> {
   final box = GetStorage();
   StreamSubscription<DocumentSnapshot>? _subscription;
   bool _isFromLogout = false;
-  final storage = FlutterSecureStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
   bool _isNavigating = false;
   late String url;
 
@@ -180,47 +177,13 @@ class _SplashPageState extends State<SplashPage> {
       }
     }
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       return fetchDataOnResume();
     }
   }
 
   bool deepEquals(AllDataUserGetResponst a, AllDataUserGetResponst b) {
     return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403 ||
-        loadtoketnew.statusCode == 401) {
-      final currentUserProfile = box.read('userProfile');
-      if (currentUserProfile != null && currentUserProfile is Map) {
-        await FirebaseFirestore.instance
-            .collection('usersLogin')
-            .doc(currentUserProfile['email'])
-            .update({'deviceName': FieldValue.delete()});
-      }
-      box.remove('userDataAll');
-      box.remove('userLogin');
-      box.remove('userProfile');
-      box.remove('accessToken');
-      await googleSignIn.signOut();
-      await FirebaseAuth.instance.signOut();
-      await storage.deleteAll();
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-    }
   }
 
   @override

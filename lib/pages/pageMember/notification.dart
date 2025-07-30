@@ -1,18 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
-import 'package:mydayplanner/splash.dart';
+import 'package:mydayplanner/shared/appData.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -26,8 +23,6 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   // 📦 Storage
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final FlutterSecureStorage storage = FlutterSecureStorage();
   var box = GetStorage();
   final Set<String> _animatedIds = <String>{};
   final Set<String> _animatedIds2 = <String>{};
@@ -997,6 +992,7 @@ class _NotificationPageState extends State<NotificationPage> {
       'Responder': box.read('userProfile')['email'],
       'Response time': DateTime.now(),
       'notiCount': false,
+      'updatedAt': Timestamp.now(),
     });
 
     // 2. อัพเดท Response ใน InviteJoin เป็น Accept
@@ -1019,7 +1015,7 @@ class _NotificationPageState extends State<NotificationPage> {
       },
     );
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       await http.post(
         Uri.parse("$url/board/addboard/${data['BoardId']}"),
         headers: {
@@ -1217,26 +1213,11 @@ class _NotificationPageState extends State<NotificationPage> {
 
   void _sortNotifications(List<QueryDocumentSnapshot> notifications) {
     notifications.sort((a, b) {
-      final aData = a.data() as Map;
-      final bData = b.data() as Map;
+      final aData = a.data() as Map<String, dynamic>;
+      final bData = b.data() as Map<String, dynamic>;
 
-      final aTime =
-          aData['updatedAt'] ??
-          aData['Invitation time'] ??
-          aData['Response time'] ??
-          aData['dueDate'] ??
-          aData['dueDateOld'] ??
-          aData['beforeDueDate'] ??
-          aData['remindMeBeforeOld'];
-
-      final bTime =
-          bData['updatedAt'] ??
-          bData['Invitation time'] ??
-          bData['Response time'] ??
-          bData['dueDate'] ??
-          bData['dueDateOld'] ??
-          bData['beforeDueDate'] ??
-          bData['remindMeBeforeOld'];
+      final aTime = aData['updatedAt'];
+      final bTime = bData['updatedAt'];
 
       return (bTime as Timestamp).compareTo(aTime as Timestamp);
     });
@@ -1286,101 +1267,6 @@ class _NotificationPageState extends State<NotificationPage> {
       }
     } else {
       return DateFormat('d MMM yyyy, HH:mm').format(postTimeLocal);
-    }
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
     }
   }
 }

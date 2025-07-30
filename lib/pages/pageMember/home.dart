@@ -8,7 +8,6 @@ import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
@@ -35,8 +34,7 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   // 📦 Storage
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final FlutterSecureStorage storage = FlutterSecureStorage();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   var box = GetStorage();
 
   // 🔑 Global Keys
@@ -1239,24 +1237,26 @@ class HomePageState extends State<HomePage> {
                                                       child: Stack(
                                                         children: [
                                                           DottedBorder(
-                                                            borderType:
-                                                                BorderType
-                                                                    .RRect,
-                                                            radius:
-                                                                Radius.circular(
-                                                                  12,
-                                                                ),
-                                                            color:
-                                                                isSelectBoard ||
-                                                                    focusedBoardId !=
-                                                                        null
-                                                                ? Colors
-                                                                      .transparent
-                                                                : Color(
-                                                                    0xFFE5E7EB,
+                                                            options: RoundedRectDottedBorderOptions(
+                                                              radius:
+                                                                  Radius.circular(
+                                                                    12,
                                                                   ),
-                                                            dashPattern: [1, 2],
-                                                            strokeWidth: 1.5,
+                                                              color:
+                                                                  isSelectBoard ||
+                                                                      focusedBoardId !=
+                                                                          null
+                                                                  ? Colors
+                                                                        .transparent
+                                                                  : Color(
+                                                                      0xFFE5E7EB,
+                                                                    ),
+                                                              dashPattern: [
+                                                                1,
+                                                                2,
+                                                              ],
+                                                              strokeWidth: 1.5,
+                                                            ),
                                                             child: Container(
                                                               width: width,
                                                               decoration: BoxDecoration(
@@ -1840,24 +1840,26 @@ class HomePageState extends State<HomePage> {
                                                       child: Stack(
                                                         children: [
                                                           DottedBorder(
-                                                            borderType:
-                                                                BorderType
-                                                                    .RRect,
-                                                            radius:
-                                                                Radius.circular(
-                                                                  12,
-                                                                ),
-                                                            color:
-                                                                isSelectBoard ||
-                                                                    focusedBoardId !=
-                                                                        null
-                                                                ? Colors
-                                                                      .transparent
-                                                                : Color(
-                                                                    0xFFE5E7EB,
+                                                            options: RoundedRectDottedBorderOptions(
+                                                              radius:
+                                                                  Radius.circular(
+                                                                    12,
                                                                   ),
-                                                            dashPattern: [1, 2],
-                                                            strokeWidth: 1.5,
+                                                              color:
+                                                                  isSelectBoard ||
+                                                                      focusedBoardId !=
+                                                                          null
+                                                                  ? Colors
+                                                                        .transparent
+                                                                  : Color(
+                                                                      0xFFE5E7EB,
+                                                                    ),
+                                                              dashPattern: [
+                                                                1,
+                                                                2,
+                                                              ],
+                                                              strokeWidth: 1.5,
+                                                            ),
                                                             child: Container(
                                                               width: width,
                                                               height:
@@ -2815,7 +2817,7 @@ class HomePageState extends State<HomePage> {
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       await http.delete(
         Uri.parse("$url/board"),
         headers: {
@@ -2958,6 +2960,7 @@ class HomePageState extends State<HomePage> {
                 box.remove('userLogin');
                 box.remove('userProfile');
                 box.remove('accessToken');
+                await googleSignIn.initialize();
                 await googleSignIn.signOut();
                 await FirebaseAuth.instance.signOut();
                 await storage.deleteAll();
@@ -3366,7 +3369,7 @@ class HomePageState extends State<HomePage> {
         }),
       );
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         await http.delete(
           Uri.parse("$url/board"),
           headers: {
@@ -3479,7 +3482,7 @@ class HomePageState extends State<HomePage> {
                                       GestureDetector(
                                         onTap: () {
                                           checkExpiresTokenBoard(boardId);
-                                          ShareFunction().shareTask(
+                                          AppDataShareBoardFunction().shareTask(
                                             context,
                                             boardId,
                                           );
@@ -3914,7 +3917,7 @@ class HomePageState extends State<HomePage> {
       }),
     );
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/board/adjust"),
         headers: {
@@ -4244,7 +4247,8 @@ class HomePageState extends State<HomePage> {
                                   ),
                                 );
                                 if (responseCreateBoradList.statusCode == 403) {
-                                  await loadNewRefreshToken();
+                                  await AppDataLoadNewRefreshToken()
+                                      .loadNewRefreshToken();
                                   responseCreateBoradList = await http.post(
                                     Uri.parse("$url/board"),
                                     headers: {
@@ -4336,7 +4340,8 @@ class HomePageState extends State<HomePage> {
                                 );
                                 if (responseCreateBoradGroup.statusCode ==
                                     403) {
-                                  await loadNewRefreshToken();
+                                  await AppDataLoadNewRefreshToken()
+                                      .loadNewRefreshToken();
                                   responseCreateBoradGroup = await http.post(
                                     Uri.parse("$url/board"),
                                     headers: {
@@ -4553,127 +4558,6 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-
-      final responseAll = await http.get(
-        Uri.parse("$url/user/data"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${box.read('accessToken')}",
-        },
-      );
-      if (responseAll.statusCode == 200) {
-        final response2 = allDataUserGetResponstFromJson(responseAll.body);
-
-        box.write('userDataAll', response2.toJson());
-        var boardData = AllDataUserGetResponst.fromJson(
-          box.read('userDataAll'),
-        );
-
-        if (privateFontWeight == FontWeight.w600) {
-          setState(() {
-            boards = boardData.board;
-          });
-        } else if (groupFontWeight == FontWeight.w600) {
-          setState(() {
-            boards = boardData.boardgroup;
-          });
-        }
-      }
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-  }
-
   void checkExpiresTokenBoard(int idBoard) async {
     url = await loadAPIEndpoint();
     final now = DateTime.now();
@@ -4693,7 +4577,7 @@ class HomePageState extends State<HomePage> {
         );
 
         if (response.statusCode == 403) {
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           response = await http.put(
             Uri.parse("$url/board/newtoken/$idBoard"),
             headers: {

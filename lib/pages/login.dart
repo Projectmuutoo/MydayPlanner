@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
   bool loadingDialogGoogle = false;
 
   // ---------------------- 🔐 Auth ----------------------
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
   // ---------------------- 🧱 Local Storage ----------------------
   var box = GetStorage();
@@ -559,32 +559,10 @@ class _LoginPageState extends State<LoginPage> {
         loadingDialogGoogle = true;
       });
 
-      GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      await googleSignIn.initialize();
+      GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      // ผู้ใช้ยกเลิกการเข้าสู่ระบบ
-      if (googleUser == null) {
-        setState(() {
-          loadingDialogGoogle = false;
-        });
-        return;
-      }
-
-      try {
-        // เรียกเมธอด authentication จากออบเจกต์ googleUser เพื่อขอรับข้อมูลการตรวจสอบสิทธิ์ (tokens)
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      } finally {
-        setState(() {
-          loadingDialogGoogle = false;
-        });
-      }
       loadingDialog();
-
       GoogleLoginUserPostRequest jsonLoginGoogleUser =
           GoogleLoginUserPostRequest(
             email: googleUser.email,
@@ -674,6 +652,13 @@ class _LoginPageState extends State<LoginPage> {
         } else {
           Get.offAll(() => NavbarPage());
         }
+      }
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        setState(() {
+          loadingDialogGoogle = false;
+        });
+        return;
       }
     } catch (e) {
       await googleSignIn.signOut();

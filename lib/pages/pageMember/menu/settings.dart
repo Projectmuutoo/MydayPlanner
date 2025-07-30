@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
 import 'package:mydayplanner/splash.dart';
@@ -33,9 +32,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   // ---------------------- 🧠 Logic / Data ----------------------
   var box = GetStorage();
-  final storage = FlutterSecureStorage();
-  late Future<void> loadData;
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   final ImagePicker picker = ImagePicker();
 
   // ---------------------- 🧍‍♂️ User Info ----------------------
@@ -48,12 +45,9 @@ class _SettingsPageState extends State<SettingsPage> {
   // ---------------------- 🧮 State / Counter ----------------------
   int private = 400;
   int group = 200;
-  int itemCount = 1;
   int countToRequest = 1;
 
   // ---------------------- 🎛️ UI State ----------------------
-  bool isLoadings = true;
-  bool showShimmer = true;
   bool notitext = false;
   bool isTyping = false;
   bool isTypingPassword = false;
@@ -101,29 +95,35 @@ class _SettingsPageState extends State<SettingsPage> {
     // }
 
     firstPageShow();
-    loadData = loadDataAsync();
+    loadDataAsync();
+
+    editNameCtl.addListener(() {
+      setState(() {
+        isTyping = editNameCtl.text.isNotEmpty;
+      });
+    });
   }
 
   Future<void> loadDataAsync() async {
-    name = box.read('userProfile')['name'];
-    userEmail = box.read('userProfile')['email'];
-    userProfile = box.read('userProfile')['profile'];
+    final userProfiles = box.read('userProfile');
+    if (userProfiles == null) return;
+
+    name = userProfiles['name'];
+    userEmail = userProfiles['email'];
+    userProfile = userProfiles['profile'];
+
     var result = await FirebaseFirestore.instance
         .collection('usersLogin')
         .doc(userEmail)
         .get();
     final data = result.data();
     if (data != null) {
-      isChangePassword = data['changePassword'] == true;
-      loginWithGoogle = data['loginWithGoogle'] == true;
-      isTogglePushNotification = data['FMCToken'].toString() == 'off'
-          ? false
-          : true;
-    }
-    if (mounted) {
       setState(() {
-        isLoadings = false;
-        showShimmer = false;
+        isChangePassword = data['changePassword'] == true;
+        loginWithGoogle = data['loginWithGoogle'] == true;
+        isTogglePushNotification = data['FMCToken'].toString() == 'off'
+            ? false
+            : true;
       });
     }
   }
@@ -150,569 +150,545 @@ class _SettingsPageState extends State<SettingsPage> {
     //vertical tob bottom
     double height = MediaQuery.of(context).size.height;
 
-    return FutureBuilder(
-      future: loadData,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          Future.delayed(Duration(seconds: 1), () {
-            if (!mounted) return;
-            setState(() {
-              itemCount = name.isEmpty ? 1 : name.length;
-            });
-          });
+    return GestureDetector(
+      onTap: () {
+        if (editNameFocusNode.hasFocus) {
+          editNameFocusNode.unfocus();
         }
-        editNameCtl.addListener(() {
-          if (context.mounted) {
-            if (!mounted) return;
-            setState(() {
-              isTyping = editNameCtl.text.isNotEmpty;
-            });
+        isTyping = false;
+      },
+      child: WillPopScope(
+        onWillPop: () async {
+          if (box.read('showDisplays')['groupTF'] ||
+              box.read('showDisplays')['privateTF']) {
+            Navigator.pop(context, 'refresh');
+          } else if (hasSuccess) {
+            Navigator.pop(context, 'loadDisplays');
+          } else {
+            Get.back();
           }
-        });
-        return GestureDetector(
-          onTap: () {
-            if (editNameFocusNode.hasFocus) {
-              editNameFocusNode.unfocus();
-            }
-            isTyping = false;
-          },
-          child: WillPopScope(
-            onWillPop: () async {
-              if (box.read('showDisplays')['groupTF'] ||
-                  box.read('showDisplays')['privateTF']) {
-                Navigator.pop(context, 'refresh');
-              } else if (hasSuccess) {
-                Navigator.pop(context, 'loadDisplays');
-              } else {
-                Get.back();
-              }
-              return false;
-            },
-            child: Scaffold(
-              appBar: AppBar(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                foregroundColor: Colors.black,
-                centerTitle: true,
-                leading: GestureDetector(
-                  onTap: () {
-                    if (box.read('showDisplays')['groupTF'] ||
-                        box.read('showDisplays')['privateTF']) {
-                      Navigator.pop(context, 'refresh');
-                    } else if (hasSuccess) {
-                      Navigator.pop(context, 'loadDisplays');
-                    } else {
-                      Get.back();
-                    }
-                  },
-                  child: Center(
-                    child: SvgPicture.string(
-                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
-                      height: height * 0.03,
-                      width: width * 0.03,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                title: Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize!,
-                    fontWeight: FontWeight.w500,
-                  ),
+          return false;
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            foregroundColor: Colors.black,
+            centerTitle: true,
+            leading: GestureDetector(
+              onTap: () {
+                if (box.read('showDisplays')['groupTF'] ||
+                    box.read('showDisplays')['privateTF']) {
+                  Navigator.pop(context, 'refresh');
+                } else if (hasSuccess) {
+                  Navigator.pop(context, 'loadDisplays');
+                } else {
+                  Get.back();
+                }
+              },
+              child: Center(
+                child: SvgPicture.string(
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);"><path d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"></path></svg>',
+                  height: height * 0.03,
+                  width: width * 0.03,
+                  fit: BoxFit.contain,
                 ),
               ),
-              body: SafeArea(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+            title: Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
                       children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: width,
-                              height: height * 0.05,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFF2F2F6),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(8),
+                        Container(
+                          width: width,
+                          height: height * 0.05,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF2F2F6),
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.only(left: width * 0.03),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  SvgPicture.string(
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
+                                    height: height * 0.03,
+                                    fit: BoxFit.contain,
+                                    color: Color(0xFF007AFF),
+                                  ),
+                                  SizedBox(width: width * 0.01),
+                                  Text(
+                                    'Account',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize!,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (savedFile != null)
+                                TextButton(
+                                  onPressed: () {
+                                    if (savedFile != null) {
+                                      confirmInformation('', 'newUrl');
+                                    }
+                                  },
+                                  child: Text(
+                                    "Save",
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize!,
+                                      fontWeight: FontWeight.normal,
+                                      color: Color(0xFF007AFF),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: height * 0.01),
+                        InkWell(
+                          key: iconKey,
+                          onTap: () {
+                            final RenderBox renderBox =
+                                iconKey.currentContext!.findRenderObject()
+                                    as RenderBox;
+                            final Offset offset = renderBox.localToGlobal(
+                              Offset.zero,
+                            );
+                            final Size size = renderBox.size;
+                            showMenu(
+                              context: context,
+                              position: RelativeRect.fromLTRB(
+                                offset.dx,
+                                offset.dy + size.height,
+                                width - offset.dx - size.width * 2.5,
+                                0,
+                              ),
+                              color: Colors.white,
+                              items: [
+                                PopupMenuItem(
+                                  height: height * 0.05,
+                                  value: 'แกลลอรี่',
+                                  child: Text(
+                                    'Choose Photo',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize!,
+                                    ),
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  height: height * 0.05,
+                                  value: 'เลือกไฟล์',
+                                  child: Text(
+                                    'Choose file',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize!,
+                                    ),
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  height: height * 0.05,
+                                  value: 'ถ่ายรูป',
+                                  child: Text(
+                                    'Take Photo',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleSmall!.fontSize!,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ).then((value) async {
+                              if (value != null) {
+                                if (value == 'แกลลอรี่') {
+                                  image = await picker.pickImage(
+                                    source: ImageSource.gallery,
+                                  );
+                                  if (image != null) {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      savedFile = File(image!.path);
+                                    });
+                                  }
+                                } else if (value == 'เลือกไฟล์') {
+                                  FilePickerResult? result = await FilePicker
+                                      .platform
+                                      .pickFiles();
+                                  if (result != null) {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      savedFile = File(
+                                        result.files.first.path!,
+                                      );
+                                    });
+                                  }
+                                } else if (value == 'ถ่ายรูป') {
+                                  image = await picker.pickImage(
+                                    source: ImageSource.camera,
+                                  );
+                                  if (image != null) {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      savedFile = File(image!.path);
+                                    });
+                                  }
+                                }
+                              }
+                            });
+                          },
+                          child: Stack(
+                            children: [
+                              savedFile != null
+                                  ? Positioned(
+                                      right: -width * 0.012,
+                                      top: -height * 0.008,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            savedFile = null;
+                                          });
+                                        },
+                                        child: SvgPicture.string(
+                                          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
+                                          width: width * 0.06,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox.shrink(),
+                              Container(
+                                height: height * 0.08,
+                                width: width * 0.18,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
                                 ),
                               ),
-                              alignment: Alignment.centerLeft,
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2A10.13 10.13 0 0 0 2 12a10 10 0 0 0 4 7.92V20h.1a9.7 9.7 0 0 0 11.8 0h.1v-.08A10 10 0 0 0 22 12 10.13 10.13 0 0 0 12 2zM8.07 18.93A3 3 0 0 1 11 16.57h2a3 3 0 0 1 2.93 2.36 7.75 7.75 0 0 1-7.86 0zm9.54-1.29A5 5 0 0 0 13 14.57h-2a5 5 0 0 0-4.61 3.07A8 8 0 0 1 4 12a8.1 8.1 0 0 1 8-8 8.1 8.1 0 0 1 8 8 8 8 0 0 1-2.39 5.64z"></path><path d="M12 6a3.91 3.91 0 0 0-4 4 3.91 3.91 0 0 0 4 4 3.91 3.91 0 0 0 4-4 3.91 3.91 0 0 0-4-4zm0 6a1.91 1.91 0 0 1-2-2 1.91 1.91 0 0 1 2-2 1.91 1.91 0 0 1 2 2 1.91 1.91 0 0 1-2 2z"></path></svg>',
-                                        height: height * 0.03,
-                                        fit: BoxFit.contain,
-                                        color: Color(0xFF007AFF),
-                                      ),
-                                      SizedBox(width: width * 0.01),
-                                      Text(
-                                        'Account',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (savedFile != null)
-                                    TextButton(
-                                      onPressed: () {
-                                        if (savedFile != null) {
-                                          confirmInformation('', 'newUrl');
-                                        }
-                                      },
-                                      child: Text(
-                                        "Save",
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Color(0xFF007AFF),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: height * 0.01),
-                            InkWell(
-                              key: iconKey,
-                              onTap: () {
-                                final RenderBox renderBox =
-                                    iconKey.currentContext!.findRenderObject()
-                                        as RenderBox;
-                                final Offset offset = renderBox.localToGlobal(
-                                  Offset.zero,
-                                );
-                                final Size size = renderBox.size;
-                                showMenu(
-                                  context: context,
-                                  position: RelativeRect.fromLTRB(
-                                    offset.dx,
-                                    offset.dy + size.height,
-                                    width - offset.dx - size.width * 2.5,
-                                    0,
-                                  ),
-                                  color: Colors.white,
-                                  items: [
-                                    PopupMenuItem(
-                                      height: height * 0.05,
-                                      value: 'แกลลอรี่',
-                                      child: Text(
-                                        'Choose Photo',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleSmall!
-                                              .fontSize!,
-                                        ),
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      height: height * 0.05,
-                                      value: 'เลือกไฟล์',
-                                      child: Text(
-                                        'Choose file',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleSmall!
-                                              .fontSize!,
-                                        ),
-                                      ),
-                                    ),
-                                    PopupMenuItem(
-                                      height: height * 0.05,
-                                      value: 'ถ่ายรูป',
-                                      child: Text(
-                                        'Take Photo',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleSmall!
-                                              .fontSize!,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ).then((value) async {
-                                  if (value != null) {
-                                    if (value == 'แกลลอรี่') {
-                                      image = await picker.pickImage(
-                                        source: ImageSource.gallery,
-                                      );
-                                      if (image != null) {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          savedFile = File(image!.path);
-                                        });
-                                      }
-                                    } else if (value == 'เลือกไฟล์') {
-                                      FilePickerResult? result =
-                                          await FilePicker.platform.pickFiles();
-                                      if (result != null) {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          savedFile = File(
-                                            result.files.first.path!,
-                                          );
-                                        });
-                                      }
-                                    } else if (value == 'ถ่ายรูป') {
-                                      image = await picker.pickImage(
-                                        source: ImageSource.camera,
-                                      );
-                                      if (image != null) {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          savedFile = File(image!.path);
-                                        });
-                                      }
-                                    }
-                                  }
-                                });
-                              },
-                              child: Stack(
-                                children: [
-                                  savedFile != null
-                                      ? Positioned(
-                                          right: -width * 0.012,
-                                          top: -height * 0.008,
-                                          child: InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                savedFile = null;
-                                              });
-                                            },
-                                            child: SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"></path></svg>',
-                                              width: width * 0.06,
-                                            ),
-                                          ),
-                                        )
-                                      : SizedBox.shrink(),
-                                  Container(
-                                    height: height * 0.08,
-                                    width: width * 0.18,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  savedFile == null
-                                      ? Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom: 0,
-                                          child: ClipOval(
-                                            child: userProfile == 'none-url'
-                                                ? Container(
-                                                    height: height * 0.08,
-                                                    width: width * 0.18,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Stack(
-                                                      children: [
-                                                        Container(
-                                                          height: height * 0.1,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color: Color(
-                                                                  0xFFF2F2F6,
-                                                                ),
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                        ),
-                                                        Positioned(
-                                                          left: 0,
-                                                          right: 0,
-                                                          bottom: 0,
-                                                          child: SvgPicture.string(
-                                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
-                                                            height:
-                                                                height * 0.05,
-                                                            fit: BoxFit.contain,
-                                                            color: Colors.grey,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                : Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black12,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Image.network(
-                                                      userProfile,
-                                                      height: height * 0.08,
-                                                      width: width * 0.18,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                          ),
-                                        )
-                                      : Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom: 0,
-                                          child: ClipOval(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.black12,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Image.file(
-                                                savedFile!,
+                              savedFile == null
+                                  ? Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: ClipOval(
+                                        child: userProfile == 'none-url'
+                                            ? Container(
                                                 height: height * 0.08,
                                                 width: width * 0.18,
-                                                fit: BoxFit.cover,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Stack(
+                                                  children: [
+                                                    Container(
+                                                      height: height * 0.1,
+                                                      decoration: BoxDecoration(
+                                                        color: Color(
+                                                          0xFFF2F2F6,
+                                                        ),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    Positioned(
+                                                      left: 0,
+                                                      right: 0,
+                                                      bottom: 0,
+                                                      child: SvgPicture.string(
+                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 8a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm9 11v-1a7 7 0 0 0-7-7h-4a7 7 0 0 0-7 7v1h2v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1z"></path></svg>',
+                                                        height: height * 0.05,
+                                                        fit: BoxFit.contain,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            : Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black12,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Image.network(
+                                                  userProfile,
+                                                  height: height * 0.08,
+                                                  width: width * 0.18,
+                                                  fit: BoxFit.cover,
+                                                ),
                                               ),
-                                            ),
+                                      ),
+                                    )
+                                  : Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: ClipOval(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.black12,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Image.file(
+                                            savedFile!,
+                                            height: height * 0.08,
+                                            width: width * 0.18,
+                                            fit: BoxFit.cover,
                                           ),
                                         ),
-                                  Positioned(
-                                    bottom: -5,
-                                    right: -10,
-                                    width: width * 0.1,
-                                    child: Center(
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          Container(
-                                            height: height * 0.03,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          Container(
-                                            height: height * 0.025,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          SvgPicture.string(
-                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 8c-2.168 0-4 1.832-4 4s1.832 4 4 4 4-1.832 4-4-1.832-4-4-4zm0 6c-1.065 0-2-.935-2-2s.935-2 2-2 2 .935 2 2-.935 2-2 2z"></path><path d="M20 5h-2.586l-2.707-2.707A.996.996 0 0 0 14 2h-4a.996.996 0 0 0-.707.293L6.586 5H4c-1.103 0-2 .897-2 2v11c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2zM4 18V7h3c.266 0 .52-.105.707-.293L10.414 4h3.172l2.707 2.707A.996.996 0 0 0 17 7h3l.002 11H4z"></path></svg>',
-                                            height: height * 0.02,
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: height * 0.02),
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                width * 0.03,
-                                0,
-                                0,
-                                height * 0.005,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Name',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleSmall!.fontSize!,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                  Row(
+                              Positioned(
+                                bottom: -5,
+                                right: -10,
+                                width: width * 0.1,
+                                child: Center(
+                                  child: Stack(
+                                    alignment: Alignment.center,
                                     children: [
-                                      SizedBox(
-                                        width: width * 0.6,
-                                        child: TextField(
-                                          controller: editNameCtl,
-                                          focusNode: editNameFocusNode,
-                                          inputFormatters: [
-                                            LengthLimitingTextInputFormatter(
-                                              20,
-                                            ),
-                                          ],
-                                          keyboardType: TextInputType.text,
-                                          cursorColor: Colors.black,
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                          ),
-                                          textAlign: TextAlign.end,
-                                          decoration: InputDecoration(
-                                            isDense: true,
-                                            hintText: isTyping
-                                                ? 'Enter your name'
-                                                : name,
-                                            hintStyle: TextStyle(
-                                              fontSize: Get
-                                                  .textTheme
-                                                  .labelMedium!
-                                                  .fontSize!,
-                                              fontWeight: FontWeight.normal,
-                                              color: Color(0xFF000000),
-                                            ),
-                                            constraints: BoxConstraints(
-                                              maxHeight: height * 0.05,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  horizontal: width * 0.02,
-                                                ),
-                                            border: InputBorder.none,
-                                            enabledBorder: InputBorder.none,
-                                            focusedBorder: InputBorder.none,
-                                          ),
+                                      Container(
+                                        height: height * 0.03,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
                                         ),
                                       ),
-                                      isTyping
-                                          ? InkWell(
-                                              onTap: () {
-                                                confirmInformation(
-                                                  'newName',
-                                                  '',
-                                                );
-                                              },
-                                              child: Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: width * 0.01,
-                                                  vertical: height * 0.005,
-                                                ),
-                                                child: Text(
-                                                  'confirm',
-                                                  style: TextStyle(
-                                                    fontSize: Get
-                                                        .textTheme
-                                                        .labelMedium!
-                                                        .fontSize!,
-                                                    fontWeight:
-                                                        FontWeight.normal,
-                                                    color: Color(0xFF007AFF),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  isTyping = true;
-                                                });
-                                              },
-                                              child: SvgPicture.string(
-                                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
-                                                height: height * 0.03,
-                                                fit: BoxFit.contain,
-                                              ),
-                                            ),
+                                      Container(
+                                        height: height * 0.025,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      SvgPicture.string(
+                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 8c-2.168 0-4 1.832-4 4s1.832 4 4 4 4-1.832 4-4-1.832-4-4-4zm0 6c-1.065 0-2-.935-2-2s.935-2 2-2 2 .935 2 2-.935 2-2 2z"></path><path d="M20 5h-2.586l-2.707-2.707A.996.996 0 0 0 14 2h-4a.996.996 0 0 0-.707.293L6.586 5H4c-1.103 0-2 .897-2 2v11c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V7c0-1.103-.897-2-2-2zM4 18V7h3c.266 0 .52-.105.707-.293L10.414 4h3.172l2.707 2.707A.996.996 0 0 0 17 7h3l.002 11H4z"></path></svg>',
+                                        height: height * 0.02,
+                                      ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                width * 0.03,
-                                height * 0.01,
-                                0,
-                                height * 0.005,
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: height * 0.02),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            width * 0.03,
+                            0,
+                            0,
+                            height * 0.005,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Name',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                  fontWeight: FontWeight.normal,
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              Row(
                                 children: [
-                                  Text(
-                                    'Password',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleSmall!.fontSize!,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                  InkWell(
-                                    onTap: changePassword,
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(6),
-                                    ),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      height: height * 0.035,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.02,
+                                  SizedBox(
+                                    width: width * 0.6,
+                                    child: TextField(
+                                      controller: editNameCtl,
+                                      focusNode: editNameFocusNode,
+                                      inputFormatters: [
+                                        LengthLimitingTextInputFormatter(20),
+                                      ],
+                                      keyboardType: TextInputType.text,
+                                      cursorColor: Colors.black,
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
                                       ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(6),
-                                        ),
-                                        border: Border.all(
-                                          width: 0.5,
-                                          color: Colors.black38,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        isChangePassword
-                                            ? 'Change password'
-                                            : 'Add password',
-                                        style: TextStyle(
+                                      textAlign: TextAlign.end,
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        hintText: isTyping
+                                            ? 'Enter your name'
+                                            : name,
+                                        hintStyle: TextStyle(
                                           fontSize: Get
                                               .textTheme
                                               .labelMedium!
                                               .fontSize!,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black,
+                                          fontWeight: FontWeight.normal,
+                                          color: Color(0xFF000000),
                                         ),
+                                        constraints: BoxConstraints(
+                                          maxHeight: height * 0.05,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                        ),
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
                                       ),
                                     ),
                                   ),
+                                  isTyping
+                                      ? InkWell(
+                                          onTap: () {
+                                            confirmInformation('newName', '');
+                                          },
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: width * 0.01,
+                                              vertical: height * 0.005,
+                                            ),
+                                            child: Text(
+                                              'confirm',
+                                              style: TextStyle(
+                                                fontSize: Get
+                                                    .textTheme
+                                                    .labelMedium!
+                                                    .fontSize!,
+                                                fontWeight: FontWeight.normal,
+                                                color: Color(0xFF007AFF),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              isTyping = true;
+                                            });
+                                          },
+                                          child: SvgPicture.string(
+                                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path></svg>',
+                                            height: height * 0.03,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
                                 ],
                               ),
-                            ),
-                            SizedBox(height: height * 0.01),
-                            Container(
-                              width: width,
-                              height: height * 0.05,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFF2F2F6),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(8),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            width * 0.03,
+                            height * 0.01,
+                            0,
+                            height * 0.005,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Password',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
-                              alignment: Alignment.centerLeft,
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              child: Row(
-                                children: [
-                                  SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M19 13.586V10c0-3.217-2.185-5.927-5.145-6.742C13.562 2.52 12.846 2 12 2s-1.562.52-1.855 1.258C7.185 4.074 5 6.783 5 10v3.586l-1.707 1.707A.996.996 0 0 0 3 16v2a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-2a.996.996 0 0 0-.293-.707L19 13.586zM19 17H5v-.586l1.707-1.707A.996.996 0 0 0 7 14v-4c0-2.757 2.243-5 5-5s5 2.243 5 5v4c0 .266.105.52.293.707L19 16.414V17zm-7 5a2.98 2.98 0 0 0 2.818-2H9.182A2.98 2.98 0 0 0 12 22z"></path></svg>',
-                                    height: height * 0.03,
-                                    fit: BoxFit.contain,
-                                    color: Color(0xFFFF3A31),
+                              InkWell(
+                                onTap: changePassword,
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(6),
+                                ),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  height: height * 0.035,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: width * 0.02,
                                   ),
-                                  SizedBox(width: width * 0.01),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(6),
+                                    ),
+                                    border: Border.all(
+                                      width: 0.5,
+                                      color: Colors.black38,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isChangePassword
+                                        ? 'Change password'
+                                        : 'Add password',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.labelMedium!.fontSize!,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: height * 0.01),
+                        Container(
+                          width: width,
+                          height: height * 0.05,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF2F2F6),
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.only(left: width * 0.03),
+                          child: Row(
+                            children: [
+                              SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M19 13.586V10c0-3.217-2.185-5.927-5.145-6.742C13.562 2.52 12.846 2 12 2s-1.562.52-1.855 1.258C7.185 4.074 5 6.783 5 10v3.586l-1.707 1.707A.996.996 0 0 0 3 16v2a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-2a.996.996 0 0 0-.293-.707L19 13.586zM19 17H5v-.586l1.707-1.707A.996.996 0 0 0 7 14v-4c0-2.757 2.243-5 5-5s5 2.243 5 5v4c0 .266.105.52.293.707L19 16.414V17zm-7 5a2.98 2.98 0 0 0 2.818-2H9.182A2.98 2.98 0 0 0 12 22z"></path></svg>',
+                                height: height * 0.03,
+                                fit: BoxFit.contain,
+                                color: Color(0xFFFF3A31),
+                              ),
+                              SizedBox(width: width * 0.01),
+                              Text(
+                                'My notifications',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                width * 0.03,
+                                height * 0.005,
+                                0,
+                                height * 0.005,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    'My notifications',
+                                    'Mobile push notifications',
                                     style: TextStyle(
                                       fontSize:
                                           Get.textTheme.titleMedium!.fontSize!,
@@ -720,208 +696,90 @@ class _SettingsPageState extends State<SettingsPage> {
                                       color: Colors.black,
                                     ),
                                   ),
+                                  Text.rich(
+                                    TextSpan(
+                                      text: 'Receive push notifications\n',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: FontWeight.normal,
+                                        color: Color(0xFF979595),
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: 'via your mobile app.',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.normal,
+                                            height: 0.9,
+                                            color: Color(0xFF979595),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Padding(
-                                  padding: EdgeInsets.fromLTRB(
-                                    width * 0.03,
-                                    height * 0.005,
-                                    0,
-                                    height * 0.005,
+                                IconButton(
+                                  onPressed: () async {
+                                    if (!isTogglePushNotification) {
+                                      String? token = await FirebaseMessaging
+                                          .instance
+                                          .getToken();
+                                      FirebaseFirestore.instance
+                                          .collection('usersLogin')
+                                          .doc(userEmail)
+                                          .update({'FMCToken': token});
+                                    } else {
+                                      FirebaseFirestore.instance
+                                          .collection('usersLogin')
+                                          .doc(userEmail)
+                                          .update({'FMCToken': 'off'});
+                                    }
+                                    setState(() {
+                                      isTogglePushNotification =
+                                          !isTogglePushNotification;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    isTogglePushNotification
+                                        ? Icons.toggle_on_outlined
+                                        : Icons.toggle_off_outlined,
+                                    color: isTogglePushNotification
+                                        ? Color(0xFF007AFF)
+                                        : Colors.grey,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Mobile push notifications',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          text: 'Receive push notifications\n',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: FontWeight.normal,
-                                            color: Color(0xFF979595),
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'via your mobile app.',
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize!,
-                                                fontWeight: FontWeight.normal,
-                                                height: 0.9,
-                                                color: Color(0xFF979595),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  iconSize: height * 0.04,
                                 ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () async {
-                                        if (!isTogglePushNotification) {
-                                          String? token =
-                                              await FirebaseMessaging.instance
-                                                  .getToken();
-                                          FirebaseFirestore.instance
-                                              .collection('usersLogin')
-                                              .doc(userEmail)
-                                              .update({'FMCToken': token});
-                                        } else {
-                                          FirebaseFirestore.instance
-                                              .collection('usersLogin')
-                                              .doc(userEmail)
-                                              .update({'FMCToken': 'off'});
-                                        }
-                                        setState(() {
-                                          isTogglePushNotification =
-                                              !isTogglePushNotification;
-                                        });
-                                      },
-                                      icon: Icon(
-                                        isTogglePushNotification
-                                            ? Icons.toggle_on_outlined
-                                            : Icons.toggle_off_outlined,
-                                        color: isTogglePushNotification
-                                            ? Color(0xFF007AFF)
-                                            : Colors.grey,
-                                      ),
-                                      iconSize: height * 0.04,
-                                    ),
-                                    SizedBox(width: width * 0.02),
-                                  ],
-                                ),
+                                SizedBox(width: width * 0.02),
                               ],
                             ),
-                            Divider(thickness: 1, indent: 10, endIndent: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.fromLTRB(
-                                    width * 0.03,
-                                    0,
-                                    0,
-                                    height * 0.005,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Send email notifications',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          text: 'Receive send notifications\n',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: FontWeight.normal,
-                                            color: Color(0xFF979595),
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'via your email.',
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize!,
-                                                fontWeight: FontWeight.normal,
-                                                height: 0.9,
-                                                color: Color(0xFF979595),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        if (!isToggleEmailNotification) {
-                                          log('noti email');
-                                        }
-                                        setState(() {
-                                          isToggleEmailNotification =
-                                              !isToggleEmailNotification;
-                                        });
-                                      },
-                                      icon: Icon(
-                                        isToggleEmailNotification
-                                            ? Icons.toggle_on_outlined
-                                            : Icons.toggle_off_outlined,
-                                        color: isToggleEmailNotification
-                                            ? Color(0xFF007AFF)
-                                            : Colors.grey,
-                                      ),
-                                      iconSize: height * 0.04,
-                                    ),
-                                    SizedBox(width: width * 0.02),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: height * 0.02),
-                            Container(
-                              width: width,
-                              height: height * 0.05,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFF2F2F6),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(8),
-                                ),
+                          ],
+                        ),
+                        Divider(thickness: 1, indent: 10, endIndent: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                width * 0.03,
+                                0,
+                                0,
+                                height * 0.005,
                               ),
-                              alignment: Alignment.centerLeft,
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 16c2.206 0 4-1.794 4-4s-1.794-4-4-4-4 1.794-4 4 1.794 4 4 4zm0-6c1.084 0 2 .916 2 2s-.916 2-2 2-2-.916-2-2 .916-2 2-2z"></path><path d="m2.845 16.136 1 1.73c.531.917 1.809 1.261 2.73.73l.529-.306A8.1 8.1 0 0 0 9 19.402V20c0 1.103.897 2 2 2h2c1.103 0 2-.897 2-2v-.598a8.132 8.132 0 0 0 1.896-1.111l.529.306c.923.53 2.198.188 2.731-.731l.999-1.729a2.001 2.001 0 0 0-.731-2.732l-.505-.292a7.718 7.718 0 0 0 0-2.224l.505-.292a2.002 2.002 0 0 0 .731-2.732l-.999-1.729c-.531-.92-1.808-1.265-2.731-.732l-.529.306A8.1 8.1 0 0 0 15 4.598V4c0-1.103-.897-2-2-2h-2c-1.103 0-2 .897-2 2v.598a8.132 8.132 0 0 0-1.896 1.111l-.529-.306c-.924-.531-2.2-.187-2.731.732l-.999 1.729a2.001 2.001 0 0 0 .731 2.732l.505.292a7.683 7.683 0 0 0 0 2.223l-.505.292a2.003 2.003 0 0 0-.731 2.733zm3.326-2.758A5.703 5.703 0 0 1 6 12c0-.462.058-.926.17-1.378a.999.999 0 0 0-.47-1.108l-1.123-.65.998-1.729 1.145.662a.997.997 0 0 0 1.188-.142 6.071 6.071 0 0 1 2.384-1.399A1 1 0 0 0 11 5.3V4h2v1.3a1 1 0 0 0 .708.956 6.083 6.083 0 0 1 2.384 1.399.999.999 0 0 0 1.188.142l1.144-.661 1 1.729-1.124.649a1 1 0 0 0-.47 1.108c.112.452.17.916.17 1.378 0 .461-.058.925-.171 1.378a1 1 0 0 0 .471 1.108l1.123.649-.998 1.729-1.145-.661a.996.996 0 0 0-1.188.142 6.071 6.071 0 0 1-2.384 1.399A1 1 0 0 0 13 18.7l.002 1.3H11v-1.3a1 1 0 0 0-.708-.956 6.083 6.083 0 0 1-2.384-1.399.992.992 0 0 0-1.188-.141l-1.144.662-1-1.729 1.124-.651a1 1 0 0 0 .471-1.108z"></path></svg>',
-                                    height: height * 0.03,
-                                    fit: BoxFit.contain,
-                                    color: Color(0xFF979595),
-                                  ),
-                                  SizedBox(width: width * 0.01),
                                   Text(
-                                    'My settings',
+                                    'Send email notifications',
                                     style: TextStyle(
                                       fontSize:
                                           Get.textTheme.titleMedium!.fontSize!,
@@ -929,305 +787,380 @@ class _SettingsPageState extends State<SettingsPage> {
                                       color: Colors.black,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.fromLTRB(
-                                    width * 0.03,
-                                    height * 0.005,
-                                    0,
-                                    height * 0.005,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'First page',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.black,
-                                        ),
+                                  Text.rich(
+                                    TextSpan(
+                                      text: 'Receive send notifications\n',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: FontWeight.normal,
+                                        color: Color(0xFF979595),
                                       ),
-                                      Text.rich(
+                                      children: [
                                         TextSpan(
-                                          text: 'Choose the home page\n',
+                                          text: 'via your email.',
                                           style: TextStyle(
                                             fontSize: Get
                                                 .textTheme
                                                 .labelMedium!
                                                 .fontSize!,
                                             fontWeight: FontWeight.normal,
+                                            height: 0.9,
                                             color: Color(0xFF979595),
                                           ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'you want.',
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize!,
-                                                fontWeight: FontWeight.normal,
-                                                height: 0.9,
-                                                color: Color(0xFF979595),
-                                              ),
-                                            ),
-                                          ],
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    if (!isToggleEmailNotification) {
+                                      log('noti email');
+                                    }
+                                    setState(() {
+                                      isToggleEmailNotification =
+                                          !isToggleEmailNotification;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    isToggleEmailNotification
+                                        ? Icons.toggle_on_outlined
+                                        : Icons.toggle_off_outlined,
+                                    color: isToggleEmailNotification
+                                        ? Color(0xFF007AFF)
+                                        : Colors.grey,
+                                  ),
+                                  iconSize: height * 0.04,
                                 ),
-                                Row(
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        if (mounted) {
-                                          box.write('showDisplays', {
-                                            'privateTF': true,
-                                            'groupTF': false,
-                                          });
+                                SizedBox(width: width * 0.02),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: height * 0.02),
+                        Container(
+                          width: width,
+                          height: height * 0.05,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF2F2F6),
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.only(left: width * 0.03),
+                          child: Row(
+                            children: [
+                              SvgPicture.string(
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 16c2.206 0 4-1.794 4-4s-1.794-4-4-4-4 1.794-4 4 1.794 4 4 4zm0-6c1.084 0 2 .916 2 2s-.916 2-2 2-2-.916-2-2 .916-2 2-2z"></path><path d="m2.845 16.136 1 1.73c.531.917 1.809 1.261 2.73.73l.529-.306A8.1 8.1 0 0 0 9 19.402V20c0 1.103.897 2 2 2h2c1.103 0 2-.897 2-2v-.598a8.132 8.132 0 0 0 1.896-1.111l.529.306c.923.53 2.198.188 2.731-.731l.999-1.729a2.001 2.001 0 0 0-.731-2.732l-.505-.292a7.718 7.718 0 0 0 0-2.224l.505-.292a2.002 2.002 0 0 0 .731-2.732l-.999-1.729c-.531-.92-1.808-1.265-2.731-.732l-.529.306A8.1 8.1 0 0 0 15 4.598V4c0-1.103-.897-2-2-2h-2c-1.103 0-2 .897-2 2v.598a8.132 8.132 0 0 0-1.896 1.111l-.529-.306c-.924-.531-2.2-.187-2.731.732l-.999 1.729a2.001 2.001 0 0 0 .731 2.732l.505.292a7.683 7.683 0 0 0 0 2.223l-.505.292a2.003 2.003 0 0 0-.731 2.733zm3.326-2.758A5.703 5.703 0 0 1 6 12c0-.462.058-.926.17-1.378a.999.999 0 0 0-.47-1.108l-1.123-.65.998-1.729 1.145.662a.997.997 0 0 0 1.188-.142 6.071 6.071 0 0 1 2.384-1.399A1 1 0 0 0 11 5.3V4h2v1.3a1 1 0 0 0 .708.956 6.083 6.083 0 0 1 2.384 1.399.999.999 0 0 0 1.188.142l1.144-.661 1 1.729-1.124.649a1 1 0 0 0-.47 1.108c.112.452.17.916.17 1.378 0 .461-.058.925-.171 1.378a1 1 0 0 0 .471 1.108l1.123.649-.998 1.729-1.145-.661a.996.996 0 0 0-1.188.142 6.071 6.071 0 0 1-2.384 1.399A1 1 0 0 0 13 18.7l.002 1.3H11v-1.3a1 1 0 0 0-.708-.956 6.083 6.083 0 0 1-2.384-1.399.992.992 0 0 0-1.188-.141l-1.144.662-1-1.729 1.124-.651a1 1 0 0 0 .471-1.108z"></path></svg>',
+                                height: height * 0.03,
+                                fit: BoxFit.contain,
+                                color: Color(0xFF979595),
+                              ),
+                              SizedBox(width: width * 0.01),
+                              Text(
+                                'My settings',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                width * 0.03,
+                                height * 0.005,
+                                0,
+                                height * 0.005,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'First page',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize!,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  Text.rich(
+                                    TextSpan(
+                                      text: 'Choose the home page\n',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: FontWeight.normal,
+                                        color: Color(0xFF979595),
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: 'you want.',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.normal,
+                                            height: 0.9,
+                                            color: Color(0xFF979595),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    if (mounted) {
+                                      box.write('showDisplays', {
+                                        'privateTF': true,
+                                        'groupTF': false,
+                                      });
 
-                                          setState(() {
-                                            private = 400;
-                                            group = 200;
-                                          });
-                                        }
-                                      },
+                                      setState(() {
+                                        private = 400;
+                                        group = 200;
+                                      });
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.02,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: private == 400
+                                          ? Color(0xFF007AFF)
+                                          : Colors.grey[private],
                                       borderRadius: BorderRadius.all(
                                         Radius.circular(8),
                                       ),
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: private == 400
-                                              ? Color(0xFF007AFF)
-                                              : Colors.grey[private],
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(8),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Private',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: private == 400
-                                                ? FontWeight.w500
-                                                : FontWeight.normal,
-                                            color: private == 400
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
-                                        ),
+                                    ),
+                                    child: Text(
+                                      'Private',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: private == 400
+                                            ? FontWeight.w500
+                                            : FontWeight.normal,
+                                        color: private == 400
+                                            ? Colors.white
+                                            : Colors.black,
                                       ),
                                     ),
-                                    SizedBox(width: width * 0.01),
-                                    InkWell(
-                                      onTap: () {
-                                        if (mounted) {
-                                          box.write('showDisplays', {
-                                            'privateTF': false,
-                                            'groupTF': true,
-                                          });
-                                          setState(() {
-                                            private = 200;
-                                            group = 400;
-                                          });
-                                        }
-                                      },
+                                  ),
+                                ),
+                                SizedBox(width: width * 0.01),
+                                InkWell(
+                                  onTap: () {
+                                    if (mounted) {
+                                      box.write('showDisplays', {
+                                        'privateTF': false,
+                                        'groupTF': true,
+                                      });
+                                      setState(() {
+                                        private = 200;
+                                        group = 400;
+                                      });
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.02,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: group == 400
+                                          ? Color(0xFF007AFF)
+                                          : Colors.grey[group],
                                       borderRadius: BorderRadius.all(
                                         Radius.circular(8),
                                       ),
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: group == 400
-                                              ? Color(0xFF007AFF)
-                                              : Colors.grey[group],
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(8),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Groups',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: group == 400
-                                                ? FontWeight.w500
-                                                : FontWeight.normal,
-                                            color: group == 400
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
-                                        ),
+                                    ),
+                                    child: Text(
+                                      'Groups',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: group == 400
+                                            ? FontWeight.w500
+                                            : FontWeight.normal,
+                                        color: group == 400
+                                            ? Colors.white
+                                            : Colors.black,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Divider(thickness: 1, indent: 10, endIndent: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.fromLTRB(
-                                    width * 0.03,
-                                    0,
-                                    0,
-                                    height * 0.005,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Delete my account',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          text: 'Delete your account and\n',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: FontWeight.normal,
-                                            color: Color(0xFF979595),
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text:
-                                                  'also delete all your workspaces.',
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .labelMedium!
-                                                    .fontSize!,
-                                                fontWeight: FontWeight.normal,
-                                                height: 0.9,
-                                                color: Color(0xFF979595),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    InkWell(
-                                      onTap: deleteUser,
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(6),
-                                      ),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        height: height * 0.04,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.02,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(6),
-                                          ),
-                                          border: Border.all(
-                                            width: 0.5,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Delete my account',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        SizedBox(height: height * 0.07),
-                        Column(
+                        Divider(thickness: 1, indent: 10, endIndent: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Material(
-                              color: Color(0xFFF2F2F6),
-                              borderRadius: BorderRadius.circular(8),
-                              child: InkWell(
-                                onTap: () {
-                                  logout();
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.01,
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                width * 0.03,
+                                0,
+                                0,
+                                height * 0.005,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Delete my account',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize!,
+                                      fontWeight: FontWeight.normal,
+                                      color: Colors.red,
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Sign Out',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
-                                          color: Color(0xFFFF3A31),
-                                        ),
+                                  Text.rich(
+                                    TextSpan(
+                                      text: 'Delete your account and\n',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: FontWeight.normal,
+                                        color: Color(0xFF979595),
                                       ),
-                                    ],
+                                      children: [
+                                        TextSpan(
+                                          text:
+                                              'also delete all your workspaces.',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .labelMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.normal,
+                                            height: 0.9,
+                                            color: Color(0xFF979595),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: deleteUser,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(6),
+                                  ),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    height: height * 0.04,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.02,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(6),
+                                      ),
+                                      border: Border.all(
+                                        width: 0.5,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Delete my account',
+                                      style: TextStyle(
+                                        fontSize: Get
+                                            .textTheme
+                                            .labelMedium!
+                                            .fontSize!,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
-                  ),
+                    SizedBox(height: height * 0.07),
+                    Column(
+                      children: [
+                        Material(
+                          color: Color(0xFFF2F2F6),
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            onTap: () {
+                              logout();
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: height * 0.01,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Sign Out',
+                                    style: TextStyle(
+                                      fontSize:
+                                          Get.textTheme.titleMedium!.fontSize!,
+                                      fontWeight: FontWeight.normal,
+                                      color: Color(0xFFFF3A31),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1607,7 +1540,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       );
 
                       if (res.statusCode == 403) {
-                        await loadNewRefreshToken();
+                        await AppDataLoadNewRefreshToken()
+                            .loadNewRefreshToken();
                         res = await http.put(
                           Uri.parse("$url/user/removepassword"),
                           headers: {
@@ -1899,7 +1833,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     );
 
                     if (res.statusCode == 403) {
-                      await loadNewRefreshToken();
+                      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
                       res = await http.put(
                         Uri.parse("$url/user/removepassword"),
                         headers: {
@@ -2066,7 +2000,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (res.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       res = await http.put(
         Uri.parse("$url/user/profile"),
         headers: {
@@ -2281,7 +2215,7 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
       if (responseLogout.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         responseLogout = await http.post(
           Uri.parse("$url/auth/signout"),
           headers: {
@@ -2311,6 +2245,7 @@ class _SettingsPageState extends State<SettingsPage> {
           .collection('usersLogin')
           .doc(userEmail)
           .update({'deviceName': FieldValue.delete()});
+      await googleSignIn.initialize();
       await googleSignIn.signOut();
       await FirebaseAuth.instance.signOut();
       await storage.deleteAll();
@@ -2449,7 +2384,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               },
                             );
                             if (responseLogout.statusCode == 403) {
-                              await loadNewRefreshToken();
+                              await AppDataLoadNewRefreshToken()
+                                  .loadNewRefreshToken();
                               responseLogout = await http.post(
                                 Uri.parse("$url/auth/signout"),
                                 headers: {
@@ -2483,6 +2419,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       'deviceName': FieldValue.delete(),
                                     });
                                 await box.erase();
+                                await googleSignIn.initialize();
                                 await googleSignIn.signOut();
                                 await FirebaseAuth.instance.signOut();
                                 await storage.deleteAll();
@@ -2555,102 +2492,5 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       ),
     );
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403 ||
-        loadtoketnew.statusCode == 401) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
   }
 }

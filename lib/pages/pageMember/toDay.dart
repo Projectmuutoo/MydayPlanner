@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/todayTasksCreatePostRequest.dart';
@@ -18,8 +14,6 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:mydayplanner/splash.dart';
-import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
 class TodayPage extends StatefulWidget {
@@ -31,8 +25,6 @@ class TodayPage extends StatefulWidget {
 
 class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   // 📦 Storage
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final FlutterSecureStorage storage = FlutterSecureStorage();
   var box = GetStorage();
 
   // 🧠 Late Variables
@@ -126,8 +118,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     final rawData = box.read('userDataAll'); //อ่านจาก storage
     //แปลง model
     final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
-    //เรียก provider
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     //เก็บ filtertask ไว้ก่อน
     List<model.Task> filteredTasks = tasksData.tasks
@@ -152,7 +142,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         .toList();
 
     filteredTasks = sortTasks(filteredTasks); //เอา filtertask ที่ได้ไป sort
-    appData.showMyTasks.setTasks(filteredTasks); //บันทึกลง provider
 
     setState(() {
       tasks = filteredTasks; //แสดง ui
@@ -2582,7 +2571,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (userDataJson == null) return;
 
     var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     // หาตำแหน่งของ task ที่มี id ตรงกับที่ส่งมา
     final index = existingData.tasks.indexWhere(
@@ -2596,7 +2584,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     if (!showArchived) {
       // ถ้าไม่ได้อยู่ในหน้า archived ให้ลบ task ออกจาก list ที่แสดงอยู่
-      appData.showMyTasks.removeTaskById(id);
       tasks.removeWhere((t) => t.taskId.toString() == id);
     } else {
       await loadDataAsync(); // ถ้าอยู่ในหน้า archived โหลดข้อมูลใหม่
@@ -2615,7 +2602,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/taskfinish/$id"),
         headers: {
@@ -2659,7 +2646,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/updatestatus/$id"),
         headers: {
@@ -2681,7 +2668,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (userDataJson == null) return;
 
     var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     // ตรวจสอบว่า ids เป็น String เดี่ยว หรือ List<String>
     if (ids is String) {
@@ -2696,7 +2682,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
     // ลบ task ออกจาก list
     for (var id in idList) {
-      appData.showMyTasks.removeTaskById(id);
       existingData.tasks.removeWhere((t) => t.taskId.toString() == id);
       tasks.removeWhere((t) => t.taskId.toString() == id);
     }
@@ -2743,7 +2728,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     var response = await sendRequest(token);
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       final newToken = box.read('accessToken');
       if (newToken != null) {
         response = await sendRequest(newToken);
@@ -2820,8 +2805,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
 
     if (mounted) {
-      final appData = Provider.of<Appdata>(context, listen: false);
-      appData.showMyTasks.addTask(tempTask);
+      tasks.add(tempTask);
 
       setState(() {
         addToday = false;
@@ -2912,7 +2896,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
 
     if (responseCreate.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       responseCreate = await http.post(
         Uri.parse("$url/todaytasks/create"),
         headers: {
@@ -2965,7 +2949,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
-    final appData = Provider.of<Appdata>(context, listen: false);
 
     // model แสดง task จริงหาก taskId,notificationID ได้รับจาก api
     final realTask = model.Task(
@@ -2994,6 +2977,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         ),
       ],
     );
+
     await _waitForDocumentCreation(realId, notificationID);
     FirebaseFirestore.instance
         .collection('Notifications')
@@ -3007,8 +2991,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
           'isNotiRemind': false,
         });
 
-    appData.showMyTasks.removeTaskById(tempId);
-    appData.showMyTasks.addTask(realTask);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
+    tasks.add(realTask);
 
     await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
     await loadDataAsync();
@@ -3054,8 +3038,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   Future<void> _removeTempTask(String tempId) async {
     if (!mounted) return;
 
-    final appData = Provider.of<Appdata>(context, listen: false);
-    appData.showMyTasks.removeTaskById(tempId);
+    tasks.removeWhere((t) => t.taskId.toString() == tempId);
 
     if (mounted) {
       setState(() {
@@ -3459,101 +3442,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     );
 
     Overlay.of(context).insert(sortMenuEntry!);
-  }
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
   }
 }
 

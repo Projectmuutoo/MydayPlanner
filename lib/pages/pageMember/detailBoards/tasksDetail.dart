@@ -55,7 +55,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   bool _isEditingDescription = false;
 
   final FlutterSecureStorage storage = FlutterSecureStorage();
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
   String? selectedReminder;
   DateTime? customReminderDateTime;
@@ -1363,6 +1363,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                 'Inviter': box.read('userProfile')['email'],
                 'Response': 'Waiting',
                 'Invitation time': DateTime.now(),
+                'notiCount': false,
+                'updatedAt': Timestamp.now(),
               });
         } catch (e) {
           Get.snackbar(
@@ -2551,15 +2553,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     // log('noti');
 
     // แก้ไขการแสดงผลสำหรับ Set due date
+    String isSend = '2';
+    DateTime? dueDate;
     if (label == 'Set due date' && notification.isNotEmpty) {
       final firstNotification = notification.first;
-      bool isSend;
-      DateTime? dueDate;
       log(firstNotification.toString());
 
       if (isGroupTask) {
         // สำหรับ Group Task
-        isSend = firstNotification['isSend'] ?? true;
+        isSend = firstNotification['isSend'].toString();
         if (firstNotification['dueDate'] != null) {
           // Handle Timestamp object
           final timestamp = firstNotification['dueDate'];
@@ -2580,7 +2582,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       }
 
       // เปลี่ยน displayText ตามเงื่อนไข
-      if (!isSend && dueDate != null) {
+      if (isSend != "2" && dueDate != null) {
         displayText = ''; // เราจะใช้ widget แทน
       }
     }
@@ -2686,10 +2688,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     )
                   : label == 'Set due date' &&
                         notification.isNotEmpty &&
-                        !notification.first[isGroupTask
-                            ? 'isSend'
-                            : 'IsSend'] &&
-                        _getDueDate(notification.first, isGroupTask) != null
+                        isSend != "2" &&
+                        dueDate != null
                   ? _buildDueDateReminderWidget(notification.first, isGroupTask)
                   : Text(
                       displayText,
@@ -7641,6 +7641,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
               box.remove('userLogin');
               box.remove('userProfile');
               box.remove('accessToken');
+              await googleSignIn.initialize();
               await googleSignIn.signOut();
               await FirebaseAuth.instance.signOut();
               await storage.deleteAll();
