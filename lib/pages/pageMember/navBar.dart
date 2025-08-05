@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
+import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,12 +15,14 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
 import 'package:mydayplanner/pages/pageMember/allTasks.dart';
 import 'package:mydayplanner/pages/pageMember/calendar.dart';
+import 'package:mydayplanner/pages/pageMember/detailBoards/boardShowTasks.dart';
 import 'package:mydayplanner/pages/pageMember/home.dart';
 import 'package:mydayplanner/pages/pageMember/notification.dart';
 import 'package:mydayplanner/pages/pageMember/toDay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mydayplanner/shared/appData.dart';
+import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 import 'package:get/get.dart';
 import 'package:mydayplanner/splash.dart';
@@ -117,6 +119,7 @@ class NavbarPage extends StatefulWidget {
 
 class _NavbarPageState extends State<NavbarPage>
     with RealtimeUserStatusMixin<NavbarPage>, WidgetsBindingObserver {
+  static int? pendingIndex;
   int selectedIndex = 2;
   final GlobalKey<HomePageState> homeKey = GlobalKey<HomePageState>();
   final GlobalKey<TodayPageState> todayKey = GlobalKey<TodayPageState>();
@@ -132,11 +135,20 @@ class _NavbarPageState extends State<NavbarPage>
   List<model.Task> tasks = [];
   int showNoticounts = 0;
   List<QueryDocumentSnapshot> all = [];
+  StreamSubscription<Uri>? sub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // เช็ค pending index จาก notification
+    if (pendingIndex != null) {
+      setState(() {
+        selectedIndex = pendingIndex!;
+        pendingIndex = null; // reset
+      });
+    }
 
     pageOptions = [
       TodayPage(),
@@ -148,853 +160,16 @@ class _NavbarPageState extends State<NavbarPage>
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
-  }
-
-  void showNotificationsCount() {
-    final rawData = box.read('userDataAll');
-    final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
-    final userEmail = box.read('userProfile')['email'];
-
-    final inviteStream = FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(userEmail)
-        .collection('InviteJoin')
-        .snapshots()
-        .map((snapshot) => snapshot.docs);
-
-    final responseStream = FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(userEmail)
-        .collection('InviteResponse')
-        .snapshots()
-        .map((snapshot) => snapshot.docs);
-
-    final taskStream = FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(userEmail)
-        .collection('Tasks')
-        .snapshots()
-        .map((snapshot) => snapshot.docs);
-
-    List<Stream<List<QueryDocumentSnapshot>>> taskGroupStreams = [];
-
-    for (var task in tasksData.tasks) {
-      final taskId = task.taskId.toString();
-
-      final taskNotificationStream = FirebaseFirestore.instance
-          .collection('BoardTasks')
-          .doc(taskId)
-          .collection('Notifications')
-          .snapshots()
-          .map((snapshot) => snapshot.docs);
-
-      taskGroupStreams.add(taskNotificationStream);
-    }
-
-    Stream<List<QueryDocumentSnapshot>> combinedStream;
-
-    if (taskGroupStreams.isEmpty) {
-      combinedStream = rxdart.Rx.combineLatest3(
-        inviteStream,
-        responseStream,
-        taskStream,
-        (invites, responses, tasks) => [...invites, ...responses, ...tasks],
-      );
-    } else {
-      final allTaskGroupStreams = rxdart.Rx.combineLatestList(
-        taskGroupStreams,
-      ).map((listOfLists) => listOfLists.expand((list) => list).toList());
-
-      combinedStream = rxdart.Rx.combineLatest4(
-        inviteStream,
-        responseStream,
-        taskStream,
-        allTaskGroupStreams,
-        (invites, responses, tasks, taskGroups) => [
-          ...invites,
-          ...responses,
-          ...tasks,
-          ...taskGroups,
-        ],
-      );
-    }
-
-    combinedStream.listen((all) {
-      _updateNotificationField(all, null);
-    });
-  }
-
-  Future<void> _updateNotificationField(
-    List<QueryDocumentSnapshot> docs,
-    int? index,
-  ) async {
-    int count = 0;
-
-    for (final doc in docs) {
-      final docRef = doc.reference;
-      final snapshot = await docRef.get();
-
-      if (snapshot.exists) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        if (data['notiCount'] != null && !data['notiCount']) {
-          count++;
-        }
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        all = docs;
-        showNoticounts = count;
-      });
-    }
-  }
-
-  Future<void> _updateNotificationField2(
-    List<QueryDocumentSnapshot> docs,
-    int? index,
-  ) async {
-    int count = 0;
-
-    for (final doc in docs) {
-      final docRef = doc.reference;
-      final snapshot = await docRef.get();
-      if (snapshot.exists) {
-        if (index != null && index == 4) {
-          docRef.update({'notiCount': true});
-          continue;
-        }
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        showNoticounts = count;
-      });
-    }
-  }
-
-  Future<List> showTimeRemineMeBefore(model.Task task) async {
-    final rawData = box.read('userDataAll');
-    final userProfile = box.read('userProfile');
-    final userEmail = userProfile['email'];
-    if (rawData == null || userEmail == null) return [];
-    final data = model.AllDataUserGetResponst.fromJson(rawData);
-    final List<String> remindTimes = [];
-    bool tokenFMC = true;
-
-    var result = await FirebaseFirestore.instance
-        .collection('usersLogin')
-        .doc(userEmail)
-        .get();
-    final dataResult = result.data();
-    if (dataResult != null) {
-      tokenFMC = dataResult['FMCToken'].toString() != 'off';
-    }
-
-    for (var notiTask in task.notifications) {
-      DateTime? remindTimestamp;
-
-      bool isGroup = (data.boardgroup).any(
-        (b) => b.boardId.toString() == task.boardId.toString(),
-      );
-      if (isGroup) {
-        // DocumentSnapshot
-        final docSnapshot = await FirebaseFirestore.instance
-            .collection('BoardTasks')
-            .doc(task.taskId.toString())
-            .collection('Notifications')
-            .doc(notiTask.notificationId.toString())
-            .get();
-
-        if (docSnapshot.exists) {
-          final data = docSnapshot.data();
-          if (data != null) {
-            if (data['beforeDueDate'] != null) {
-              remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
-            }
-            if (data['beforeDueDate'] != null &&
-                (data['beforeDueDate'] as Timestamp).toDate().isBefore(
-                  DateTime.now(),
-                ) &&
-                !data['isNotiRemind']) {
-              // แสดง snackbar เฉพาะเมื่อไม่ได้อยู่ในหน้า notification
-              if (!tokenFMC && selectedIndex != 4) {
-                Get.snackbar(
-                  "It's almost time for your work.",
-                  "You will be reminded before '${task.taskName}' starts.",
-                  duration: Duration(seconds: 3),
-                );
-              }
-
-              // อัปเดต notification status
-              var boardUsersSnapshot = await FirebaseFirestore.instance
-                  .collection('Boards')
-                  .doc(task.boardId.toString())
-                  .collection('BoardUsers')
-                  .get();
-
-              for (var boardUsersDoc in boardUsersSnapshot.docs) {
-                FirebaseFirestore.instance
-                    .collection('BoardTasks')
-                    .doc(task.taskId.toString())
-                    .collection('Notifications')
-                    .doc(notiTask.notificationId.toString())
-                    .update({
-                      'isSend': '1',
-                      'notiCount': false,
-                      'isNotiRemind': true,
-                      'isNotiRemindShow': true,
-                      'dueDateOld': FieldValue.delete(),
-                      'remindMeBeforeOld': FieldValue.delete(),
-                      'updatedAt': Timestamp.now(),
-                      'userNotifications.${boardUsersDoc['UserID'].toString()}.isShow':
-                          false,
-                      'userNotifications.${boardUsersDoc['UserID'].toString()}.isNotiRemindShow':
-                          true,
-                    });
-              }
-            }
-
-            if (data['dueDate'] != null &&
-                (data['dueDate'] as Timestamp).toDate().isBefore(
-                  DateTime.now(),
-                ) &&
-                data['isSend'].toString() == '0') {
-              if (!tokenFMC && selectedIndex != 4) {
-                Get.snackbar(
-                  task.taskName,
-                  showDetailPrivateOrGroup(task).isEmpty
-                      ? "Today, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}"
-                      : "${showDetailPrivateOrGroup(task)}, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}",
-                  titleText: task.priority.isEmpty
-                      ? Text(
-                          task.taskName,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize!,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF007AFF),
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: task.priority == '3'
-                                    ? Colors.red
-                                    : task.priority == '2'
-                                    ? Colors.orange
-                                    : Colors.green,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              task.taskName,
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF007AFF),
-                              ),
-                            ),
-                          ],
-                        ),
-                  duration: Duration(seconds: 3),
-                );
-              }
-
-              handleRecurringNotification(
-                notificationID: notiTask.notificationId.toString(),
-                dueDate: (data['dueDate'] as Timestamp).toDate(),
-                remindMeBefore: data['beforeDueDate'] != null
-                    ? (data['beforeDueDate'] as Timestamp).toDate()
-                    : null,
-                recurringPattern: data['recurringPattern'].toString(),
-                userEmail: box.read('userProfile')['email'],
-                taskID: data['taskID'],
-                boardID: task.boardId.toString(),
-                isGroup: true,
-              );
-            }
-          }
-        }
-      } else {
-        // QuerySnapshot
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('Notifications')
-            .doc(box.read('userProfile')['email'])
-            .collection('Tasks')
-            .where('taskID', isEqualTo: task.taskId)
-            .get();
-
-        if (querySnapshot.docs.isNotEmpty) {
-          final data = querySnapshot.docs.first.data();
-          if (data['beforeDueDate'] != null) {
-            remindTimestamp = (data['beforeDueDate'] as Timestamp).toDate();
-          }
-          if (data['beforeDueDate'] != null &&
-              (data['beforeDueDate'] as Timestamp).toDate().isBefore(
-                DateTime.now(),
-              ) &&
-              !data['isNotiRemind']) {
-            if (!tokenFMC && selectedIndex != 4) {
-              Get.snackbar(
-                "It's almost time for your work.",
-                "You will be reminded before '${task.taskName}' starts.",
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.blue.shade600,
-                colorText: Colors.white,
-                duration: Duration(seconds: 3),
-                isDismissible: true,
-              );
-            }
-            await FirebaseFirestore.instance
-                .collection('Notifications')
-                .doc(box.read('userProfile')['email'])
-                .collection('Tasks')
-                .doc(notiTask.notificationId.toString())
-                .update({
-                  'isSend': '1',
-                  'notiCount': false,
-                  'isNotiRemind': true,
-                  'isNotiRemindShow': true,
-                  'dueDateOld': FieldValue.delete(),
-                  'remindMeBeforeOld': FieldValue.delete(),
-                  'updatedAt': Timestamp.now(),
-                });
-          }
-
-          if (data['dueDate'] != null &&
-              (data['dueDate'] as Timestamp).toDate().isBefore(
-                DateTime.now(),
-              ) &&
-              data['isSend'].toString() == '0') {
-            if (!tokenFMC && selectedIndex != 4) {
-              Get.snackbar(
-                task.taskName,
-                showDetailPrivateOrGroup(task).isEmpty
-                    ? "Today, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}"
-                    : "${showDetailPrivateOrGroup(task)}, ${formatDateDisplay((data['dueDate'] as Timestamp).toDate())}",
-                titleText: task.priority.isEmpty
-                    ? Text(
-                        task.taskName,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.titleMedium!.fontSize!,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF007AFF),
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: task.priority == '3'
-                                  ? Colors.red
-                                  : task.priority == '2'
-                                  ? Colors.orange
-                                  : Colors.green,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            task.taskName,
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize!,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF007AFF),
-                            ),
-                          ),
-                        ],
-                      ),
-                duration: Duration(seconds: 3),
-              );
-            }
-
-            handleRecurringNotification(
-              notificationID: notiTask.notificationId.toString(),
-              dueDate: (data['dueDate'] as Timestamp).toDate(),
-              remindMeBefore: data['beforeDueDate'] != null
-                  ? (data['beforeDueDate'] as Timestamp).toDate()
-                  : null,
-              recurringPattern: data['recurringPattern'].toString(),
-              userEmail: box.read('userProfile')['email'],
-              taskID: data['taskID'],
-            );
-          }
-        }
-      }
-
-      if (remindTimestamp != null && remindTimestamp.isAfter(DateTime.now())) {
-        final timeString =
-            "${remindTimestamp.hour.toString().padLeft(2, '0')}:${remindTimestamp.minute.toString().padLeft(2, '0')}";
-        remindTimes.add(timeString);
-      }
-    }
-
-    return remindTimes;
-  }
-
-  Future<void> handleRecurringNotification({
-    required String notificationID,
-    required DateTime dueDate,
-    required DateTime? remindMeBefore,
-    required String recurringPattern,
-    required String userEmail,
-    required int taskID,
-    String? boardID,
-    bool isGroup = false,
-  }) async {
-    final firestore = FirebaseFirestore.instance;
-    DocumentReference docRef;
-
-    if (isGroup && boardID != null) {
-      docRef = firestore
-          .collection('BoardTasks')
-          .doc(taskID.toString())
-          .collection('Notifications')
-          .doc(notificationID);
-    } else {
-      docRef = firestore
-          .collection('Notifications')
-          .doc(userEmail)
-          .collection('Tasks')
-          .doc(notificationID);
-    }
-
-    DateTime? nextDueDate;
-    DateTime? nextRemindMeBefore;
-
-    if (recurringPattern == 'onetime') {
-      Map<String, dynamic> updateData = {
-        'isSend': '2',
-        'isShow': true,
-        'dueDateOld': FieldValue.delete(),
-        'remindMeBeforeOld': FieldValue.delete(),
-        'updatedAt': Timestamp.now(),
-        'notiCount': false,
-      };
-
-      if (isGroup && boardID != null) {
-        var boardUsersSnapshot = await firestore
-            .collection('Boards')
-            .doc(boardID)
-            .collection('BoardUsers')
-            .get();
-
-        for (var boardUsersDoc in boardUsersSnapshot.docs) {
-          updateData['userNotifications.${boardUsersDoc['UserID'].toString()}.isShow'] =
-              true;
-        }
-      }
-
-      await docRef.update(updateData);
-      nextDueDate = dueDate;
-    } else {
-      nextDueDate = _calculateNextDueDate(dueDate, recurringPattern);
-      nextRemindMeBefore = remindMeBefore != null
-          ? _calculateNextRemindMeBefore(remindMeBefore, recurringPattern)
-          : null;
-
-      if (nextDueDate != null) {
-        Map<String, dynamic> updateData = {
-          'dueDate': Timestamp.fromDate(nextDueDate),
-          'updatedAt': Timestamp.now(),
-          'dueDateOld': dueDate,
-          'remindMeBeforeOld': remindMeBefore,
-          'isSend': '2',
-          'isShow': false,
-          'isNotiRemind': false,
-          'notiCount': false,
-        };
-
-        if (nextRemindMeBefore != null) {
-          updateData['beforeDueDate'] = Timestamp.fromDate(nextRemindMeBefore);
-        }
-
-        if (isGroup && boardID != null) {
-          var boardUsersSnapshot = await firestore
-              .collection('Boards')
-              .doc(boardID)
-              .collection('BoardUsers')
-              .get();
-
-          for (var boardUsersDoc in boardUsersSnapshot.docs) {
-            updateData['userNotifications.${boardUsersDoc['UserID'].toString()}.isShow'] =
-                false;
-            updateData['userNotifications.${boardUsersDoc['UserID'].toString()}.isNotiRemindShow'] =
-                false;
-            updateData['userNotifications.${boardUsersDoc['UserID'].toString()}.dueDateOld'] =
-                dueDate;
-            updateData['userNotifications.${boardUsersDoc['UserID'].toString()}.remindMeBeforeOld'] =
-                remindMeBefore;
-          }
-        }
-
-        await docRef.update(updateData);
-      }
-    }
-
-    final url = await loadAPIEndpoint();
-    http.Response response = await http.put(
-      Uri.parse("$url/notification/update/$taskID"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-      body: jsonEncode({
-        'due_date': nextDueDate?.toUtc().toIso8601String(),
-        'recurring_pattern': recurringPattern,
-        'is_send': '0',
-      }),
-    );
-
-    if (response.statusCode == 403) {
-      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
-      response = await http.put(
-        Uri.parse("$url/notification/update/$taskID"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${box.read('accessToken')}",
-        },
-        body: jsonEncode({
-          'due_date': nextDueDate?.toUtc().toIso8601String(),
-          'recurring_pattern': recurringPattern,
-          'is_send': '0',
-        }),
-      );
-    }
-
-    if (isGroup) {
-      fetchDataOnResume();
-    }
-  }
-
-  DateTime? _calculateNextDueDate(DateTime currentDueDate, String pattern) {
-    switch (pattern) {
-      case 'daily':
-        return currentDueDate.add(Duration(days: 1));
-      case 'weekly':
-        return currentDueDate.add(Duration(days: 7));
-      case 'monthly':
-        return DateTime(
-          currentDueDate.year,
-          currentDueDate.month + 1,
-          currentDueDate.day,
-          currentDueDate.hour,
-          currentDueDate.minute,
-          currentDueDate.second,
-        );
-      case 'yearly':
-        return DateTime(
-          currentDueDate.year + 1,
-          currentDueDate.month,
-          currentDueDate.day,
-          currentDueDate.hour,
-          currentDueDate.minute,
-          currentDueDate.second,
-        );
-      default:
-        return null;
-    }
-  }
-
-  // ฟังก์ชันคำนวณ remindMeBefore ครั้งถัดไป
-  DateTime? _calculateNextRemindMeBefore(
-    DateTime currentRemindMeBefore,
-    String pattern,
-  ) {
-    switch (pattern) {
-      case 'daily':
-        return currentRemindMeBefore.add(Duration(days: 1));
-      case 'weekly':
-        return currentRemindMeBefore.add(Duration(days: 7));
-      case 'monthly':
-        return DateTime(
-          currentRemindMeBefore.year,
-          currentRemindMeBefore.month + 1,
-          currentRemindMeBefore.day,
-          currentRemindMeBefore.hour,
-          currentRemindMeBefore.minute,
-          currentRemindMeBefore.second,
-        );
-      case 'yearly':
-        return DateTime(
-          currentRemindMeBefore.year + 1,
-          currentRemindMeBefore.month,
-          currentRemindMeBefore.day,
-          currentRemindMeBefore.hour,
-          currentRemindMeBefore.minute,
-          currentRemindMeBefore.second,
-        );
-      default:
-        return null;
-    }
-  }
-
-  String formatDateDisplay(DateTime date) {
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  String showDetailPrivateOrGroup(model.Task task) {
-    final rawData = box.read('userDataAll');
-    final data = model.AllDataUserGetResponst.fromJson(rawData);
-
-    bool isPrivate = (data.board).any(
-      (b) => b.boardId.toString() == task.boardId.toString(),
-    );
-    bool isGroup = (data.boardgroup).any(
-      (b) => b.boardId.toString() == task.boardId.toString(),
-    );
-    if (isPrivate) return 'Private';
-    if (isGroup) return 'Group';
-
-    return '';
-  }
-
-  void checkExpiresRefreshToken() async {
-    final userProfile = box.read('userProfile');
-    if (userProfile == null) return;
-
-    final userId = userProfile['userid'];
-    await FirebaseFirestore.instance
-        .collection('refreshTokens')
-        .doc(userId.toString())
-        .get()
-        .then((snapshot) {
-          if (snapshot.exists) {
-            var createdAt = snapshot['CreatedAt'];
-            expiresIn = snapshot['ExpiresIn'];
-            createdAtDate = DateTime.fromMillisecondsSinceEpoch(
-              createdAt * 1000,
-            );
-          }
-        });
-
-    _timer = Timer.periodic(Duration(seconds: 1), (_) {
-      if (createdAtDate == null) return;
-
-      DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
-      DateTime now = DateTime.now();
-
-      if (now.isAfter(expiryDate)) {
-        //1. หยุด Timer
-        _timer?.cancel();
-
-        Get.defaultDialog(
-          title: '',
-          titlePadding: EdgeInsets.zero,
-          backgroundColor: Colors.white,
-          barrierDismissible: false,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width * 0.04,
-            vertical: MediaQuery.of(context).size.height * 0.02,
-          ),
-          content: WillPopScope(
-            onWillPop: () async => false,
-            child: Column(
-              children: [
-                Image.asset(
-                  "assets/images/aleart/warning.png",
-                  height: MediaQuery.of(context).size.height * 0.1,
-                  fit: BoxFit.contain,
-                ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                Text(
-                  'Warning!!',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.headlineSmall!.fontSize,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF007AFF),
-                  ),
-                ),
-                Text(
-                  'The system has expired. Please log in again.',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                final currentUserProfile = box.read('userProfile');
-                if (currentUserProfile != null && currentUserProfile is Map) {
-                  await FirebaseFirestore.instance
-                      .collection('usersLogin')
-                      .doc(currentUserProfile['email'])
-                      .update({'deviceName': FieldValue.delete()});
-                }
-                await box.remove('userProfile');
-                await box.remove('userLogin');
-                await googleSignIn.initialize();
-                await googleSignIn.signOut();
-                await FirebaseAuth.instance.signOut();
-                await storage.deleteAll();
-                Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-              },
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).size.height * 0.05,
-                ),
-                backgroundColor: Color(0xFF007AFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 1,
-              ),
-              child: Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-      }
-    });
-  }
-
-  Future<String> getDeviceName() async {
-    final deviceInfoPlugin = DeviceInfoPlugin();
-
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfoPlugin.androidInfo;
-      final model = androidInfo.model;
-      final id = androidInfo.id;
-      return '${model}_$id';
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfoPlugin.iosInfo;
-      final model = iosInfo.modelName;
-      final id = iosInfo.identifierForVendor!;
-      return '${model}_$id';
-    } else {
-      return 'Unknown_${Random().nextInt(100000000)}';
-    }
-  }
-
-  void checkInSystem() async {
-    final userProfile = box.read('userProfile');
-    final userLogin = box.read('userLogin');
-    if (userProfile == null || userLogin == null) return;
-    String deviceName = await getDeviceName();
-
     _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
-      final userDataAll = box.read('userDataAll');
-      if (userDataAll == null) return;
-      // final rawData = model.AllDataUserGetResponst.fromJson(userDataAll);
-
-      // for (var tasks in rawData.tasks) {
-      //   showTimeRemineMeBefore(tasks);
-      // }
       showNotificationsCount();
-
-      final snapshot = await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(userProfile['email'])
-          .get();
-      final data = snapshot.data();
-      if (data != null) {
-        final serverdeviceName = data['deviceName'].toString();
-        if ((serverdeviceName != deviceName)) {
-          _timer2?.cancel();
-
-          Get.defaultDialog(
-            title: '',
-            titlePadding: EdgeInsets.zero,
-            backgroundColor: Colors.white,
-            barrierDismissible: false,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.04,
-              vertical: MediaQuery.of(context).size.height * 0.02,
-            ),
-            content: WillPopScope(
-              onWillPop: () async => false,
-              child: Column(
-                children: [
-                  Image.asset(
-                    "assets/images/aleart/warning.png",
-                    height: MediaQuery.of(context).size.height * 0.1,
-                    fit: BoxFit.contain,
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                  Text(
-                    'Warning!!',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
-                    ),
-                  ),
-                  Text(
-                    'Detected login from another device.',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.black,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () async {
-                  await box.remove('userProfile');
-                  await box.remove('userLogin');
-                  await googleSignIn.initialize();
-                  await googleSignIn.signOut();
-                  await FirebaseAuth.instance.signOut();
-                  await storage.deleteAll();
-                  Get.offAll(
-                    () => SplashPage(),
-                    arguments: {'fromLogout': true},
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width,
-                    MediaQuery.of(context).size.height * 0.05,
-                  ),
-                  backgroundColor: Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 1,
-                ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
-      }
     });
+    checkJoinBoard();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    sub?.cancel();
     _timer?.cancel();
     _timer2?.cancel();
     super.dispose();
@@ -1004,32 +179,6 @@ class _NavbarPageState extends State<NavbarPage>
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       await fetchDataOnResume();
-    }
-  }
-
-  Future<void> fetchDataOnResume() async {
-    url = await loadAPIEndpoint();
-    http.Response response = await http.get(
-      Uri.parse("$url/user/data"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-    );
-
-    if (response.statusCode == 403) {
-      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
-      response = await http.get(
-        Uri.parse("$url/user/data"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${box.read('accessToken')}",
-        },
-      );
-    }
-    if (response.statusCode == 200) {
-      final newDataJson = model.allDataUserGetResponstFromJson(response.body);
-      box.write('userDataAll', newDataJson.toJson());
     }
   }
 
@@ -1176,6 +325,581 @@ class _NavbarPageState extends State<NavbarPage>
       body: pageOptions[selectedIndex],
     );
   }
+
+  void checkJoinBoard() async {
+    final appData = Provider.of<Appdata>(context, listen: false);
+    final uri = appData.keepPendingUri.pendingUri;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (uri != null) {
+        await _handleJoinBoardUri(uri);
+        appData.keepPendingUri.clear();
+      } else {
+        await _handleJoinBoardUri(null);
+      }
+    });
+  }
+
+  Future<void> _handleJoinBoardUri(Uri? uri) async {
+    if (!mounted) return;
+    if (uri != null) {
+      if (uri.host == 'mydayplanner-app' && uri.path == '/source') {
+        final encoded = uri.queryParameters['join'];
+        if (encoded != null) {
+          final rawData = box.read('userDataAll');
+          if (rawData == null) return;
+
+          final rawDataResult = model.AllDataUserGetResponst.fromJson(rawData);
+
+          final decoded = utf8.decode(base64.decode(encoded));
+          final params = Uri.splitQueryString(decoded);
+          final boardId = params['boardId'];
+          final expire = params['expire'];
+
+          if (boardId == null || expire == null) return;
+
+          DateTime expireDate = DateTime.fromMillisecondsSinceEpoch(
+            int.parse(expire) * 1000,
+          );
+
+          final checkBoardAgain = rawDataResult.boardgroup
+              .where((b) => b.boardId.toString() == boardId)
+              .toList();
+
+          if (DateTime.now().isAfter(expireDate)) {
+            Get.snackbar('The link has expired.', 'Unable to join this board.');
+          } else {
+            if (checkBoardAgain.isNotEmpty) {
+              Get.snackbar(
+                'You already have this board.',
+                "Can't re-enter the board.",
+              );
+            } else {
+              Get.defaultDialog(
+                title: '',
+                titlePadding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                barrierDismissible: false,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.01,
+                ),
+                content: Column(
+                  children: [
+                    Image.asset(
+                      "assets/images/aleart/question.png",
+                      height: MediaQuery.of(context).size.height * 0.1,
+                      fit: BoxFit.contain,
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                    Text(
+                      'Do you want to join this board?',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize!,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                actions: [
+                  Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                          _confirmJoinBoard(boardId);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF007AFF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 1,
+                          fixedSize: Size(
+                            MediaQuery.of(context).size.width,
+                            MediaQuery.of(context).size.height * 0.05,
+                          ),
+                        ),
+                        child: Text(
+                          'Confirm',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize!,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[400],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          fixedSize: Size(
+                            MediaQuery.of(context).size.width,
+                            MediaQuery.of(context).size.height * 0.05,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: Get.textTheme.titleMedium!.fontSize!,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
+          }
+        }
+      }
+    }
+
+    _setupUriListener();
+  }
+
+  void _setupUriListener() {
+    sub = AppLinks().uriLinkStream.listen((Uri uri2) {
+      _handleJoinBoardUri(uri2);
+    });
+  }
+
+  Future<void> _confirmJoinBoard(String boardId) async {
+    Get.snackbar('Joining...', '');
+
+    try {
+      url = await loadAPIEndpoint();
+      var response = await http.post(
+        Uri.parse("$url/board/addboard/$boardId"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+
+      if (response.statusCode == 403) {
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+        response = await http.post(
+          Uri.parse("$url/board/addboard/$boardId"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+      }
+
+      if (response.statusCode == 200) {
+        await fetchDataOnResume();
+        Get.snackbar('Successfully join the board.', '');
+      } else {
+        Get.snackbar('Error', 'Failed to join board');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to join board');
+    }
+  }
+
+  void showNotificationsCount() {
+    final rawData = box.read('userDataAll');
+    final userProfile = box.read('userProfile');
+    if (rawData == null || userProfile == null) return;
+    final userEmail = userProfile['email'];
+    final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
+
+    final inviteStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('InviteJoin')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    final responseStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('InviteResponse')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    final taskStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('Tasks')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    final addAssignessStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('AddAssigness')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
+    List<Stream<List<QueryDocumentSnapshot>>> taskGroupStreams = [];
+
+    for (var task in tasksData.tasks) {
+      final taskId = task.taskId.toString();
+
+      final taskNotificationStream = FirebaseFirestore.instance
+          .collection('BoardTasks')
+          .doc(taskId)
+          .collection('Notifications')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+
+      taskGroupStreams.add(taskNotificationStream);
+    }
+
+    Stream<List<QueryDocumentSnapshot>> combinedStream;
+
+    if (taskGroupStreams.isEmpty) {
+      combinedStream = rxdart.Rx.combineLatest4(
+        inviteStream,
+        responseStream,
+        taskStream,
+        addAssignessStream,
+        (invites, responses, tasks, addAssignessStream) => [
+          ...invites,
+          ...responses,
+          ...tasks,
+          ...addAssignessStream,
+        ],
+      );
+    } else {
+      final allTaskGroupStreams = rxdart.Rx.combineLatestList(
+        taskGroupStreams,
+      ).map((listOfLists) => listOfLists.expand((list) => list).toList());
+
+      combinedStream = rxdart.Rx.combineLatest5(
+        inviteStream,
+        responseStream,
+        taskStream,
+        addAssignessStream,
+        allTaskGroupStreams,
+        (invites, responses, tasks, addAssignessStream, taskGroups) => [
+          ...invites,
+          ...responses,
+          ...tasks,
+          ...addAssignessStream,
+          ...taskGroups,
+        ],
+      );
+    }
+
+    combinedStream.listen((all) {
+      _updateNotificationField(all, null);
+    });
+  }
+
+  Future<void> _updateNotificationField(
+    List<QueryDocumentSnapshot> docs,
+    int? index,
+  ) async {
+    int count = 0;
+
+    for (final doc in docs) {
+      final docRef = doc.reference;
+      final snapshot = await docRef.get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        if (data['notiCount'] != null && !data['notiCount']) {
+          count++;
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        all = docs;
+        showNoticounts = count;
+      });
+    }
+  }
+
+  Future<void> _updateNotificationField2(
+    List<QueryDocumentSnapshot> docs,
+    int? index,
+  ) async {
+    int count = 0;
+
+    for (final doc in docs) {
+      final docRef = doc.reference;
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        if (index != null && index == 4) {
+          docRef.update({'notiCount': true});
+          continue;
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        showNoticounts = count;
+      });
+    }
+  }
+
+  void checkExpiresRefreshToken() async {
+    final userProfile = box.read('userProfile');
+    if (userProfile == null) return;
+
+    final userId = userProfile['userid'];
+    await FirebaseFirestore.instance
+        .collection('refreshTokens')
+        .doc(userId.toString())
+        .get()
+        .then((snapshot) {
+          if (snapshot.exists) {
+            var createdAt = snapshot['CreatedAt'];
+            expiresIn = snapshot['ExpiresIn'];
+            createdAtDate = DateTime.fromMillisecondsSinceEpoch(
+              createdAt * 1000,
+            );
+          }
+        });
+
+    _timer = Timer.periodic(Duration(seconds: 1), (_) {
+      if (createdAtDate == null) return;
+
+      DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
+      DateTime now = DateTime.now();
+
+      if (now.isAfter(expiryDate)) {
+        //1. หยุด Timer
+        _timer?.cancel();
+
+        Get.defaultDialog(
+          title: '',
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          barrierDismissible: false,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: WillPopScope(
+            onWillPop: () async => false,
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/warning.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Warning!!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.headlineSmall!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                Text(
+                  'The system has expired. Please log in again.',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                final currentUserProfile = box.read('userProfile');
+                if (currentUserProfile != null && currentUserProfile is Map) {
+                  await FirebaseFirestore.instance
+                      .collection('usersLogin')
+                      .doc(currentUserProfile['email'])
+                      .update({'deviceName': FieldValue.delete()});
+                }
+                await box.remove('userProfile');
+                await box.remove('userLogin');
+                await googleSignIn.initialize();
+                await googleSignIn.signOut();
+                await FirebaseAuth.instance.signOut();
+                await storage.deleteAll();
+                Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    });
+  }
+
+  Future<String> getDeviceName() async {
+    final deviceInfoPlugin = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfoPlugin.androidInfo;
+      final model = androidInfo.model;
+      final id = androidInfo.id;
+      return '${model}_$id';
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfoPlugin.iosInfo;
+      final model = iosInfo.modelName;
+      final id = iosInfo.identifierForVendor!;
+      return '${model}_$id';
+    } else {
+      return 'Unknown_${Random().nextInt(100000000)}';
+    }
+  }
+
+  void checkInSystem() async {
+    final userProfile = box.read('userProfile');
+    final userLogin = box.read('userLogin');
+    if (userProfile == null || userLogin == null) return;
+    String deviceName = await getDeviceName();
+
+    FirebaseFirestore.instance.collection('usersLogin').snapshots().listen((
+      snapshot,
+    ) {
+      for (var i in snapshot.docChanges) {
+        final data = i.doc;
+        final change = i.type;
+        if (change == DocumentChangeType.modified) {
+          final serverdeviceName = data['deviceName'].toString();
+          if (data['email'] == userProfile['email']) {
+            if ((serverdeviceName != deviceName)) {
+              if (!mounted) return;
+              Get.defaultDialog(
+                title: '',
+                titlePadding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                barrierDismissible: false,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
+                content: WillPopScope(
+                  onWillPop: () async => false,
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        "assets/images/aleart/warning.png",
+                        height: MediaQuery.of(context).size.height * 0.1,
+                        fit: BoxFit.contain,
+                      ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.01,
+                      ),
+                      Text(
+                        'Warning!!',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                      Text(
+                        'Detected login from another device.',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      await box.remove('userProfile');
+                      await box.remove('userLogin');
+                      await googleSignIn.initialize();
+                      await googleSignIn.signOut();
+                      await FirebaseAuth.instance.signOut();
+                      await storage.deleteAll();
+                      Get.offAll(
+                        () => SplashPage(),
+                        arguments: {'fromLogout': true},
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(
+                        MediaQuery.of(context).size.width,
+                        MediaQuery.of(context).size.height * 0.05,
+                      ),
+                      backgroundColor: Color(0xFF007AFF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 1,
+                    ),
+                    child: Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> fetchDataOnResume() async {
+    url = await loadAPIEndpoint();
+    http.Response response = await http.get(
+      Uri.parse("$url/user/data"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+
+    if (response.statusCode == 403) {
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+      response = await http.get(
+        Uri.parse("$url/user/data"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
+    if (response.statusCode == 200) {
+      final newDataJson = model.allDataUserGetResponstFromJson(response.body);
+      box.write('userDataAll', newDataJson.toJson());
+    }
+  }
 }
 
 class NotificationService {
@@ -1195,19 +919,53 @@ class NotificationService {
         final payload = response.payload;
 
         if (payload != null) {
-          log(payload.toString());
-          if (payload == 'test') {
-            Get.to(() => TodayPage());
+          if (payload == 'notification') {
+            Get.to(() => NotificationPage());
           } else {
-            final data = jsonDecode(payload) as Map<String, dynamic>;
-            log(data.toString());
-            final timestamp = data['timestamp'];
-            final boardid = data['boardid'];
-            final taskid = data['taskid'];
+            final rawData = box.read('userDataAll');
+            if (rawData == null) return;
+            final rawDatas = model.AllDataUserGetResponst.fromJson(rawData);
+            final appData = Provider.of<Appdata>(context, listen: false);
 
-            log('timestamp: $timestamp');
-            log('boardid: $boardid');
-            log('taskid: $taskid');
+            final data = jsonDecode(payload) as Map<String, dynamic>;
+            final timestamp = DateTime.parse(data['timestamp']).toLocal();
+            String boardid = data['boardid'];
+            String taskid = data['taskid'];
+
+            final now = DateTime.now();
+            final todayStart = DateTime(now.year, now.month, now.day).toLocal();
+            final todayEnd = todayStart.add(Duration(days: 1));
+
+            appData.showNotiTasks.setBoardId(boardid);
+            appData.showNotiTasks.setTaskId(taskid);
+
+            // เช็คว่า timestamp เป็นวันนี้หรือไม่
+            if (timestamp.isAfter(todayStart) &&
+                timestamp.isBefore(todayEnd) &&
+                boardid == 'Today') {
+              _NavbarPageState.pendingIndex = 0;
+            } else {
+              if (boardid != 'Today') {
+                appData.boardDatas.setIdBoard(boardid);
+                List<dynamic> foundBoards = rawDatas.board
+                    .where((t) => t.boardId.toString() == boardid)
+                    .toList();
+                if (foundBoards.isEmpty) {
+                  foundBoards = rawDatas.boardgroup
+                      .where((t) => t.boardId.toString() == boardid)
+                      .toList();
+                  appData.boardDatas.setBoardToken(foundBoards.first.token);
+                } else {
+                  appData.boardDatas.setBoardToken('');
+                }
+                appData.boardDatas.setBoardName(foundBoards.first.boardName);
+                Get.to(() => BoardshowtasksPage());
+              } else {
+                _NavbarPageState.pendingIndex = 1;
+              }
+            }
+
+            if (boardid == 'Today') Get.offAll(() => NavbarPage());
           }
         }
       },

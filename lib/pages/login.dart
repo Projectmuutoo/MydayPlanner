@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show Random;
 
+import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -69,6 +70,15 @@ class _LoginPageState extends State<LoginPage> {
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
     return config['apiEndpoint'];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final appData = Provider.of<Appdata>(context, listen: false);
+    AppLinks().uriLinkStream.listen((Uri uri) async {
+      appData.keepPendingUri.setPendingUri(uri);
+    });
   }
 
   @override

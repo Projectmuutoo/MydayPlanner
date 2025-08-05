@@ -15,6 +15,7 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class TodayPage extends StatefulWidget {
   const TodayPage({super.key});
@@ -110,6 +111,15 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         _scrollToAddForm();
       }
     });
+
+    final appData = Provider.of<Appdata>(context, listen: false);
+    if (appData.showNotiTasks.taskId.isNotEmpty) {
+      Future.delayed(Duration(seconds: 5), () {
+        appData.showNotiTasks.setBoardId('');
+        appData.showNotiTasks.setTaskId('');
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   Future<void> loadDataAsync() async {
@@ -665,12 +675,41 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                       : data.status == "2" &&
                                                             hideMenu
                                                       ? Colors.grey[100]
+                                                      : context
+                                                                .watch<
+                                                                  Appdata
+                                                                >()
+                                                                .showNotiTasks
+                                                                .taskId ==
+                                                            data.taskId
+                                                                .toString()
+                                                      ? Color(0xFFEFF6FF)
                                                       : Colors.white,
                                                   borderRadius:
                                                       BorderRadius.circular(8),
                                                   border: Border.all(
-                                                    color: Color(0xFFE2E8F0),
-                                                    width: 1,
+                                                    color:
+                                                        context
+                                                                .watch<
+                                                                  Appdata
+                                                                >()
+                                                                .showNotiTasks
+                                                                .taskId ==
+                                                            data.taskId
+                                                                .toString()
+                                                        ? Color(0xFF3B82F6)
+                                                        : Color(0xFFE2E8F0),
+                                                    width:
+                                                        context
+                                                                .watch<
+                                                                  Appdata
+                                                                >()
+                                                                .showNotiTasks
+                                                                .taskId ==
+                                                            data.taskId
+                                                                .toString()
+                                                        ? 1.5
+                                                        : 1,
                                                   ),
                                                 ),
                                                 child: Column(
@@ -1713,14 +1752,14 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
               onWillPop: () async => false,
               child: SizedBox(
                 height: height * 0.94,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    top: height * 0.01,
-                    left: width * 0.05,
-                    right: width * 0.05,
-                  ),
-                  child: Scaffold(
-                    body: SingleChildScrollView(
+                child: Scaffold(
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      top: height * 0.01,
+                      left: width * 0.05,
+                      right: width * 0.05,
+                    ),
+                    child: SingleChildScrollView(
                       child: Column(
                         children: [
                           Row(
@@ -1823,6 +1862,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                   colorScheme: ColorScheme.light(
                                     primary: Color(0xFF4790EB),
                                   ),
+                                  useMaterial3: true,
                                   textTheme: TextTheme(
                                     bodySmall: TextStyle(
                                       fontWeight: FontWeight.w600,
@@ -1837,7 +1877,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Material(
-                                      color: Colors.black12,
+                                      color: Color(0xFFF2F2F6),
                                       child: CalendarDatePicker(
                                         initialDate: tempSelectedDate,
                                         firstDate: DateTime.now().subtract(
@@ -1873,7 +1913,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               Container(
                                 height: height * 0.16,
                                 decoration: BoxDecoration(
-                                  color: Colors.black12,
+                                  color: Color(0xFFF2F2F6),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: CupertinoDatePicker(
@@ -1905,7 +1945,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -1973,7 +2013,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -2101,7 +2141,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(
@@ -2240,7 +2280,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(
@@ -2767,7 +2807,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     }
 
     DateTime? beforeDueDate;
-    if (_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+    if (!_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    } else {
       beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
     }
 
@@ -2791,7 +2833,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       boardId: "Today",
       notifications: [
         model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+          beforeDueDate: selectedBeforeMinutes != null
               ? beforeDueDate.toUtc().toIso8601String()
               : '',
           createdAt: DateTime.now().toIso8601String(),

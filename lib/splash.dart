@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart';
 import 'package:mydayplanner/pages/login.dart';

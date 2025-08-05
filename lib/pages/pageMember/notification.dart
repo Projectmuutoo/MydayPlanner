@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +26,7 @@ class _NotificationPageState extends State<NotificationPage> {
   final Set<String> _animatedIds = <String>{};
   final Set<String> _animatedIds2 = <String>{};
   final Set<String> _animatedIds3 = <String>{};
+  final Set<String> _animatedIds4 = <String>{};
   late String url;
   Timer? timer;
 
@@ -73,34 +73,6 @@ class _NotificationPageState extends State<NotificationPage> {
                           collectionType3: 'Tasks',
                           all: true,
                         );
-                        // FirebaseFirestore.instance
-                        //     .collection('Notifications')
-                        //     .doc(box.read('userProfile')['email'])
-                        //     .collection('Tasks')
-                        //     .doc(1963.toString())
-                        //     .update({
-                        //       'beforeDueDate': Timestamp.fromDate(
-                        //         DateTime(
-                        //           DateTime.now().year,
-                        //           DateTime.now().month,
-                        //           DateTime.now().day,
-                        //           DateTime.now().hour,
-                        //           DateTime.now().minute + 1,
-                        //         ),
-                        //       ),
-                        //       'dueDate': Timestamp.fromDate(
-                        //         DateTime(
-                        //           DateTime.now().year,
-                        //           DateTime.now().month,
-                        //           DateTime.now().day,
-                        //           DateTime.now().hour,
-                        //           DateTime.now().minute + 2,
-                        //         ),
-                        //       ),
-                        //       'isNotiRemind': false,
-                        //       'isSend': false,
-                        //       'recurringPattern': 'onetime',
-                        //     });
                       },
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
@@ -183,6 +155,10 @@ class _NotificationPageState extends State<NotificationPage> {
                                 (userSettings['remindMeBeforeOld'] != null);
                           }
                         }
+                      }
+
+                      if (data.containsKey('AssignBy')) {
+                        return true;
                       }
 
                       return false;
@@ -516,6 +492,204 @@ class _NotificationPageState extends State<NotificationPage> {
                                                     ),
                                                   ],
                                                 ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        } else if (data.containsKey('AssignBy')) {
+                          final isFirstTime = !_animatedIds4.contains(doc.id);
+                          if (isFirstTime) {
+                            _animatedIds4.add(doc.id);
+                          }
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: height * 0.01),
+                            child: TweenAnimationBuilder(
+                              tween: Tween<double>(
+                                begin: isFirstTime ? 0.0 : 1.0,
+                                end: 1.0,
+                              ),
+                              duration: Duration(
+                                milliseconds: isFirstTime ? 400 : 0,
+                              ),
+                              curve: Curves.easeOutCirc,
+                              builder: (context, value, child) {
+                                return Transform.translate(
+                                  offset: Offset(0, (1 - value) * -30),
+                                  child: Opacity(
+                                    opacity: value.clamp(0.0, 1.0),
+                                    child: Transform.scale(
+                                      scale: 0.8 + (value * 0.2),
+                                      child: child,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Material(
+                                color: Color(0xFFF2F2F6),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Dismissible(
+                                  key: ValueKey(doc.id),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.02,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.red,
+                                    ),
+                                    child: Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  confirmDismiss: (direction) async {
+                                    return true;
+                                  },
+                                  onDismissed: (direction) async {
+                                    setState(() {
+                                      notifications.removeAt(index);
+                                    });
+
+                                    await _deleteNotification(
+                                      doc.id,
+                                      'AddAssigness',
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.only(
+                                      top: height * 0.01,
+                                      bottom: height * 0.01,
+                                      left: width * 0.02,
+                                      right: width * 0.03,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFFF2F2F6),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        ClipOval(
+                                          child: Container(
+                                            width: height * 0.05,
+                                            height: height * 0.05,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Stack(
+                                              children: [
+                                                Container(
+                                                  height: height * 0.1,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black12,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                                Align(
+                                                  child: Icon(
+                                                    Icons.person_add_rounded,
+                                                    size: 24,
+                                                    color: Color(0xFF979595),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: width * 0.02),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    'There is a new assignment',
+                                                    style: TextStyle(
+                                                      fontSize: Get
+                                                          .textTheme
+                                                          .titleSmall!
+                                                          .fontSize!,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isInvite
+                                                          ? Colors.black
+                                                          : Colors.green,
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        timeAgo(
+                                                          data['updatedAt']
+                                                              .toDate()
+                                                              .toIso8601String(),
+                                                        ),
+                                                        style: TextStyle(
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize!,
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              RichText(
+                                                text: TextSpan(
+                                                  style: Get
+                                                      .textTheme
+                                                      .labelMedium!
+                                                      .copyWith(
+                                                        fontSize: Get
+                                                            .textTheme
+                                                            .labelMedium!
+                                                            .fontSize!,
+                                                        color: Colors.black,
+                                                      ),
+                                                  children: [
+                                                    TextSpan(
+                                                      text: 'You ',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          '${data['nameUser']}',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          ' have been assigned a task.',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                maxLines: 4,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -963,10 +1137,15 @@ class _NotificationPageState extends State<NotificationPage> {
 
   String showDetailPrivateOrGroup(Task task) {
     final rawData = box.read('userDataAll');
+    if (rawData == null) return '';
     final data = AllDataUserGetResponst.fromJson(rawData);
 
-    bool isPrivate = (data.board).any((b) => b.boardId == task.boardId);
-    bool isGroup = (data.boardgroup).any((b) => b.boardId == task.boardId);
+    bool isPrivate = (data.board).any(
+      (b) => b.boardId.toString() == task.boardId.toString(),
+    );
+    bool isGroup = (data.boardgroup).any(
+      (b) => b.boardId.toString() == task.boardId.toString(),
+    );
     if (isPrivate) return 'Private';
     if (isGroup) return 'Group';
 
@@ -975,26 +1154,34 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> _handleAccept(String docId, Map data) async {
     final batch = FirebaseFirestore.instance.batch();
+    Get.snackbar('Joining...', '');
 
     // 1. ส่งการแจ้งเตือนให้คนที่เชิญ
-    final responseDoc = FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(data['Inviter'])
-        .collection('InviteResponse')
-        .doc('${data['BoardId']}from-${box.read('userProfile')['email']}');
+    var boardUsersSnapshot = await FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(data['BoardId'])
+        .collection('BoardUsers')
+        .get();
 
-    batch.set(responseDoc, {
-      'Profile': box.read('userProfile')['profile'],
-      'BoardId': data['BoardId'],
-      'BoardName': data['BoardName'],
-      'Response': 'Accept',
-      'ResponderName': box.read('userProfile')['name'],
-      'Responder': box.read('userProfile')['email'],
-      'Response time': DateTime.now(),
-      'notiCount': false,
-      'updatedAt': Timestamp.now(),
-    });
+    for (var boardUsersDoc in boardUsersSnapshot.docs) {
+      final responseDoc = FirebaseFirestore.instance
+          .collection('Notifications')
+          .doc(boardUsersDoc['Email'])
+          .collection('InviteResponse')
+          .doc('${data['BoardId']}from-${box.read('userProfile')['email']}');
 
+      batch.set(responseDoc, {
+        'Profile': box.read('userProfile')['profile'],
+        'BoardId': data['BoardId'],
+        'BoardName': data['BoardName'],
+        'Response': 'Accept',
+        'ResponderName': box.read('userProfile')['name'],
+        'Responder': box.read('userProfile')['email'],
+        'Response time': DateTime.now(),
+        'notiCount': false,
+        'updatedAt': Timestamp.now(),
+      });
+    }
     // 2. อัพเดท Response ใน InviteJoin เป็น Accept
     final inviteDoc = FirebaseFirestore.instance
         .collection('Notifications')
@@ -1023,6 +1210,28 @@ class _NotificationPageState extends State<NotificationPage> {
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
       );
+    }
+    var response2 = await http.get(
+      Uri.parse("$url/user/data"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+    if (response2.statusCode == 403) {
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+      response = await http.get(
+        Uri.parse("$url/user/data"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
+    if (response2.statusCode == 200) {
+      final newDataJson = allDataUserGetResponstFromJson(response2.body);
+      box.write('userDataAll', newDataJson.toJson());
+      Get.snackbar('Successfully join the board.', '');
     }
   }
 
@@ -1160,6 +1369,13 @@ class _NotificationPageState extends State<NotificationPage> {
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
+    final addAssignessStream = FirebaseFirestore.instance
+        .collection('Notifications')
+        .doc(userEmail)
+        .collection('AddAssigness')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+
     List<Stream<List<QueryDocumentSnapshot>>> taskGroupStreams = [];
 
     for (var task in tasksData.tasks) {
@@ -1177,13 +1393,19 @@ class _NotificationPageState extends State<NotificationPage> {
 
     // Combine all streams
     if (taskGroupStreams.isEmpty) {
-      return rxdart.Rx.combineLatest3<
+      return rxdart.Rx.combineLatest4<
+        List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>
-      >(inviteStream, responseStream, taskStream, (invites, responses, tasks) {
-        final all = [...invites, ...responses, ...tasks];
+      >(inviteStream, responseStream, taskStream, addAssignessStream, (
+        invites,
+        responses,
+        tasks,
+        addAssignessStream,
+      ) {
+        final all = [...invites, ...responses, ...tasks, ...addAssignessStream];
         _sortNotifications(all);
         return all;
       });
@@ -1192,22 +1414,31 @@ class _NotificationPageState extends State<NotificationPage> {
         taskGroupStreams,
       ).map((listOfLists) => listOfLists.expand((list) => list).toList());
 
-      return rxdart.Rx.combineLatest4<
+      return rxdart.Rx.combineLatest5<
+        List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>,
         List<QueryDocumentSnapshot>
-      >(inviteStream, responseStream, taskStream, allTaskGroupStreams, (
-        invites,
-        responses,
-        tasks,
-        taskGroups,
-      ) {
-        final all = [...invites, ...responses, ...tasks, ...taskGroups];
-        _sortNotifications(all);
-        return all;
-      });
+      >(
+        inviteStream,
+        responseStream,
+        taskStream,
+        addAssignessStream,
+        allTaskGroupStreams,
+        (invites, responses, tasks, addAssignessStream, taskGroups) {
+          final all = [
+            ...invites,
+            ...responses,
+            ...tasks,
+            ...addAssignessStream,
+            ...taskGroups,
+          ];
+          _sortNotifications(all);
+          return all;
+        },
+      );
     }
   }
 

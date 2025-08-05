@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,7 +9,6 @@ import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/request/editProfileUserPutRequest.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -298,17 +296,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                                 PopupMenuItem(
                                   height: height * 0.05,
-                                  value: 'เลือกไฟล์',
-                                  child: Text(
-                                    'Choose file',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleSmall!.fontSize!,
-                                    ),
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  height: height * 0.05,
                                   value: 'ถ่ายรูป',
                                   child: Text(
                                     'Take Photo',
@@ -329,18 +316,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                     if (!mounted) return;
                                     setState(() {
                                       savedFile = File(image!.path);
-                                    });
-                                  }
-                                } else if (value == 'เลือกไฟล์') {
-                                  FilePickerResult? result = await FilePicker
-                                      .platform
-                                      .pickFiles();
-                                  if (result != null) {
-                                    if (!mounted) return;
-                                    setState(() {
-                                      savedFile = File(
-                                        result.files.first.path!,
-                                      );
                                     });
                                   }
                                 } else if (value == 'ถ่ายรูป') {
@@ -764,87 +739,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                           ],
                         ),
-                        Divider(thickness: 1, indent: 10, endIndent: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                width * 0.03,
-                                0,
-                                0,
-                                height * 0.005,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Send email notifications',
-                                    style: TextStyle(
-                                      fontSize:
-                                          Get.textTheme.titleMedium!.fontSize!,
-                                      fontWeight: FontWeight.normal,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  Text.rich(
-                                    TextSpan(
-                                      text: 'Receive send notifications\n',
-                                      style: TextStyle(
-                                        fontSize: Get
-                                            .textTheme
-                                            .labelMedium!
-                                            .fontSize!,
-                                        fontWeight: FontWeight.normal,
-                                        color: Color(0xFF979595),
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: 'via your email.',
-                                          style: TextStyle(
-                                            fontSize: Get
-                                                .textTheme
-                                                .labelMedium!
-                                                .fontSize!,
-                                            fontWeight: FontWeight.normal,
-                                            height: 0.9,
-                                            color: Color(0xFF979595),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    if (!isToggleEmailNotification) {
-                                      log('noti email');
-                                    }
-                                    setState(() {
-                                      isToggleEmailNotification =
-                                          !isToggleEmailNotification;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    isToggleEmailNotification
-                                        ? Icons.toggle_on_outlined
-                                        : Icons.toggle_off_outlined,
-                                    color: isToggleEmailNotification
-                                        ? Color(0xFF007AFF)
-                                        : Colors.grey,
-                                  ),
-                                  iconSize: height * 0.04,
-                                ),
-                                SizedBox(width: width * 0.02),
-                              ],
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: height * 0.02),
+                        SizedBox(height: height * 0.01),
                         Container(
                           width: width,
                           height: height * 0.05,
@@ -1120,7 +1015,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: height * 0.07),
+                    SizedBox(height: height * 0.16),
                     Column(
                       children: [
                         Material(

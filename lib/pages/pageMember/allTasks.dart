@@ -16,6 +16,7 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
 import 'package:http/http.dart' as http;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
 import 'package:mydayplanner/shared/appData.dart';
+import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 
 class AlltasksPage extends StatefulWidget {
@@ -87,6 +88,15 @@ class AlltasksPageState extends State<AlltasksPage>
         if (addTasknameFocusNodeMap[category]!.hasFocus && addTask) {
           _scrollToForm(category);
         }
+      });
+    }
+
+    final appData = Provider.of<Appdata>(context, listen: false);
+    if (appData.showNotiTasks.taskId.isNotEmpty) {
+      Future.delayed(Duration(seconds: 5), () {
+        appData.showNotiTasks.setBoardId('');
+        appData.showNotiTasks.setTaskId('');
+        if (mounted) setState(() {});
       });
     }
   }
@@ -1044,11 +1054,48 @@ class AlltasksPageState extends State<AlltasksPage>
                                                                       "2" &&
                                                                   hideMenu
                                                             ? Colors.grey[100]
+                                                            : context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                            ? Color(0xFFEFF6FF)
                                                             : Colors.white,
                                                         borderRadius:
                                                             BorderRadius.circular(
                                                               12,
                                                             ),
+                                                        border: Border.all(
+                                                          color:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? Color(
+                                                                  0xFF3B82F6,
+                                                                )
+                                                              : Color(
+                                                                  0xFFE2E8F0,
+                                                                ),
+                                                          width:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? 1.5
+                                                              : 0,
+                                                        ),
                                                       ),
                                                       child: Column(
                                                         children: [
@@ -1186,6 +1233,21 @@ class AlltasksPageState extends State<AlltasksPage>
                                                                                           taskId: data.taskId,
                                                                                         ),
                                                                                       );
+                                                                                      // final result = await Navigator.push(
+                                                                                      //   context,
+                                                                                      //   MaterialPageRoute(
+                                                                                      //     builder:
+                                                                                      //         (
+                                                                                      //           context,
+                                                                                      //         ) => TasksdetailPage(
+                                                                                      //           taskId: data.taskId,
+                                                                                      //         ),
+                                                                                      //   ),
+                                                                                      // );
+                                                                                      // if (result ==
+                                                                                      //     'refresh') {
+                                                                                      //   loadDataAsync();
+                                                                                      // }
                                                                                     }
                                                                             : null,
                                                                         child: Row(
@@ -2225,7 +2287,9 @@ class AlltasksPageState extends State<AlltasksPage>
     }
 
     DateTime? beforeDueDate;
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+    if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    } else {
       beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
     }
 
@@ -2247,7 +2311,7 @@ class AlltasksPageState extends State<AlltasksPage>
       boardId: "Today",
       notifications: [
         model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+          beforeDueDate: selectedBeforeMinutes != null
               ? beforeDueDate.toUtc().toIso8601String()
               : '',
           createdAt: DateTime.now().toIso8601String(),
@@ -3057,7 +3121,7 @@ class AlltasksPageState extends State<AlltasksPage>
     for (var id in idList) {
       final task = tasks.firstWhereOrNull((t) => t.taskId.toString() == id);
       if (task != null && task.boardId != 'Today') {
-        taskIdToBoardId[id] = task.boardId;
+        taskIdToBoardId[id] = task.boardId.toString();
       }
 
       tasks.removeWhere((t) => t.taskId.toString() == id);
@@ -3333,14 +3397,14 @@ class AlltasksPageState extends State<AlltasksPage>
               onWillPop: () async => false,
               child: SizedBox(
                 height: height * 0.94,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    top: height * 0.01,
-                    left: width * 0.05,
-                    right: width * 0.05,
-                  ),
-                  child: Scaffold(
-                    body: SingleChildScrollView(
+                child: Scaffold(
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      top: height * 0.01,
+                      left: width * 0.05,
+                      right: width * 0.05,
+                    ),
+                    child: SingleChildScrollView(
                       child: Column(
                         children: [
                           Row(
@@ -3447,6 +3511,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                   colorScheme: ColorScheme.light(
                                     primary: Color(0xFF4790EB),
                                   ),
+                                  useMaterial3: true,
                                   textTheme: TextTheme(
                                     bodySmall: TextStyle(
                                       fontWeight: FontWeight.w600,
@@ -3461,7 +3526,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Material(
-                                      color: Colors.black12,
+                                      color: Color(0xFFF2F2F6),
                                       child: CalendarDatePicker(
                                         initialDate: tempSelectedDate,
                                         firstDate: DateTime.now().subtract(
@@ -3497,7 +3562,7 @@ class AlltasksPageState extends State<AlltasksPage>
                               Container(
                                 height: height * 0.16,
                                 decoration: BoxDecoration(
-                                  color: Colors.black12,
+                                  color: Color(0xFFF2F2F6),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: CupertinoDatePicker(
@@ -3529,7 +3594,7 @@ class AlltasksPageState extends State<AlltasksPage>
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -3597,7 +3662,7 @@ class AlltasksPageState extends State<AlltasksPage>
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -3725,7 +3790,7 @@ class AlltasksPageState extends State<AlltasksPage>
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(
@@ -3864,7 +3929,7 @@ class AlltasksPageState extends State<AlltasksPage>
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(

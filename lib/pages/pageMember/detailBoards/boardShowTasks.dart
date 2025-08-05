@@ -12,6 +12,7 @@ import 'package:mydayplanner/models/request/BoardTasksCreatePostRequest.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as model;
 import 'package:mydayplanner/pages/pageMember/detailBoards/tasksDetail.dart';
+import 'package:mydayplanner/pages/pageMember/navBar.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -73,9 +74,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
   bool isLoading = false;
   StreamSubscription? combinedSubscription;
   StreamSubscription? notificationSubscription;
+  StreamSubscription? boardSubscription;
   bool isBackHomepage = false;
   List<model.Task> firebaseTasks = [];
   Set<String> deletedTaskIds = {};
+  dynamic boards = [];
+  bool hasFetchedData = false;
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -120,6 +124,27 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         _scrollToAddForm();
       }
     });
+
+    if (appData.showNotiTasks.taskId.isNotEmpty) {
+      Future.delayed(Duration(seconds: 5), () {
+        appData.showNotiTasks.setBoardId('');
+        appData.showNotiTasks.setTaskId('');
+        if (mounted) setState(() {});
+      });
+    }
+
+    boardSubscription = FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(appData.boardDatas.idBoard)
+        .snapshots()
+        .listen((boardSnapshot) async {
+          if (!boardSnapshot.exists) {
+            // ถ้า board ถูกลบ
+            await fetchDataOnResume();
+            Get.offAll(() => NavbarPage());
+            return;
+          }
+        });
   }
 
   Future<void> loadDataAsync() async {
@@ -146,9 +171,23 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         isLoading = false;
       });
     }
+
+    final index = appData.boardDatas.boardToken.isEmpty
+        ? (tasksData.board).indexWhere(
+            (model.Board t) =>
+                t.boardId.toString() == appData.boardDatas.idBoard,
+          )
+        : (tasksData.boardgroup).indexWhere(
+            (model.Boardgroup t) =>
+                t.boardId.toString() == appData.boardDatas.idBoard,
+          );
+
+    boards = appData.boardDatas.boardToken.isEmpty
+        ? (tasksData.board)[index]
+        : (tasksData.boardgroup)[index];
   }
 
-  void _setupFirebaseListeners(dynamic appData) {
+  void _setupFirebaseListeners(dynamic appData) async {
     // ยกเลิก subscriptions เก่าทั้งหมด
     combinedSubscription?.cancel();
     notificationSubscription?.cancel();
@@ -349,6 +388,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     pageController.dispose();
     _timer?.cancel();
     debounceTimer?.cancel();
+    boardSubscription?.cancel();
     combinedSubscription?.cancel();
     notificationSubscription?.cancel();
     mainMenuEntry?.remove();
@@ -426,18 +466,48 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                             SizedBox(width: width * 0.01),
                             !hideMenu
                                 ? Expanded(
-                                    child: Text(
-                                      context
-                                          .read<Appdata>()
-                                          .boardDatas
-                                          .boardName,
-                                      style: TextStyle(
-                                        fontSize:
-                                            Get.textTheme.titleLarge!.fontSize!,
-                                        fontWeight: FontWeight.w500,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        final appData = Provider.of<Appdata>(
+                                          context,
+                                          listen: false,
+                                        );
+                                        AppDataShareShowEditInfo.showEditInfo(
+                                          context,
+                                          boards,
+                                          appData.boardDatas.boardToken,
+                                          appData
+                                                  .boardDatas
+                                                  .boardToken
+                                                  .isNotEmpty
+                                              ? FontWeight.w500
+                                              : FontWeight.w600,
+                                          appData
+                                                  .boardDatas
+                                                  .boardToken
+                                                  .isNotEmpty
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                          pageSend: 'boardShowTasks',
+                                          menuName: true,
+                                          loadDataAsync: loadDataAsync,
+                                        );
+                                      },
+                                      child: Text(
+                                        context
+                                            .read<Appdata>()
+                                            .boardDatas
+                                            .boardName,
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleLarge!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   )
                                 : Text(
@@ -473,6 +543,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                   int.parse(
                                     context.read<Appdata>().boardDatas.idBoard,
                                   ),
+                                  loadDataAsync: loadDataAsync,
                                 );
                               },
                               child: SvgPicture.string(
@@ -1153,11 +1224,48 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                       "2" &&
                                                                   hideMenu
                                                             ? Colors.grey[100]
+                                                            : context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                            ? Color(0xFFEFF6FF)
                                                             : Colors.white,
                                                         borderRadius:
                                                             BorderRadius.circular(
                                                               8,
                                                             ),
+                                                        border: Border.all(
+                                                          color:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? Color(
+                                                                  0xFF3B82F6,
+                                                                )
+                                                              : Color(
+                                                                  0xFFE2E8F0,
+                                                                ),
+                                                          width:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? 1.5
+                                                              : 0,
+                                                        ),
                                                       ),
                                                       child: Column(
                                                         crossAxisAlignment:
@@ -1476,59 +1584,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                       ),
                                     ),
                                   ),
-                            if (!addTask && !hideMenu)
-                              Positioned(
-                                bottom: 20,
-                                right: 20,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          addTask = !addTask;
-                                        });
-                                        if (addTask) {
-                                          Future.delayed(
-                                            Duration(milliseconds: 100),
-                                            () {
-                                              addTasknameFocusNode
-                                                  .requestFocus();
-                                            },
-                                          );
-                                        }
-                                      },
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: width * 0.01,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Text(
-                                              "New",
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .fontSize!,
-                                                color: Color(0xFF007AFF),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            SizedBox(width: width * 0.01),
-                                            SvgPicture.string(
-                                              '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4z"></path><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path></svg>',
-                                              height: height * 0.04,
-                                              fit: BoxFit.contain,
-                                              color: Color(0xFF007AFF),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             if (hideMenu)
                               Positioned(
                                 bottom: 20,
@@ -2154,6 +2209,76 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                         ),
                       ),
                     ],
+                  ),
+                ),
+              if (!addTask && !hideMenu)
+                Container(
+                  margin: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFEFF6FF), Color(0xFFF2F2F6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        setState(() {
+                          addTask = !addTask;
+                        });
+                        if (addTask) {
+                          Future.delayed(Duration(milliseconds: 100), () {
+                            addTasknameFocusNode.requestFocus();
+                          });
+                        }
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: width * 0.04,
+                          vertical: height * 0.015,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  "New",
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleMedium!.fontSize!,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF3B82F6).withOpacity(0.8),
+                                    Color(0xFF1D4ED8).withOpacity(0.7),
+                                  ],
+                                ),
+                                shape: BoxShape.rectangle,
+                              ),
+                              child: Icon(
+                                Icons.add,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -2852,7 +2977,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     }
 
     DateTime? beforeDueDate;
-    if (isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+    if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    } else {
       beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
     }
 
@@ -2877,8 +3004,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
-            beforeDueDate:
-                selectedBeforeMinutes != null && beforeDueDate != null
+            beforeDueDate: selectedBeforeMinutes != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
             createdAt: DateTime.now().toIso8601String(),
@@ -2958,8 +3084,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
-            beforeDueDate:
-                selectedBeforeMinutes != null && beforeDueDate != null
+            beforeDueDate: selectedBeforeMinutes != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
             createdAt: DateTime.now().toIso8601String(),
@@ -3525,6 +3650,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       child: Container(
         padding:
             title == 'Sort By' ||
+                title == 'Show Info' ||
+                title == 'Leave board' ||
                 title == 'Select Task' ||
                 title == 'Show Completed' ||
                 title == 'Hide Completed'
@@ -3543,6 +3670,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                   style: TextStyle(
                     fontSize: Get.textTheme.titleSmall!.fontSize!,
                     fontWeight: FontWeight.w500,
+                    color: title == 'Leave board' ? Colors.red : null,
                   ),
                 ),
                 if (trailing2 != null) trailing2,
@@ -3638,6 +3766,34 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                   ),
                   buildPopupItem(
                     context,
+                    title: 'Show Info',
+                    trailing: SvgPicture.string(
+                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M11 11h2v6h-2zm0-4h2v2h-2z"></path></svg>',
+                      height: height * 0.025,
+                      fit: BoxFit.contain,
+                    ),
+                    onTap: () {
+                      hideMenus();
+                      setState(() {
+                        addTask = false;
+                      });
+                      AppDataShareShowEditInfo.showEditInfo(
+                        context,
+                        boards,
+                        appData.boardDatas.boardToken,
+                        appData.boardDatas.boardToken.isNotEmpty
+                            ? FontWeight.w500
+                            : FontWeight.w600,
+                        appData.boardDatas.boardToken.isNotEmpty
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        pageSend: 'boardShowTasks',
+                        loadDataAsync: loadDataAsync,
+                      );
+                    },
+                  ),
+                  buildPopupItem(
+                    context,
                     title: 'Sort By',
                     trailing: SvgPicture.string(
                       '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M7 20h2V8h3L8 4 4 8h3zm13-4h-3V4h-2v12h-3l4 4z"></path></svg>',
@@ -3653,6 +3809,25 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                     ),
                     onTap: () => showSortByOverlay(context),
                   ),
+                  if (appData.boardDatas.boardToken.isNotEmpty &&
+                      boards.createdBy != box.read('userProfile')['userid'])
+                    buildPopupItem(
+                      context,
+                      title: 'Leave board',
+                      trailing: Icon(
+                        Icons.logout_outlined,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                      onTap: () {
+                        hideMenus();
+                        setState(() {
+                          addTask = false;
+                          hideMenu = false;
+                        });
+                        leaveBoard(appData.boardDatas.idBoard);
+                      },
+                    ),
                 ],
               ),
             ),
@@ -3662,6 +3837,159 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     Overlay.of(context).insert(mainMenuEntry!);
+  }
+
+  void leaveBoard(String boardId) async {
+    final userProfiles = box.read('userProfile');
+    if (userProfiles == null) return;
+
+    url = await loadAPIEndpoint();
+
+    Get.defaultDialog(
+      title: '',
+      titlePadding: EdgeInsets.zero,
+      backgroundColor: Colors.white,
+      barrierDismissible: false,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
+      content: WillPopScope(
+        onWillPop: () async => false,
+        child: Column(
+          children: [
+            Image.asset(
+              "assets/images/aleart/question.png",
+              height: MediaQuery.of(context).size.height * 0.1,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+            Text(
+              'Do you want to leave this board?',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+            Text(
+              'Are you sure you want to leave this board?',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        Column(
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                Get.back();
+                Get.snackbar('Deleting...', '');
+                http.Response response;
+                response = await http.delete(
+                  Uri.parse("$url/board/boarduser"),
+                  headers: {
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": "Bearer ${box.read('accessToken')}",
+                  },
+                  body: jsonEncode({
+                    "board_id": boardId,
+                    "user_id": userProfiles['userid'].toString(),
+                  }),
+                );
+                if (response.statusCode == 403) {
+                  await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+                  response = await http.delete(
+                    Uri.parse("$url/board/boarduser"),
+                    headers: {
+                      "Content-Type": "application/json; charset=utf-8",
+                      "Authorization": "Bearer ${box.read('accessToken')}",
+                    },
+                    body: jsonEncode({
+                      "board_id": boardId,
+                      "user_id": userProfiles['userid'].toString(),
+                    }),
+                  );
+                }
+                var response2 = await http.get(
+                  Uri.parse("$url/user/data"),
+                  headers: {
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": "Bearer ${box.read('accessToken')}",
+                  },
+                );
+                if (response2.statusCode == 403) {
+                  await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+                  response = await http.get(
+                    Uri.parse("$url/user/data"),
+                    headers: {
+                      "Content-Type": "application/json; charset=utf-8",
+                      "Authorization": "Bearer ${box.read('accessToken')}",
+                    },
+                  );
+                }
+                if (response2.statusCode == 200) {
+                  final newDataJson = model.allDataUserGetResponstFromJson(
+                    response2.body,
+                  );
+                  box.write('userDataAll', newDataJson.toJson());
+                  Get.snackbar('Successfully exited the board.', '');
+                  Get.offAll(() => NavbarPage());
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[400],
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   //ฟังก์ชันแสดง popup menu Sort By
@@ -3831,7 +4159,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(
@@ -3934,14 +4262,14 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
               onWillPop: () async => false,
               child: SizedBox(
                 height: height * 0.94,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    top: height * 0.01,
-                    left: width * 0.05,
-                    right: width * 0.05,
-                  ),
-                  child: Scaffold(
-                    body: SingleChildScrollView(
+                child: Scaffold(
+                  body: Padding(
+                    padding: EdgeInsets.only(
+                      top: height * 0.01,
+                      left: width * 0.05,
+                      right: width * 0.05,
+                    ),
+                    child: SingleChildScrollView(
                       child: Column(
                         children: [
                           Row(
@@ -4044,6 +4372,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                   colorScheme: ColorScheme.light(
                                     primary: Color(0xFF4790EB),
                                   ),
+                                  useMaterial3: true,
                                   textTheme: TextTheme(
                                     bodySmall: TextStyle(
                                       fontWeight: FontWeight.w600,
@@ -4058,7 +4387,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Material(
-                                      color: Colors.black12,
+                                      color: Color(0xFFF2F2F6),
                                       child: CalendarDatePicker(
                                         initialDate: tempSelectedDate,
                                         firstDate: DateTime.now().subtract(
@@ -4094,7 +4423,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                               Container(
                                 height: height * 0.16,
                                 decoration: BoxDecoration(
-                                  color: Colors.black12,
+                                  color: Color(0xFFF2F2F6),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: CupertinoDatePicker(
@@ -4126,7 +4455,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -4194,7 +4523,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black12,
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               padding: EdgeInsets.symmetric(
@@ -4319,7 +4648,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black12,
+                        color: Color(0xFFF2F2F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GridView.count(
