@@ -182,7 +182,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                 elevation: 0,
                 foregroundColor: Colors.black,
                 centerTitle: true,
-                leading: InkWell(
+                leading: GestureDetector(
                   onTap: () {
                     if (searchFocusNode.hasFocus) {
                       searchFocusNode.unfocus();
@@ -966,14 +966,14 @@ class _ManageuserPageState extends State<ManageuserPage> {
 
             return SizedBox(
               height: height * 0.94,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: width * 0.05,
-                  left: width * 0.05,
-                  top: height * 0.01,
-                ),
-                child: Scaffold(
-                  body: SafeArea(
+              child: Scaffold(
+                body: SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: width * 0.05,
+                      left: width * 0.05,
+                      top: height * 0.01,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -982,7 +982,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                InkWell(
+                                GestureDetector(
                                   onTap: () {
                                     Get.back();
                                   },
@@ -1204,7 +1204,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                         Column(
                           children: [
                             Material(
-                              color: Colors.white,
+                              color: Color(0xFFF2F2F6),
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
@@ -1253,7 +1253,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                             ),
                             SizedBox(height: height * 0.01),
                             Material(
-                              color: Colors.white,
+                              color: Color(0xFFF2F2F6),
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
@@ -1866,7 +1866,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
           Text(
             isActive == '1' ? 'Disable?' : 'Undisable?',
             style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontSize: Get.textTheme.titleLarge!.fontSize,
               fontWeight: FontWeight.w500,
               color: Colors.red,
             ),
@@ -1874,7 +1874,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
           Text(
             'You confirm to ${isActive == '1' ? 'disable' : 'undisable'} this user email',
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
@@ -1882,7 +1882,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
           Text(
             email,
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
@@ -1944,7 +1944,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'Successfully!!',
                       style: TextStyle(
-                        fontSize: Get.textTheme.headlineSmall!.fontSize,
+                        fontSize: Get.textTheme.titleLarge!.fontSize,
                         fontWeight: FontWeight.w500,
                         color: ui.Color(0xFF007AFF),
                       ),
@@ -1952,7 +1952,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'You ${isActive == '1' ? 'disable' : 'undisable'} email',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize: Get.textTheme.titleSmall!.fontSize,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
@@ -1960,7 +1960,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       email,
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize: Get.textTheme.titleSmall!.fontSize,
                         fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
@@ -1969,7 +1969,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     Text(
                       'successfully',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        fontSize: Get.textTheme.titleSmall!.fontSize,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
@@ -1995,7 +1995,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                     child: Text(
                       'Ok',
                       style: TextStyle(
-                        fontSize: Get.textTheme.titleLarge!.fontSize,
+                        fontSize: Get.textTheme.titleSmall!.fontSize,
                         color: Colors.white,
                       ),
                     ),
@@ -2029,7 +2029,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
           child: Text(
             'Confirm',
             style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               color: Colors.white,
             ),
           ),
@@ -2052,7 +2052,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
           child: Text(
             'Cancel',
             style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               color: Colors.white,
             ),
           ),
@@ -2189,7 +2189,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
     }
   }
 
-  showModalConfirmEmail(String email) {
+  void showModalConfirmEmail(String email) {
     emailConfirmOtpCtl.text = email;
 
     showModalBottomSheet(
@@ -2226,7 +2226,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                         children: [
                           Row(
                             children: [
-                              InkWell(
+                              GestureDetector(
                                 onTap: () {
                                   blockOTP = false;
                                   emailCtl.clear();
@@ -2275,8 +2275,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               Text(
                                 'Verify your email',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.headlineMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleLarge!.fontSize,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -2287,7 +2286,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               Text(
                                 'We will send the otp code to the email you entered',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -2302,7 +2301,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                   'Email',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -2315,14 +2314,14 @@ class _ManageuserPageState extends State<ManageuserPage> {
                             keyboardType: TextInputType.emailAddress,
                             cursorColor: Colors.black,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                             ),
                             decoration: InputDecoration(
                               hintText: isTyping
                                   ? ''
                                   : 'Enter your email address…',
                               hintStyle: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.grey,
                               ),
@@ -2354,7 +2353,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                             Text(
                               'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.red,
                               ),
@@ -2443,7 +2442,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                             child: Text(
                               blockOTP ? 'Back' : 'Request code',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),

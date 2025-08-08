@@ -669,14 +669,14 @@ class _ReportPageState extends State<ReportPage> {
 
             return SizedBox(
               height: height * 0.94,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: width * 0.05,
-                  left: width * 0.05,
-                  top: height * 0.01,
-                ),
-                child: Scaffold(
-                  body: SafeArea(
+              child: Scaffold(
+                body: SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: width * 0.05,
+                      left: width * 0.05,
+                      top: height * 0.01,
+                    ),
                     child: Column(
                       children: [
                         Row(
@@ -708,7 +708,7 @@ class _ReportPageState extends State<ReportPage> {
                             Row(
                               children: [
                                 SizedBox(width: width * 0.03),
-                                InkWell(
+                                GestureDetector(
                                   onTap: () => deleteReport(id, subject),
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
@@ -987,7 +987,7 @@ class _ReportPageState extends State<ReportPage> {
       backgroundColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(
         horizontal: MediaQuery.of(context).size.width * 0.04,
-        vertical: MediaQuery.of(context).size.height * 0.02,
+        vertical: MediaQuery.of(context).size.height * 0.0,
       ),
       content: Column(
         children: [
@@ -1000,7 +1000,7 @@ class _ReportPageState extends State<ReportPage> {
           Text(
             'Confirm?',
             style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontSize: Get.textTheme.titleLarge!.fontSize,
               fontWeight: FontWeight.w500,
               color: Color(0xFF007AFF),
             ),
@@ -1008,61 +1008,59 @@ class _ReportPageState extends State<ReportPage> {
           Text(
             'You want to delete this report',
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
           ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back(result: true);
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFFE7F3FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Back',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize,
+                color: Color(0xFF007AFF),
+              ),
+            ),
+          ),
         ],
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: () {
-            Get.back(result: true);
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: Color(0xFF007AFF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 1,
-          ),
-          child: Text(
-            'Confirm',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Get.back();
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: Color(0xFFE7F3FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 1,
-          ),
-          child: Text(
-            'Back',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
-              color: Color(0xFF007AFF),
-            ),
-          ),
-        ),
-      ],
     );
     if (confirm != true) return;
     Get.back();
@@ -1122,7 +1120,7 @@ class _ReportPageState extends State<ReportPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -1130,7 +1128,7 @@ class _ReportPageState extends State<ReportPage> {
               Text(
                 'Delete report successfully',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize: Get.textTheme.titleSmall!.fontSize,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -1157,7 +1155,7 @@ class _ReportPageState extends State<ReportPage> {
             child: Text(
               'Ok!',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize: Get.textTheme.titleSmall!.fontSize,
                 color: Colors.white,
               ),
             ),

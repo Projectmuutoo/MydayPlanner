@@ -394,7 +394,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            InkWell(
+                            GestureDetector(
                               onTap: () {
                                 Get.back();
                               },
@@ -420,7 +420,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                             Row(
                               children: [
                                 SizedBox(width: width * 0.03),
-                                InkWell(
+                                GestureDetector(
                                   onTap: () => deleteReport(id, subject),
                                   child: Padding(
                                     padding: EdgeInsets.symmetric(
@@ -593,7 +593,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
       backgroundColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(
         horizontal: MediaQuery.of(context).size.width * 0.04,
-        vertical: MediaQuery.of(context).size.height * 0.02,
+        vertical: MediaQuery.of(context).size.height * 0.0,
       ),
       content: Column(
         children: [
@@ -606,7 +606,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
           Text(
             'Confirm?',
             style: TextStyle(
-              fontSize: Get.textTheme.headlineSmall!.fontSize,
+              fontSize: Get.textTheme.titleLarge!.fontSize,
               fontWeight: FontWeight.w500,
               color: Color(0xFF007AFF),
             ),
@@ -614,61 +614,59 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
           Text(
             'You want to delete this report',
             style: TextStyle(
-              fontSize: Get.textTheme.titleMedium!.fontSize,
+              fontSize: Get.textTheme.titleSmall!.fontSize,
               color: Colors.black,
             ),
             textAlign: TextAlign.center,
           ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back(result: true);
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFF007AFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(
+                MediaQuery.of(context).size.width,
+                MediaQuery.of(context).size.height * 0.05,
+              ),
+              backgroundColor: Color(0xFFE7F3FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 1,
+            ),
+            child: Text(
+              'Back',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize,
+                color: Color(0xFF007AFF),
+              ),
+            ),
+          ),
         ],
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: () {
-            Get.back(result: true);
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: Color(0xFF007AFF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 1,
-          ),
-          child: Text(
-            'Confirm',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Get.back();
-          },
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height * 0.05,
-            ),
-            backgroundColor: Color(0xFFE7F3FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 1,
-          ),
-          child: Text(
-            'Back',
-            style: TextStyle(
-              fontSize: Get.textTheme.titleLarge!.fontSize,
-              color: Color(0xFF007AFF),
-            ),
-          ),
-        ),
-      ],
     );
     if (confirm != true) return;
 
@@ -730,7 +728,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
               Text(
                 'Successfully!!',
                 style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize,
+                  fontSize: Get.textTheme.titleLarge!.fontSize,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF007AFF),
                 ),
@@ -738,7 +736,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
               Text(
                 'Delete report successfully',
                 style: TextStyle(
-                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  fontSize: Get.textTheme.titleSmall!.fontSize,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
@@ -765,7 +763,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
             child: Text(
               'Ok!',
               style: TextStyle(
-                fontSize: Get.textTheme.titleLarge!.fontSize,
+                fontSize: Get.textTheme.titleSmall!.fontSize,
                 color: Colors.white,
               ),
             ),

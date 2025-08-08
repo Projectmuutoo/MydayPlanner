@@ -19,6 +19,7 @@ import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as data;
 import 'package:mydayplanner/pages/pageMember/menu/menuReport.dart';
 import 'package:mydayplanner/pages/pageMember/menu/settings.dart';
+import 'package:mydayplanner/pages/pageMember/navBar.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
@@ -414,13 +415,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                 return IconButton(
                                   key: iconKey,
                                   onPressed: () {
-                                    showPopupMenu(context);
+                                    final taskid = isGroupTask
+                                        ? combinedData['task']['taskID']
+                                        : appData
+                                              .showDetailTask
+                                              .currentTask
+                                              ?.taskId;
+                                    _deleteTask(taskid.toString(), isGroupTask);
                                   },
-                                  icon: SvgPicture.string(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>',
-                                    height: height * 0.035,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  icon: Icon(Icons.delete, color: Colors.red),
                                 );
                               },
                             ),
@@ -647,6 +650,188 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         );
       },
     );
+  }
+
+  void _deleteTask(String taskId, bool isGroupTask) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                "assets/images/aleart/question.png",
+                height: MediaQuery.of(context).size.height * 0.1,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+              Text(
+                'Do you want to delete this task?',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF007AFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                ),
+                child: Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                ),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == true) {
+      Get.snackbar('Deleting...', '');
+      deleteTaskById(taskId, isGroupTask);
+    }
+  }
+
+  void deleteTaskById(dynamic ids, bool isGroupTask) async {
+    if (!mounted) return;
+
+    final userDataJson = box.read('userDataAll');
+    if (userDataJson == null) return;
+
+    var existingData = data.AllDataUserGetResponst.fromJson(userDataJson);
+    if (!isGroupTask) {
+      // Local storage logic (เดิม)
+
+      existingData.tasks.removeWhere((t) => t.taskId.toString() == ids);
+      box.write('userDataAll', existingData.toJson());
+    } else {
+      // 🔥 Firebase mode with Deleted State Management
+      // 3. 🔄 ลบจาก Firebase ใน background
+      _deleteFromFirebaseInBackground(ids).then((_) {
+        // 4. อัพเดท local storage หลังจากลบ Firebase สำเร็จ
+        existingData.tasks.removeWhere((t) => t.taskId.toString() == ids);
+        box.write('userDataAll', existingData.toJson());
+      });
+    }
+
+    // เรียก API ลบใน background
+    final endpoint = "deltask/$ids";
+    final requestBody = {"task_id": ids};
+    deleteWithRetry(endpoint, requestBody);
+  }
+
+  Future<http.Response> deleteWithRetry(
+    String endpoint,
+    Map<String, dynamic>? body,
+  ) async {
+    url = await loadAPIEndpoint();
+
+    final token = box.read('accessToken');
+    Uri uri = Uri.parse("$url/$endpoint");
+
+    Future<http.Response> sendRequest(String token) {
+      return http.delete(
+        uri,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer $token",
+        },
+      );
+    }
+
+    var response = await sendRequest(token);
+
+    if (response.statusCode == 403) {
+      await loadNewRefreshToken();
+      final newToken = box.read('accessToken');
+      if (newToken != null) {
+        response = await sendRequest(newToken);
+      }
+    }
+    log(response.statusCode.toString());
+    if (response.statusCode == 200) {
+      Get.snackbar('Task deleted successfully.', '');
+      if (mounted) Navigator.pop(context, 'refresh');
+    }
+
+    return response;
+  }
+
+  Future<void> _deleteFromFirebaseInBackground(dynamic taskIdPayload) async {
+    await _deleteSingleTaskFromFirebase(taskIdPayload.toString());
+  }
+
+  Future<void> _deleteSingleTaskFromFirebase(String taskId) async {
+    final appData = Provider.of<Appdata>(context, listen: false);
+    // ลบจาก Boards collection
+    await FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(appData.boardDatas.idBoard)
+        .collection('Tasks')
+        .doc(taskId)
+        .delete();
+
+    // ลบจาก BoardTasks collection รวม notifications
+    final taskDocRef = FirebaseFirestore.instance
+        .collection('BoardTasks')
+        .doc(taskId);
+
+    final notificationsSnapshot = await taskDocRef
+        .collection('Notifications')
+        .get();
+
+    // ลบ notifications ทั้งหมด
+    final deleteNotificationsFutures = notificationsSnapshot.docs.map(
+      (doc) => doc.reference.delete(),
+    );
+    await Future.wait(deleteNotificationsFutures);
+    await loadDataAsync();
+    // ลบ BoardTasks document
+    await taskDocRef.delete();
   }
 
   ({Appdata appData, data.Task? currentTask}) _getAppDataAndTask() {
@@ -1372,6 +1557,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     bool isGroupTask,
     String selectedPriority,
   ) async {
+    if (!mounted) return;
     final existingData = _getUserData();
     if (existingData == null) return;
     final appDataAndTask = _getAppDataAndTask();
@@ -1393,9 +1579,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           oldPriority = taskData['priority']?.toString() ?? '1';
 
           // อัปเดตสถานะใน UI ทันที
-          setState(() {
-            combinedData['task']['priority'] = selectedPriority;
-          });
+          if (mounted) {
+            setState(() {
+              combinedData['task']['priority'] = selectedPriority;
+            });
+          }
         }
       } else {
         if (currentTask != null) {
@@ -1481,20 +1669,22 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       }
 
-      setState(() {
-        if (isGroupTask) {
-          final taskData = combinedData['task'];
-          if (taskData != null) {
-            combinedData['task']['priority'] = revertPriority;
+      if (mounted) {
+        setState(() {
+          if (isGroupTask) {
+            final taskData = combinedData['task'];
+            if (taskData != null) {
+              combinedData['task']['priority'] = revertPriority;
+            }
+          } else {
+            final appData = _getAppDataAndTask();
+            final currentTask = appData.appData.showDetailTask.currentTask;
+            if (currentTask != null) {
+              currentTask.priority = revertPriority;
+            }
           }
-        } else {
-          final appData = _getAppDataAndTask();
-          final currentTask = appData.appData.showDetailTask.currentTask;
-          if (currentTask != null) {
-            currentTask.priority = revertPriority;
-          }
-        }
-      });
+        });
+      }
     }
   }
 
@@ -6679,9 +6869,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                 final userEmail =
                                     user['Email'] as String? ?? '';
                                 final userId = user['UserID'].toString();
-                                final currentId = box.read(
-                                  'userProfile',
-                                )['userid'];
 
                                 return Container(
                                   margin: EdgeInsets.only(bottom: 8),
@@ -7323,7 +7510,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       final String userName = user['name'] ?? '';
       final String userEmail = user['email'] ?? '';
       final String userProfile = user['profile'] ?? 'none-url';
-      final bool isVerified = user['is_verify'] == '1';
       final bool isActive = user['is_active'] == '1';
 
       return Container(
@@ -7493,7 +7679,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     }
 
     // แสดง dialog adduser
-    final result = await showDialog<bool>(
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
@@ -7625,94 +7811,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   }
 
   // =========================================================
-  void showPopupMenu(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
-
-    final RenderBox? renderBox =
-        iconKey.currentContext?.findRenderObject() as RenderBox?;
-
-    if (renderBox == null) return;
-
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    final Size size = renderBox.size;
-
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + size.height,
-        width - offset.dx - size.width,
-        0,
-      ),
-      elevation: 1,
-      items: [
-        PopupMenuItem(
-          padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-          height: height * 0.05,
-          value: 'setting',
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Settings',
-                style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SvgPicture.string(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 16c2.206 0 4-1.794 4-4s-1.794-4-4-4-4 1.794-4 4 1.794 4 4 4zm0-6c1.084 0 2 .916 2 2s-.916 2-2 2-2-.916-2-2 .916-2 2-2z"></path><path d="m2.845 16.136 1 1.73c.531.917 1.809 1.261 2.73.73l.529-.306A8.1 8.1 0 0 0 9 19.402V20c0 1.103.897 2 2 2h2c1.103 0 2-.897 2-2v-.598a8.132 8.132 0 0 0 1.896-1.111l.529.306c.923.53 2.198.188 2.731-.731l.999-1.729a2.001 2.001 0 0 0-.731-2.732l-.505-.292a7.718 7.718 0 0 0 0-2.224l.505-.292a2.002 2.002 0 0 0 .731-2.732l-.999-1.729c-.531-.92-1.808-1.265-2.731-.732l-.529.306A8.1 8.1 0 0 0 15 4.598V4c0-1.103-.897-2-2-2h-2c-1.103 0-2 .897-2 2v.598a8.132 8.132 0 0 0-1.896 1.111l-.529-.306c-.924-.531-2.2-.187-2.731.732l-.999 1.729a2.001 2.001 0 0 0 .731 2.732l.505.292a7.683 7.683 0 0 0 0 2.223l-.505.292a2.003 2.003 0 0 0-.731 2.733zm3.326-2.758A5.703 5.703 0 0 1 6 12c0-.462.058-.926.17-1.378a.999.999 0 0 0-.47-1.108l-1.123-.65.998-1.729 1.145.662a.997.997 0 0 0 1.188-.142 6.071 6.071 0 0 1 2.384-1.399A1 1 0 0 0 11 5.3V4h2v1.3a1 1 0 0 0 .708.956 6.083 6.083 0 0 1 2.384 1.399.999.999 0 0 0 1.188.142l1.144-.661 1 1.729-1.124.649a1 1 0 0 0-.47 1.108c.112.452.17.916.17 1.378 0 .461-.058.925-.171 1.378a1 1 0 0 0 .471 1.108l1.123.649-.998 1.729-1.145-.661a.996.996 0 0 0-1.188.142 6.071 6.071 0 0 1-2.384 1.399A1 1 0 0 0 13 18.7l.002 1.3H11v-1.3a1 1 0 0 0-.708-.956 6.083 6.083 0 0 1-2.384-1.399.992.992 0 0 0-1.188-.141l-1.144.662-1-1.729 1.124-.651a1 1 0 0 0 .471-1.108z"></path></svg>',
-                height: height * 0.025,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-          height: height * 0.05,
-          value: 'report',
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Report',
-                style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SvgPicture.string(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 6a3.939 3.939 0 0 0-3.934 3.934h2C10.066 8.867 10.934 8 12 8s1.934.867 1.934 1.934c0 .598-.481 1.032-1.216 1.626a9.208 9.208 0 0 0-.691.599c-.998.997-1.027 2.056-1.027 2.174V15h2l-.001-.633c.001-.016.033-.386.441-.793.15-.15.339-.3.535-.458.779-.631 1.958-1.584 1.958-3.182A3.937 3.937 0 0 0 12 6zm-1 10h2v2h-2z"></path><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path></svg>',
-                height: height * 0.025,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
-        ),
-      ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      menuPadding: EdgeInsets.zero,
-    ).then((value) {
-      if (value == 'setting') {
-        _navigateAndRefresh();
-      } else if (value == 'report') {
-        Get.to(() => const MenureportPage());
-      }
-    });
-  }
-
-  Future<void> _navigateAndRefresh() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SettingsPage()),
-    );
-  }
 
   Future<void> loadNewRefreshToken() async {
     url = await loadAPIEndpoint();

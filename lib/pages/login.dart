@@ -334,7 +334,7 @@ class _LoginPageState extends State<LoginPage> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        InkWell(
+                                        GestureDetector(
                                           onTap: forgotPassword,
                                           child: Padding(
                                             padding: EdgeInsets.symmetric(
@@ -503,7 +503,7 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.grey,
                           ),
                         ),
-                        InkWell(
+                        GestureDetector(
                           onTap: goToRegisterPage,
                           child: Padding(
                             padding: EdgeInsets.symmetric(
@@ -927,7 +927,7 @@ class _LoginPageState extends State<LoginPage> {
     return formatter.format(now);
   }
 
-  showModalConfirmEmail(String email) {
+  void showModalConfirmEmail(String email) {
     emailConfirmOtpCtl.text = email;
     showModalBottomSheet(
       context: context,

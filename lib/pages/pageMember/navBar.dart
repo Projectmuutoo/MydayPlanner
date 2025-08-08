@@ -136,6 +136,7 @@ class _NavbarPageState extends State<NavbarPage>
   int showNoticounts = 0;
   List<QueryDocumentSnapshot> all = [];
   StreamSubscription<Uri>? sub;
+  bool _listenerInitialized = false;
 
   @override
   void initState() {
@@ -163,6 +164,7 @@ class _NavbarPageState extends State<NavbarPage>
     _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
       showNotificationsCount();
     });
+    _setupUriListener();
     checkJoinBoard();
   }
 
@@ -375,88 +377,92 @@ class _NavbarPageState extends State<NavbarPage>
                 "Can't re-enter the board.",
               );
             } else {
-              Get.defaultDialog(
-                title: '',
-                titlePadding: EdgeInsets.zero,
-                backgroundColor: Colors.white,
-                barrierDismissible: false,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.04,
-                  vertical: MediaQuery.of(context).size.height * 0.01,
-                ),
-                content: Column(
-                  children: [
-                    Image.asset(
-                      "assets/images/aleart/question.png",
-                      height: MediaQuery.of(context).size.height * 0.1,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                    Text(
-                      'Do you want to join this board?',
-                      style: TextStyle(
-                        fontSize: Get.textTheme.titleMedium!.fontSize!,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-                actions: [
-                  Column(
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Get.defaultDialog(
+                  title: '',
+                  titlePadding: EdgeInsets.zero,
+                  backgroundColor: Colors.white,
+                  barrierDismissible: false,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.04,
+                    vertical: MediaQuery.of(context).size.height * 0.01,
+                  ),
+                  content: Column(
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                          _confirmJoinBoard(boardId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF007AFF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 1,
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
-                        ),
-                        child: Text(
-                          'Confirm',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize!,
-                            color: Colors.white,
-                          ),
-                        ),
+                      Image.asset(
+                        "assets/images/aleart/question.png",
+                        height: MediaQuery.of(context).size.height * 0.1,
+                        fit: BoxFit.contain,
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[400],
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          fixedSize: Size(
-                            MediaQuery.of(context).size.width,
-                            MediaQuery.of(context).size.height * 0.05,
-                          ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.02,
+                      ),
+                      Text(
+                        'Do you want to join this board?',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize!,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue,
                         ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize!,
-                            color: Colors.white,
-                          ),
-                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                ],
-              );
+                  actions: [
+                    Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                            _confirmJoinBoard(boardId);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF007AFF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 1,
+                            fixedSize: Size(
+                              MediaQuery.of(context).size.width,
+                              MediaQuery.of(context).size.height * 0.05,
+                            ),
+                          ),
+                          child: Text(
+                            'Confirm',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[400],
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            fixedSize: Size(
+                              MediaQuery.of(context).size.width,
+                              MediaQuery.of(context).size.height * 0.05,
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleMedium!.fontSize!,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              });
             }
           }
         }
@@ -467,6 +473,9 @@ class _NavbarPageState extends State<NavbarPage>
   }
 
   void _setupUriListener() {
+    if (_listenerInitialized) return; // ป้องกันซ้ำ
+    _listenerInitialized = true;
+
     sub = AppLinks().uriLinkStream.listen((Uri uri2) {
       _handleJoinBoardUri(uri2);
     });
@@ -497,8 +506,29 @@ class _NavbarPageState extends State<NavbarPage>
       }
 
       if (response.statusCode == 200) {
+        var response2 = await http.post(
+          Uri.parse("$url/acceptinviteboardNotify/$boardId"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+        );
+
+        if (response2.statusCode == 403) {
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+          response2 = await http.post(
+            Uri.parse("$url/acceptinviteboardNotify/$boardId"),
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Bearer ${box.read('accessToken')}",
+            },
+          );
+        }
+
         await fetchDataOnResume();
-        Get.snackbar('Successfully join the board.', '');
+        if (response2.statusCode == 200) {
+          Get.snackbar('Successfully join the board.', '');
+        }
       } else {
         Get.snackbar('Error', 'Failed to join board');
       }
@@ -603,15 +633,27 @@ class _NavbarPageState extends State<NavbarPage>
     int? index,
   ) async {
     int count = 0;
+    final userId = box.read('userProfile')['userid'].toString();
 
     for (final doc in docs) {
       final docRef = doc.reference;
       final snapshot = await docRef.get();
 
       if (snapshot.exists) {
+        final path = docRef.path;
         final data = snapshot.data() as Map<String, dynamic>;
-        if (data['notiCount'] != null && !data['notiCount']) {
-          count++;
+
+        if (path.contains('BoardTasks') && path.contains('Notifications')) {
+          final notiCountValue =
+              (data['userNotifications']?[userId]?['notiCount']) as bool?;
+          if (notiCountValue != null && !notiCountValue) {
+            count++;
+          }
+        } else {
+          final notiCountValue = data['notiCount'] as bool?;
+          if (notiCountValue != null && !notiCountValue) {
+            count++;
+          }
         }
       }
     }
@@ -629,14 +671,21 @@ class _NavbarPageState extends State<NavbarPage>
     int? index,
   ) async {
     int count = 0;
+    final userId = box.read('userProfile')['userid'].toString();
 
     for (final doc in docs) {
       final docRef = doc.reference;
       final snapshot = await docRef.get();
+
       if (snapshot.exists) {
-        if (index != null && index == 4) {
-          docRef.update({'notiCount': true});
-          continue;
+        final path = docRef.path;
+
+        if (path.contains('BoardTasks') && path.contains('Notifications')) {
+          await docRef.update({'userNotifications.$userId.notiCount': true});
+        } else {
+          if (index != null && index == 4) {
+            docRef.update({'notiCount': true});
+          }
         }
       }
     }

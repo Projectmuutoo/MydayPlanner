@@ -133,18 +133,30 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       });
     }
 
-    boardSubscription = FirebaseFirestore.instance
-        .collection('Boards')
-        .doc(appData.boardDatas.idBoard)
-        .snapshots()
-        .listen((boardSnapshot) async {
-          if (!boardSnapshot.exists) {
-            // ถ้า board ถูกลบ
-            await fetchDataOnResume();
-            Get.offAll(() => NavbarPage());
-            return;
-          }
-        });
+    if (appData.boardDatas.boardToken.isNotEmpty) {
+      boardSubscription = FirebaseFirestore.instance
+          .collection('Boards')
+          .doc(appData.boardDatas.idBoard)
+          .collection('BoardUsers')
+          .snapshots()
+          .listen((usersSnapshot) async {
+            final userProfile = box.read('userProfile');
+            if (userProfile == null) return;
+            final userEmail = userProfile['email'];
+
+            final emailNotFound = !usersSnapshot.docs.any(
+              (doc) =>
+                  (doc.data()['Email']?.toString().toLowerCase() ?? '') ==
+                  userEmail.toString().toLowerCase(),
+            );
+
+            if (emailNotFound) {
+              await fetchDataOnResume();
+              Get.offAll(() => NavbarPage());
+              return;
+            }
+          });
+    }
   }
 
   Future<void> loadDataAsync() async {
@@ -2745,9 +2757,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         deletedTaskIds.add(id);
       }
 
-      // 2. 🚀 อัพเดท UI ทันที
-      // _updateDisplayTasks(firebaseTasks);
-
       // 3. 🔄 ลบจาก Firebase ใน background
       _deleteFromFirebaseInBackground(idList, select, taskIdPayload).then((_) {
         // 4. อัพเดท local storage หลังจากลบ Firebase สำเร็จ
@@ -3651,6 +3660,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         padding:
             title == 'Sort By' ||
                 title == 'Show Info' ||
+                title == 'Delete board' ||
                 title == 'Leave board' ||
                 title == 'Select Task' ||
                 title == 'Show Completed' ||
@@ -3670,7 +3680,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                   style: TextStyle(
                     fontSize: Get.textTheme.titleSmall!.fontSize!,
                     fontWeight: FontWeight.w500,
-                    color: title == 'Leave board' ? Colors.red : null,
+                    color: title == 'Leave board' || title == 'Delete board'
+                        ? Colors.red
+                        : null,
                   ),
                 ),
                 if (trailing2 != null) trailing2,
@@ -3828,6 +3840,20 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                         leaveBoard(appData.boardDatas.idBoard);
                       },
                     ),
+                  if (boards.createdBy == box.read('userProfile')['userid'])
+                    buildPopupItem(
+                      context,
+                      title: 'Delete board',
+                      trailing: Icon(Icons.delete, color: Colors.red, size: 18),
+                      onTap: () {
+                        hideMenus();
+                        setState(() {
+                          addTask = false;
+                          hideMenu = false;
+                        });
+                        deleteBoard(appData.boardDatas.idBoard);
+                      },
+                    ),
                 ],
               ),
             ),
@@ -3837,6 +3863,149 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     Overlay.of(context).insert(mainMenuEntry!);
+  }
+
+  void deleteBoard(String boardId) async {
+    Get.defaultDialog(
+      title: '',
+      titlePadding: EdgeInsets.zero,
+      backgroundColor: Colors.white,
+      barrierDismissible: false,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
+      content: WillPopScope(
+        onWillPop: () async => false,
+        child: Column(
+          children: [
+            Image.asset(
+              "assets/images/aleart/question.png",
+              height: MediaQuery.of(context).size.height * 0.1,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+            Text(
+              'Do you want to delete this board?',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+            Text(
+              'Are you sure you want to delete this board and all its tasks.',
+              style: TextStyle(
+                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        Column(
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                Get.back();
+                Get.snackbar('Deleting...', '');
+                url = await loadAPIEndpoint();
+
+                if (!mounted) return;
+                final appData = Provider.of<Appdata>(context, listen: false);
+                var existingData = model.AllDataUserGetResponst.fromJson(
+                  box.read('userDataAll'),
+                );
+
+                if (appData.boardDatas.boardToken.isEmpty) {
+                  existingData.board.removeWhere(
+                    (b) => b.boardId.toString() == boardId,
+                  );
+                } else {
+                  existingData.boardgroup.removeWhere(
+                    (b) => b.boardId.toString() == boardId,
+                  );
+                }
+                box.write('userDataAll', existingData.toJson());
+
+                var response = await http.delete(
+                  Uri.parse("$url/board"),
+                  headers: {
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": "Bearer ${box.read('accessToken')}",
+                  },
+                  body: jsonEncode({
+                    "board_id": [boardId.toString()],
+                  }),
+                );
+                if (response.statusCode == 403) {
+                  await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+                  await http.delete(
+                    Uri.parse("$url/board"),
+                    headers: {
+                      "Content-Type": "application/json; charset=utf-8",
+                      "Authorization": "Bearer ${box.read('accessToken')}",
+                    },
+                    body: jsonEncode({
+                      "board_id": [boardId.toString()],
+                    }),
+                  );
+                }
+                if (response.statusCode == 200) {
+                  Get.snackbar('Board deleted successfully.', '');
+                  Get.offAll(() => NavbarPage());
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+              ),
+              child: Text(
+                'Confirm',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[400],
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize!,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   void leaveBoard(String boardId) async {
@@ -3891,7 +4060,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
             ElevatedButton(
               onPressed: () async {
                 Get.back();
-                Get.snackbar('Deleting...', '');
+                Get.snackbar('Leaving...', '');
                 http.Response response;
                 response = await http.delete(
                   Uri.parse("$url/board/boarduser"),

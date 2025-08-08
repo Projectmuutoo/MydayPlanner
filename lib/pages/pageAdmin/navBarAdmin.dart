@@ -252,89 +252,94 @@ class _NavbaradminPageState extends State<NavbaradminPage>
     if (userProfile == null || userLogin == null) return;
     String deviceName = await getDeviceName();
 
-    _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(userProfile['email'])
-          .get();
-      final data = snapshot.data();
-      if (data != null) {
-        final serverdeviceName = data['deviceName'].toString();
-        if ((serverdeviceName != deviceName)) {
-          _timer2?.cancel();
-
-          Get.defaultDialog(
-            title: '',
-            titlePadding: EdgeInsets.zero,
-            backgroundColor: Colors.white,
-            barrierDismissible: false,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.04,
-              vertical: MediaQuery.of(context).size.height * 0.02,
-            ),
-            content: WillPopScope(
-              onWillPop: () async => false,
-              child: Column(
-                children: [
-                  Image.asset(
-                    "assets/images/aleart/warning.png",
-                    height: MediaQuery.of(context).size.height * 0.1,
-                    fit: BoxFit.contain,
+    FirebaseFirestore.instance.collection('usersLogin').snapshots().listen((
+      snapshot,
+    ) {
+      for (var i in snapshot.docChanges) {
+        final data = i.doc;
+        final change = i.type;
+        if (change == DocumentChangeType.modified) {
+          final serverdeviceName = data['deviceName'].toString();
+          if (data['email'] == userProfile['email']) {
+            if ((serverdeviceName != deviceName)) {
+              if (!mounted) return;
+              Get.defaultDialog(
+                title: '',
+                titlePadding: EdgeInsets.zero,
+                backgroundColor: Colors.white,
+                barrierDismissible: false,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
+                content: WillPopScope(
+                  onWillPop: () async => false,
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        "assets/images/aleart/warning.png",
+                        height: MediaQuery.of(context).size.height * 0.1,
+                        fit: BoxFit.contain,
+                      ),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.01,
+                      ),
+                      Text(
+                        'Warning!!',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleLarge!.fontSize,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                      Text(
+                        'Detected login from another device.',
+                        style: TextStyle(
+                          fontSize: Get.textTheme.titleMedium!.fontSize,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-                  Text(
-                    'Warning!!',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleLarge!.fontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                ),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      await box.remove('userProfile');
+                      await box.remove('userLogin');
+                      await googleSignIn.initialize();
+                      await googleSignIn.signOut();
+                      await FirebaseAuth.instance.signOut();
+                      await storage.deleteAll();
+                      Get.offAll(
+                        () => SplashPage(),
+                        arguments: {'fromLogout': true},
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(
+                        MediaQuery.of(context).size.width,
+                        MediaQuery.of(context).size.height * 0.05,
+                      ),
+                      backgroundColor: Color(0xFF007AFF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 1,
                     ),
-                  ),
-                  Text(
-                    'Detected login from another device.',
-                    style: TextStyle(
-                      fontSize: Get.textTheme.titleMedium!.fontSize,
-                      color: Colors.black,
+                    child: Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize,
+                        color: Colors.white,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () async {
-                  await box.remove('userProfile');
-                  await box.remove('userLogin');
-                  await googleSignIn.signOut();
-                  await FirebaseAuth.instance.signOut();
-                  await storage.deleteAll();
-                  Get.offAll(
-                    () => SplashPage(),
-                    arguments: {'fromLogout': true},
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(
-                    MediaQuery.of(context).size.width,
-                    MediaQuery.of(context).size.height * 0.05,
-                  ),
-                  backgroundColor: Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 1,
-                ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: Get.textTheme.titleMedium!.fontSize,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          );
+              );
+            }
+          }
         }
       }
     });

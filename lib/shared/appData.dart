@@ -21,7 +21,7 @@ import 'package:mydayplanner/pages/pageMember/navBar.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 
-Map<String, dynamic> combinedData = {};
+List<Map<String, dynamic>> boardUsers = [];
 var box = GetStorage();
 final FlutterSecureStorage storage = FlutterSecureStorage();
 final GoogleSignIn googleSignIn = GoogleSignIn.instance;
@@ -264,7 +264,7 @@ class AppDataShareBoardFunction {
           .collection('BoardUsers')
           .get();
 
-      final boardUsers = result2.docs.map((doc) => doc.data()).toList();
+      boardUsers = result2.docs.map((doc) => doc.data()).toList();
       final userIsownerboard =
           (data['CreatedBy'] ?? '') ==
           (box.read('userProfile')['userid'] ?? '');
@@ -665,7 +665,7 @@ class AppDataShareBoardFunction {
 
     if (response.statusCode == 200) {
       // ลบ user ออกจาก combinedData ทันที
-      combinedData['boardUsers'] = (combinedData['boardUsers'] as List)
+      boardUsers = boardUsers
           .where((user) => user['UserID'].toString() != userid)
           .toList();
 
@@ -2381,7 +2381,7 @@ class AppDataShareShowEditInfo {
             ElevatedButton(
               onPressed: () async {
                 Get.back();
-                Get.snackbar('Deleting...', '');
+                Get.snackbar('Leaving...', '');
                 http.Response response;
                 response = await http.delete(
                   Uri.parse("$url/board/boarduser"),
@@ -2733,7 +2733,7 @@ class AppDataShareShowEditInfo {
     }
   }
 
-  static void checkExpiresTokenBoard(int idBoard) async {
+  static Future<void> checkExpiresTokenBoard(int idBoard) async {
     url = await loadAPIEndpoint();
     final now = DateTime.now();
     final docSnapshot = await FirebaseFirestore.instance

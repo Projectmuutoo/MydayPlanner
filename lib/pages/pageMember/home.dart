@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:math' show Random;
 import 'dart:ui';
 
@@ -2594,48 +2595,62 @@ class HomePageState extends State<HomePage> {
 
   void checkBoardGroupActive() async {
     final rawData = box.read('userDataAll');
-    if (rawData == null) return;
+    final userProfile = box.read('userProfile');
+    if (rawData == null || userProfile == null) return;
 
+    final userEmail = userProfile['email'];
     final rawDataResult = AllDataUserGetResponst.fromJson(rawData);
 
     final localBoardIds = rawDataResult.boardgroup
         .map((b) => b.boardId.toString())
         .toSet();
 
-    final result = await FirebaseFirestore.instance.collection('Boards').get();
+    for (var i in rawDataResult.boardgroup) {
+      final result = await FirebaseFirestore.instance
+          .collection('Boards')
+          .doc(i.boardId.toString())
+          .collection('BoardUsers')
+          .get();
 
-    final firebaseBoardIds = result.docs
-        .map((doc) => doc['BoardID'].toString())
-        .toSet();
+      final firebaseBoardIds = result.docs
+          .map((doc) => doc['BoardID'].toString())
+          .toSet();
 
-    final missingBoardIds = localBoardIds.difference(firebaseBoardIds);
-
-    if (missingBoardIds.isNotEmpty && !_hasFetchedData) {
-      _hasFetchedData = true;
-
-      final url = await loadAPIEndpoint();
-      var response = await http.get(
-        Uri.parse("$url/user/data"),
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": "Bearer ${box.read('accessToken')}",
-        },
+      final missingBoardIds = localBoardIds.difference(firebaseBoardIds);
+      final emailNotFound = !result.docs.any(
+        (doc) =>
+            (doc.data()['Email']?.toString().toLowerCase() ?? '') ==
+            userEmail.toString().toLowerCase(),
       );
 
-      if (response.statusCode == 403) {
-        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
-        response = await http.get(
+      if ((missingBoardIds.isNotEmpty || emailNotFound) && !_hasFetchedData) {
+        _hasFetchedData = true;
+
+        final url = await loadAPIEndpoint();
+        var response = await http.get(
           Uri.parse("$url/user/data"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
           },
         );
-      }
 
-      if (response.statusCode == 200) {
-        final newDataJson = allDataUserGetResponstFromJson(response.body);
-        box.write('userDataAll', newDataJson.toJson());
+        if (response.statusCode == 403) {
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+          response = await http.get(
+            Uri.parse("$url/user/data"),
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Bearer ${box.read('accessToken')}",
+            },
+          );
+        }
+
+        if (response.statusCode == 200) {
+          final newDataJson = allDataUserGetResponstFromJson(response.body);
+          box.write('userDataAll', newDataJson.toJson());
+        }
+
         _hasFetchedData = false;
       }
     }
@@ -3143,6 +3158,9 @@ class HomePageState extends State<HomePage> {
                             focusedBoardId = null;
                           });
                         }
+                        AppDataShareShowEditInfo.checkExpiresTokenBoard(
+                          board.boardId,
+                        );
                         AppDataShareShowEditInfo.showEditInfo(
                           context,
                           board,

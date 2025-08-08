@@ -241,7 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         Row(
                           children: [
-                            InkWell(
+                            GestureDetector(
                               onTap: backToLoginPage,
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
@@ -822,7 +822,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             color: Colors.grey,
                           ),
                         ),
-                        InkWell(
+                        GestureDetector(
                           onTap: goToLogin,
                           child: Padding(
                             padding: EdgeInsets.symmetric(
@@ -922,7 +922,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool isValidEmail(String email) {
     final RegExp emailRegExp = RegExp(
-      r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com)$",
+      r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|hotmail\.com|outlook\.com|yahoo\.com|icloud\.com|msu\.ac\.th)$",
     );
     return emailRegExp.hasMatch(email);
   }
@@ -1341,7 +1341,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  showModalConfirmEmail(String email, String password) {
+  void showModalConfirmEmail(String email, String password) {
     emailConfirmOtpCtl.text = email;
 
     showModalBottomSheet(
@@ -1398,7 +1398,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         style: TextStyle(
                                           fontSize: Get
                                               .textTheme
-                                              .titleLarge!
+                                              .titleMedium!
                                               .fontSize,
                                           fontWeight: FontWeight.normal,
                                           color: Colors.grey,
@@ -1425,8 +1425,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               Text(
                                 'Verify your email',
                                 style: TextStyle(
-                                  fontSize:
-                                      Get.textTheme.headlineMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleLarge!.fontSize,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1437,7 +1436,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               Text(
                                 'We will send the otp code to the email you entered',
                                 style: TextStyle(
-                                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                                  fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
                                 ),
                               ),
@@ -1452,7 +1451,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   'Email',
                                   style: TextStyle(
                                     fontSize:
-                                        Get.textTheme.titleMedium!.fontSize,
+                                        Get.textTheme.titleSmall!.fontSize,
                                     fontWeight: FontWeight.normal,
                                   ),
                                 ),
@@ -1465,14 +1464,14 @@ class _RegisterPageState extends State<RegisterPage> {
                             keyboardType: TextInputType.emailAddress,
                             cursorColor: Colors.black,
                             style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize,
+                              fontSize: Get.textTheme.titleSmall!.fontSize,
                             ),
                             decoration: InputDecoration(
                               hintText: isTyping
                                   ? ''
                                   : 'Enter your email address…',
                               hintStyle: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.grey,
                               ),
@@ -1504,7 +1503,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             Text(
                               'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                                 color: Colors.red,
                               ),
@@ -1591,7 +1590,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             child: Text(
                               blockOTP ? 'Back' : 'Request code',
                               style: TextStyle(
-                                fontSize: Get.textTheme.titleMedium!.fontSize,
+                                fontSize: Get.textTheme.titleSmall!.fontSize,
                                 fontWeight: FontWeight.normal,
                               ),
                             ),

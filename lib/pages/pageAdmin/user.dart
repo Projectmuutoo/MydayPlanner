@@ -66,6 +66,7 @@ class _UserPageState extends State<UserPage> {
     _debounce = Timer.periodic(Duration(seconds: 5), (timer) async {
       await compareUsers();
       getLatestLogin();
+      if (!mounted) return;
       setState(() {});
     });
   }
