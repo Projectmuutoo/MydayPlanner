@@ -2212,10 +2212,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         TextSpan(
                           text:
                               'Confirm you want to delete this account by typing its: ',
+                          style: TextStyle(fontFamily: 'baloo'),
                         ),
                         TextSpan(
                           text: 'Confirm',
                           style: TextStyle(
+                            fontFamily: 'baloo',
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                             height: 2,

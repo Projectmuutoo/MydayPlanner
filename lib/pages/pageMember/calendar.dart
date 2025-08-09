@@ -1741,7 +1741,7 @@ class CalendarPageState extends State<CalendarPage>
                                                                       ? creatingTasks[data.taskId.toString()] ==
                                                                                 true
                                                                             ? null
-                                                                            : () {
+                                                                            : () async {
                                                                                 if (!hideMenu) {
                                                                                   setState(
                                                                                     () {
@@ -1750,11 +1750,21 @@ class CalendarPageState extends State<CalendarPage>
                                                                                     },
                                                                                   );
                                                                                 }
-                                                                                Get.to(
-                                                                                  () => TasksdetailPage(
-                                                                                    taskId: data.taskId,
+                                                                                final result = await Navigator.push(
+                                                                                  context,
+                                                                                  MaterialPageRoute(
+                                                                                    builder:
+                                                                                        (
+                                                                                          context,
+                                                                                        ) => TasksdetailPage(
+                                                                                          taskId: data.taskId,
+                                                                                        ),
                                                                                   ),
                                                                                 );
+                                                                                if (result ==
+                                                                                    'refresh') {
+                                                                                  loadDataAsync();
+                                                                                }
                                                                               }
                                                                       : null,
                                                                   child: Row(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
@@ -716,7 +717,7 @@ class _NavbarPageState extends State<NavbarPage>
           }
         });
 
-    _timer = Timer.periodic(Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(Duration(seconds: 10), (_) {
       if (createdAtDate == null) return;
 
       DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
@@ -967,6 +968,20 @@ class NotificationService {
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         final payload = response.payload;
 
+        if (response.actionId == 'SNOOZE') {
+          // ทำงานเมื่อกด Snooze
+          log("User tapped Snooze");
+          final data = jsonDecode(payload!) as Map<String, dynamic>;
+          String taskid = data['taskid'];
+          snooze(taskid);
+          return;
+        } else if (response.actionId == 'MARK_DONE') {
+          final data = jsonDecode(payload!) as Map<String, dynamic>;
+          String taskid = data['taskid'];
+          tasksFinish(taskid);
+          return;
+        }
+
         if (payload != null) {
           if (payload == 'notification') {
             Get.to(() => NotificationPage());
@@ -1036,6 +1051,20 @@ class NotificationService {
           ticker: 'ticker',
           icon: '@drawable/logo',
           color: Color(0xFF3B82F6),
+          actions: <AndroidNotificationAction>[
+            AndroidNotificationAction(
+              'SNOOZE',
+              'Snooze',
+              showsUserInterface: true,
+              cancelNotification: true,
+            ),
+            AndroidNotificationAction(
+              'MARK_DONE',
+              'Mark as Done',
+              showsUserInterface: true,
+              cancelNotification: true,
+            ),
+          ],
         );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
@@ -1049,5 +1078,68 @@ class NotificationService {
       platformChannelSpecifics,
       payload: payload,
     );
+  }
+
+  static Future<void> tasksFinish(String id) async {
+    final userDataJson = box.read('userDataAll');
+    if (userDataJson == null) return;
+
+    var existingData = model.AllDataUserGetResponst.fromJson(userDataJson);
+
+    // หาตำแหน่งของ task ที่มี id ตรงกับที่ส่งมา
+    final index = existingData.tasks.indexWhere(
+      (t) => t.taskId.toString() == id,
+    );
+    log(index.toString());
+    if (index == -1) return; // ออกจากฟังก์ชัน ถ้าไม่เจอ task
+
+    // เปลี่ยนสถานะของ task เป็นเสร็จสิ้น
+    existingData.tasks[index].status = '2';
+    box.write('userDataAll', existingData.toJson());
+
+    url = await loadAPIEndpoint();
+
+    var response = await http.put(
+      Uri.parse("$url/markasdoneTask/$id"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+
+    if (response.statusCode == 403) {
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+      response = await http.put(
+        Uri.parse("$url/markasdoneTask/$id"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
+  }
+
+  static Future<void> snooze(String id) async {
+    url = await loadAPIEndpoint();
+
+    var response = await http.put(
+      Uri.parse("$url/snoozeNotify/$id"),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": "Bearer ${box.read('accessToken')}",
+      },
+    );
+
+    if (response.statusCode == 403) {
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+      response = await http.put(
+        Uri.parse("$url/snoozeNotify/$id"),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        },
+      );
+    }
+    _NavbarPageState().fetchDataOnResume();
   }
 }

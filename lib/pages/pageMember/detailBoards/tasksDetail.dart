@@ -17,9 +17,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as data;
-import 'package:mydayplanner/pages/pageMember/menu/menuReport.dart';
-import 'package:mydayplanner/pages/pageMember/menu/settings.dart';
-import 'package:mydayplanner/pages/pageMember/navBar.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
@@ -129,80 +126,140 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     try {
       url = await loadAPIEndpoint();
-      final tasksData = _getUserData();
-      if (tasksData == null) return;
-
-      final appDataAndTask = _getAppDataAndTask();
-      final appData = appDataAndTask.appData;
-
-      data.Task? foundTask;
-      try {
-        foundTask = tasksData.tasks.firstWhere(
-          (task) => task.taskId == widget.taskId,
-        );
-      } catch (_) {
-        log('ไม่พบ task ที่มี taskId: ${widget.taskId}');
+      final rawData = box.read('userDataAll');
+      if (rawData == null) {
+        log('rawData เป็น null');
         return;
       }
 
-      if (foundTask.boardId != "Today") {
+      final appData = Provider.of<Appdata>(context, listen: false);
+      final tasksData = data.AllDataUserGetResponst.fromJson(rawData);
+
+      log(
+        'widget.taskId: ${widget.taskId} (type: ${widget.taskId.runtimeType})',
+      );
+      log(
+        'Available task IDs: ${tasksData.tasks.map((t) => '${t.taskId} (${t.taskId.runtimeType})').toList()}',
+      );
+
+      data.Task? foundTask;
+      try {
+        // แปลง widget.taskId เป็น int เพื่อเปรียบเทียบ
+        final targetTaskId =
+            int.tryParse(widget.taskId.toString()) ?? widget.taskId;
+
+        foundTask = tasksData.tasks.firstWhere(
+          (task) => task.taskId == targetTaskId,
+        );
+        log(
+          'พบ task: ${foundTask.taskName}, boardId: ${foundTask.boardId} (type: ${foundTask.boardId.runtimeType})',
+        );
+      } catch (_) {
+        // ลองค้นหาด้วยวิธีการแปลงประเภทข้อมูลทั้งสองฝั่ง
         try {
-          // ลองค้นหาใน Individual Board
-          final foundBoard = tasksData.board.firstWhere(
-            (board) => board.boardId == foundTask!.boardId,
+          foundTask = tasksData.tasks.firstWhere(
+            (task) => task.taskId.toString() == widget.taskId.toString(),
+          );
+          log('พบ task ด้วยการเปรียบเทียบ string: ${foundTask.taskName}');
+        } catch (_) {
+          log('ไม่พบ task ที่มี taskId: ${widget.taskId}');
+
+          // Debug: แสดงรายละเอียด tasks ทั้งหมด
+          for (var task in tasksData.tasks) {
+            log(
+              'Task ID: ${task.taskId}, Name: ${task.taskName}, BoardID: ${task.boardId}',
+            );
+          }
+          return;
+        }
+      }
+
+      // ตรวจสอบ boardId และแปลงเป็น String สำหรับการเปรียบเทียบ
+      final taskBoardId = foundTask.boardId?.toString();
+
+      if (taskBoardId == null) {
+        log('boardId เป็น null สำหรับ task: ${foundTask.taskName}');
+        return;
+      }
+
+      if (taskBoardId != "Today") {
+        bool foundBoard = false;
+
+        // ลองค้นหาใน Individual Board
+        try {
+          final board = tasksData.board.firstWhere(
+            (board) => board.boardId.toString() == taskBoardId,
           );
 
+          log('พบใน Individual Board: ${board.boardName}');
           _taskNameController.text = foundTask.taskName ?? '';
           _descriptionController.text = foundTask.description ?? '';
           appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
-        } catch (_) {
-          // หากไม่พบ ให้ค้นหาใน Group Board
+          foundBoard = true;
+        } catch (e) {
+          log('ไม่พบใน Individual Board สำหรับ boardId: $taskBoardId');
+        }
+
+        // หากไม่พบใน Individual Board ให้ค้นหาใน Group Board
+        if (!foundBoard) {
           try {
-            final foundBoardgroup = tasksData.boardgroup.firstWhere(
-              (boardgroup) => boardgroup.boardId == foundTask!.boardId,
+            final boardgroup = tasksData.boardgroup.firstWhere(
+              (boardgroup) => boardgroup.boardId.toString() == taskBoardId,
             );
 
-            if (foundBoardgroup.boardId != null) {
-              appData.showDetailTask.setCurrentTask(foundTask, isGroup: true);
-              fetchGroupDataAndAddStream(
-                foundBoardgroup.boardId!,
-                widget.taskId,
-                (data) {
-                  if (mounted) {
-                    setState(() {
-                      combinedData = data;
+            log('พบใน Group Board: ${boardgroup.boardName}');
+            appData.showDetailTask.setCurrentTask(foundTask, isGroup: true);
 
-                      // ตรวจสอบว่ามีข้อมูล task จาก Firestore หรือยัง
-                      if (data['task'] != null) {
-                        if (data['task']['taskName'] != null) {
-                          _taskNameController.text = data['task']['taskName'];
-                        }
-                        if (data['task']['description'] != null) {
-                          _descriptionController.text =
-                              data['task']['description']; // เพิ่มบรรทัดนี้
-                        }
-                      }
-                    });
+            fetchGroupDataAndAddStream(boardgroup.boardId, widget.taskId, (
+              data,
+            ) {
+              if (mounted) {
+                setState(() {
+                  combinedData = data;
 
-                    // เรียก callback เพื่อให้ popup อัปเดต
-                    if (onDataLoaded != null) {
-                      onDataLoaded();
+                  // ตรวจสอบว่ามีข้อมูล task จาก Firestore หรือยัง
+                  if (data['task'] != null) {
+                    if (data['task']['taskName'] != null) {
+                      _taskNameController.text = data['task']['taskName'];
+                    }
+                    if (data['task']['description'] != null) {
+                      _descriptionController.text = data['task']['description'];
                     }
                   }
-                },
-              );
-            }
-          } catch (_) {
-            log('ไม่พบ boardgroup สำหรับ taskId: ${widget.taskId}');
+                });
+
+                // เรียก callback เพื่อให้ popup อัปเดต
+                if (onDataLoaded != null) {
+                  onDataLoaded();
+                }
+              }
+            });
+            foundBoard = true;
+          } catch (e) {
+            log('ไม่พบใน Group Board สำหรับ boardId: $taskBoardId, error: $e');
           }
         }
+
+        if (!foundBoard) {
+          log('ไม่สามารถหา board ใดๆ สำหรับ boardId: $taskBoardId');
+          // Debug: แสดง boardId ทั้งหมดที่มีอยู่
+          log(
+            'Available Individual Board IDs: ${tasksData.board.map((b) => b.boardId).toList()}',
+          );
+          log(
+            'Available Group Board IDs: ${tasksData.boardgroup.map((b) => b.boardId).toList()}',
+          );
+        }
       } else {
+        // กรณี Today task
+        log('เป็น Today task');
         _taskNameController.text = foundTask.taskName ?? '';
         _descriptionController.text = foundTask.description ?? '';
         appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       log('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e');
+      log('Stack trace: $stackTrace');
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -792,7 +849,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         response = await sendRequest(newToken);
       }
     }
-    log(response.statusCode.toString());
+
     if (response.statusCode == 200) {
       Get.snackbar('Task deleted successfully.', '');
       if (mounted) Navigator.pop(context, 'refresh');

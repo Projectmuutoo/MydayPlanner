@@ -814,7 +814,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                       ? creatingTasks[data.taskId.toString()] ==
                                                                                 true
                                                                             ? null
-                                                                            : () {
+                                                                            : () async {
                                                                                 if (!hideMenu) {
                                                                                   setState(
                                                                                     () {
@@ -823,11 +823,23 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                                     },
                                                                                   );
                                                                                 }
-                                                                                Get.to(
-                                                                                  () => TasksdetailPage(
-                                                                                    taskId: data.taskId,
+
+                                                                                final result = await Navigator.push(
+                                                                                  context,
+                                                                                  MaterialPageRoute(
+                                                                                    builder:
+                                                                                        (
+                                                                                          context,
+                                                                                        ) => TasksdetailPage(
+                                                                                          taskId: data.taskId,
+                                                                                        ),
                                                                                   ),
                                                                                 );
+
+                                                                                if (result ==
+                                                                                    'refresh') {
+                                                                                  loadDataAsync();
+                                                                                }
                                                                               }
                                                                       : null,
                                                                   child: Row(
@@ -2859,7 +2871,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     }
 
     //ฟังก์ชันอัพเดทลง storage
-    await _updateLocalStorage(tempTask, isTemp: true);
+    await _updateLocalStorage(tempTask);
 
     //เรียก api สร้าง task
     final success = await _createTaskAPI(
@@ -3036,7 +3048,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);
 
-    await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
+    await _updateLocalStorage(realTask, tempIdToRemove: tempId);
     await loadDataAsync();
     if (mounted) {
       setState(() {
@@ -3101,7 +3113,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   Future<void> _updateLocalStorage(
     model.Task task, {
-    bool isTemp = false,
     String? tempIdToRemove,
   }) async {
     final userDataJson = box.read('userDataAll');

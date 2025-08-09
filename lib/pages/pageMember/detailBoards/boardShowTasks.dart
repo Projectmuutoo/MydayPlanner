@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -17,7 +16,6 @@ import 'package:mydayplanner/shared/appData.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:mydayplanner/splash.dart';
 import 'package:rxdart/rxdart.dart' as rxdart;
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -484,6 +482,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                           context,
                                           listen: false,
                                         );
+                                        loadDataAsync();
                                         AppDataShareShowEditInfo.showEditInfo(
                                           context,
                                           boards,
@@ -1375,7 +1374,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                             ? creatingTasks[data.taskId.toString()] ==
                                                                                       true
                                                                                   ? null
-                                                                                  : () {
+                                                                                  : () async {
                                                                                       if (!hideMenu) {
                                                                                         setState(
                                                                                           () {
@@ -1384,11 +1383,21 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                                           },
                                                                                         );
                                                                                       }
-                                                                                      Get.to(
-                                                                                        () => TasksdetailPage(
-                                                                                          taskId: data.taskId,
+                                                                                      final result = await Navigator.push(
+                                                                                        context,
+                                                                                        MaterialPageRoute(
+                                                                                          builder:
+                                                                                              (
+                                                                                                context,
+                                                                                              ) => TasksdetailPage(
+                                                                                                taskId: data.taskId,
+                                                                                              ),
                                                                                         ),
                                                                                       );
+                                                                                      if (result ==
+                                                                                          'refresh') {
+                                                                                        loadDataAsync();
+                                                                                      }
                                                                                     }
                                                                             : null,
                                                                         child: Row(
@@ -2442,7 +2451,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         );
 
         if (response.statusCode == 403) {
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           response = await http.put(
             Uri.parse("$url/board/newtoken/$idBoard"),
             headers: {
@@ -2631,7 +2640,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/taskfinish/$id"),
         headers: {
@@ -2674,7 +2683,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.put(
         Uri.parse("$url/updatestatus/$id"),
         headers: {
@@ -2805,7 +2814,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     var response = await sendRequest(token);
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       final newToken = box.read('accessToken');
       if (newToken != null) {
         response = await sendRequest(newToken);
@@ -3165,8 +3174,11 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         notificationID,
         tempTask,
         dueDate,
+        beforeDueDate,
         appData,
       );
+    } else {
+      await _removeTempTask(tempId.toString());
     }
   }
 
@@ -3176,6 +3188,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     int notificationID,
     model.Task tempTask,
     DateTime dueDate,
+    DateTime? beforeDueDate,
     dynamic appData,
   ) async {
     // 1. ลบ temp task ทันที เพื่อป้องกัน duplicate
@@ -3199,6 +3212,35 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           'taskName': tempTask.taskName,
           'updatedAt': Timestamp.now(),
         });
+
+    final realTask = model.Task(
+      taskName: tempTask.taskName,
+      description: tempTask.description,
+      createdAt: DateTime.now().toIso8601String(),
+      priority: selectedPriority == null ? '' : selectedPriority.toString(),
+      status: '0',
+      attachments: [],
+      checklists: [],
+      createBy: tempTask.createBy,
+      taskId: realTaskId,
+      assigned: [],
+      boardId: appData.boardDatas.idBoard.toString(),
+      notifications: [
+        model.Notification(
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
+              ? beforeDueDate.toUtc().toIso8601String()
+              : '',
+          createdAt: DateTime.now().toIso8601String(),
+          dueDate: dueDate.toUtc().toIso8601String(),
+          isSend: '0',
+          notificationId: notificationID,
+          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
+          taskId: realTaskId,
+        ),
+      ],
+    );
+
+    _updateLocalStorage(realTask);
 
     loadDataAsync();
     // 3. รอให้ Firebase document ถูกสร้าง
@@ -3300,7 +3342,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     if (responseCreate.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       responseCreate = await http.post(
         Uri.parse("$url/task"),
         headers: {
@@ -3789,6 +3831,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                       setState(() {
                         addTask = false;
                       });
+                      loadDataAsync();
                       AppDataShareShowEditInfo.showEditInfo(
                         context,
                         boards,
@@ -4899,102 +4942,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     });
   }
 
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize: Get.textTheme.headlineSmall!.fontSize!,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.initialize();
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize: Get.textTheme.titleMedium!.fontSize!,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-  }
-
   Future<void> fetchDataOnResume() async {
     url = await loadAPIEndpoint();
     var oldUserDataAllJson = box.read('userDataAll');
@@ -5010,7 +4957,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.get(
         Uri.parse("$url/user/data"),
         headers: {

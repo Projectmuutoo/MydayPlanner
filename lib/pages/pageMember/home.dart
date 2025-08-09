@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:math' show Random;
 import 'dart:ui';
 
@@ -107,7 +106,7 @@ class HomePageState extends State<HomePage> {
     //   log(i);
     // }
 
-    showDisplays(null);
+    showDisplays();
     loadMessages();
     loadDataAsync();
     timer2 = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -528,12 +527,21 @@ class HomePageState extends State<HomePage> {
                                               );
                                             },
                                             child: GestureDetector(
-                                              onTap: () {
-                                                Get.to(
-                                                  () => TasksdetailPage(
-                                                    taskId: task.taskId,
-                                                  ),
-                                                );
+                                              onTap: () async {
+                                                final result =
+                                                    await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            TasksdetailPage(
+                                                              taskId:
+                                                                  task.taskId,
+                                                            ),
+                                                      ),
+                                                    );
+                                                if (result == 'refresh') {
+                                                  loadDataAsync();
+                                                }
                                               },
                                               child: Container(
                                                 margin: EdgeInsets.symmetric(
@@ -2476,52 +2484,76 @@ class HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                          ...showSearchResultCreatedBoards(searchCtl.text).map(
-                            (data) => Column(
-                              children: [
-                                Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {},
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.02,
-                                        vertical: height * 0.01,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              data.boardName,
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .fontSize!,
+                          if (showSearchResultCreatedBoards(
+                            searchCtl.text,
+                          ).isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: height * 0.01,
+                              ),
+                              child: Text(
+                                "No results found",
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.bodyMedium!.fontSize!,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          else
+                            ...showSearchResultCreatedBoards(
+                              searchCtl.text,
+                            ).map(
+                              (data) => Column(
+                                children: [
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        goToMyTask(
+                                          data.boardId.toString(),
+                                          data.boardName,
+                                          tokenBoard: null,
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                          vertical: height * 0.01,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                data.boardName,
+                                                style: TextStyle(
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize!,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.001,
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: height * 0.001,
+                                    ),
+                                    child: Container(
+                                      width: width,
+                                      height: 0.5,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                  child: Container(
-                                    width: width,
-                                    height: 0.5,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                           SizedBox(height: height * 0.01),
                           Row(
                             children: [
@@ -2535,52 +2567,74 @@ class HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                          ...showSearchResultMemberBoards(searchCtl.text).map(
-                            (data) => Column(
-                              children: [
-                                Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () {},
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.02,
-                                        vertical: height * 0.01,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              data.boardName,
-                                              style: TextStyle(
-                                                fontSize: Get
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .fontSize!,
+                          if (showSearchResultMemberBoards(
+                            searchCtl.text,
+                          ).isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: height * 0.01,
+                              ),
+                              child: Text(
+                                "No results found",
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.bodyMedium!.fontSize!,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          else
+                            ...showSearchResultMemberBoards(searchCtl.text).map(
+                              (data) => Column(
+                                children: [
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        goToMyTask(
+                                          data.boardId.toString(),
+                                          data.boardName,
+                                          tokenBoard: data.token,
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: width * 0.02,
+                                          vertical: height * 0.01,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                data.boardName,
+                                                style: TextStyle(
+                                                  fontSize: Get
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .fontSize!,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.001,
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: height * 0.001,
+                                    ),
+                                    child: Container(
+                                      width: width,
+                                      height: 0.5,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                  child: Container(
-                                    width: width,
-                                    height: 0.5,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                   ],
@@ -3466,7 +3520,7 @@ class HomePageState extends State<HomePage> {
         .toList();
   }
 
-  void showDisplays(String? show) {
+  void showDisplays() {
     if (!mounted) return;
     final userData = box.read('userDataAll');
     if (userData == null) return;
@@ -3493,15 +3547,9 @@ class HomePageState extends State<HomePage> {
     // อัปเดต list/group
     final showDisplay = box.read('showDisplays');
     if (showDisplay['privateTF'] == true) {
-      if (show == 'group') {
-        privateFontWeight = FontWeight.w500;
-        groupFontWeight = FontWeight.w600;
-        boards = memberBoards;
-      } else {
-        privateFontWeight = FontWeight.w600;
-        groupFontWeight = FontWeight.w500;
-        boards = createdBoards;
-      }
+      privateFontWeight = FontWeight.w600;
+      groupFontWeight = FontWeight.w500;
+      boards = createdBoards;
     } else if (showDisplay['groupTF'] == true) {
       privateFontWeight = FontWeight.w500;
       groupFontWeight = FontWeight.w600;
@@ -3779,7 +3827,6 @@ class HomePageState extends State<HomePage> {
                                   );
 
                                   // ปิดหน้าต่างและเคลียร์ฟอร์ม
-                                  showDisplays(null);
                                   if (!mounted) return;
                                   setState(() {
                                     boardCtl.clear();
@@ -3874,7 +3921,6 @@ class HomePageState extends State<HomePage> {
                                   );
 
                                   // ปิดหน้าต่างและเคลียร์ฟอร์ม
-                                  showDisplays('group');
                                   if (!mounted) return;
                                   setState(() {
                                     boardCtl.clear();
@@ -4012,7 +4058,7 @@ class HomePageState extends State<HomePage> {
     );
 
     if (result == 'refresh') {
-      showDisplays(null);
+      showDisplays();
       loadDataAsync();
     } else if (result == 'loadDisplays') {
       loadDataAsync();

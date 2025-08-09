@@ -1228,26 +1228,21 @@ class AlltasksPageState extends State<AlltasksPage>
                                                                                         );
                                                                                       }
 
-                                                                                      Get.to(
-                                                                                        () => TasksdetailPage(
-                                                                                          taskId: data.taskId,
+                                                                                      final result = await Navigator.push(
+                                                                                        context,
+                                                                                        MaterialPageRoute(
+                                                                                          builder:
+                                                                                              (
+                                                                                                context,
+                                                                                              ) => TasksdetailPage(
+                                                                                                taskId: data.taskId,
+                                                                                              ),
                                                                                         ),
                                                                                       );
-                                                                                      // final result = await Navigator.push(
-                                                                                      //   context,
-                                                                                      //   MaterialPageRoute(
-                                                                                      //     builder:
-                                                                                      //         (
-                                                                                      //           context,
-                                                                                      //         ) => TasksdetailPage(
-                                                                                      //           taskId: data.taskId,
-                                                                                      //         ),
-                                                                                      //   ),
-                                                                                      // );
-                                                                                      // if (result ==
-                                                                                      //     'refresh') {
-                                                                                      //   loadDataAsync();
-                                                                                      // }
+                                                                                      if (result ==
+                                                                                          'refresh') {
+                                                                                        loadDataAsync();
+                                                                                      }
                                                                                     }
                                                                             : null,
                                                                         child: Row(

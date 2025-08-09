@@ -2729,7 +2729,7 @@ class AppDataShareShowEditInfo {
     }
 
     if (response.statusCode == 200) {
-      boardListNameCtl.clear();
+      boardListNameCtl.text = boardListNameCtl.text.trim();
     }
   }
 
