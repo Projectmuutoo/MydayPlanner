@@ -165,7 +165,7 @@ class _RegisterPageState extends State<RegisterPage> {
             hasError = true;
           } else if (!isValidPassword(passwordController.text)) {
             alearPassword =
-                'Password must contain at least 8 digits\nor lowercase letters';
+                'Use a password longer than 8 characters, \nincluding at least one uppercase letter, \none lowercase letter, and one special character.';
             colorAlearPassword = Colors.red;
             hasError = true;
           } else {
@@ -928,12 +928,19 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   bool isValidPassword(String password) {
-    if (password.length < 8) return false;
+    // ความยาวมากกว่า 8
+    if (password.length <= 8) return false;
 
-    // นับจำนวนตัวเลขและตัวพิมพ์เล็กรวมกัน
-    int count = RegExp(r'[0-9a-z]').allMatches(password).length;
+    // อย่างน้อย 1 ตัวพิมพ์ใหญ่
+    if (!RegExp(r'[A-Z]').hasMatch(password)) return false;
 
-    return count >= 8;
+    // อย่างน้อย 1 ตัวพิมพ์เล็ก
+    if (!RegExp(r'[a-z]').hasMatch(password)) return false;
+
+    // อย่างน้อย 1 ตัวอักษรพิเศษ
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) return false;
+
+    return true;
   }
 
   void loadingDialog() {
@@ -985,7 +992,7 @@ class _RegisterPageState extends State<RegisterPage> {
         hasError = true;
       } else if (!isValidPassword(passwordController.text)) {
         alearPassword =
-            'Password must contain at least 8 digits\nor lowercase letters';
+            'Use a password longer than 8 characters, \nincluding at least one uppercase letter, \none lowercase letter, and one special character.';
         colorAlearPassword = Colors.red;
         hasError = true;
       } else {

@@ -1557,217 +1557,223 @@ class _ManageuserPageState extends State<ManageuserPage> {
                 bottom:
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
-              child: SizedBox(
-                height: height * 0.35,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      children: [
-                        Row(
-                          children: [
+              child: SafeArea(
+                child: SizedBox(
+                  height: height * 0.4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Add Admin',
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.headlineSmall!.fontSize!,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(left: width * 0.03),
+                                child: Text(
+                                  'Email',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleSmall!.fontSize!,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          TextField(
+                            controller: emailCtl,
+                            keyboardType: TextInputType.emailAddress,
+                            cursorColor: Colors.black,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: isTyping
+                                  ? ''
+                                  : 'Enter your email address…',
+                              hintStyle: TextStyle(
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: IconButton(
+                                onPressed: null,
+                                icon: SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              constraints: BoxConstraints(
+                                maxHeight: height * 0.05,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: height * 0.01),
+                          Row(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(left: width * 0.03),
+                                child: Text(
+                                  'Password',
+                                  style: TextStyle(
+                                    fontSize:
+                                        Get.textTheme.titleSmall!.fontSize!,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          TextField(
+                            controller: passwordCtl,
+                            keyboardType: TextInputType.visiblePassword,
+                            obscureText: !isCheckedPassword,
+                            cursorColor: Colors.black,
+                            style: TextStyle(
+                              fontSize: Get.textTheme.titleSmall!.fontSize!,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: isTyping ? '' : 'Enter your password',
+                              hintStyle: TextStyle(
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.grey,
+                              ),
+                              prefixIcon: IconButton(
+                                onPressed: null,
+                                icon: SvgPicture.string(
+                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    isCheckedPassword = !isCheckedPassword;
+                                  });
+                                },
+                                icon: Icon(
+                                  isCheckedPassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              constraints: BoxConstraints(
+                                maxHeight: height * 0.05,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: width * 0.02,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                            ),
+                          ),
+                          if (textNotification.isNotEmpty)
+                            SizedBox(height: height * 0.02),
+                          if (textNotification.isNotEmpty)
                             Text(
-                              'Add Admin',
+                              textNotification,
                               style: TextStyle(
-                                fontSize:
-                                    Get.textTheme.headlineSmall!.fontSize!,
-                                fontWeight: FontWeight.w500,
+                                fontSize: Get.textTheme.titleSmall!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.red, // สีสำหรับแจ้งเตือน
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              child: Text(
-                                'Email',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextField(
-                          controller: emailCtl,
-                          keyboardType: TextInputType.emailAddress,
-                          cursorColor: Colors.black,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleSmall!.fontSize!,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: isTyping
-                                ? ''
-                                : 'Enter your email address…',
-                            hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey,
-                            ),
-                            prefixIcon: IconButton(
-                              onPressed: null,
-                              icon: SvgPicture.string(
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                color: Colors.grey,
-                              ),
-                            ),
-                            constraints: BoxConstraints(
-                              maxHeight: height * 0.05,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * 0.02,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: height * 0.01),
-                        Row(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: width * 0.03),
-                              child: Text(
-                                'Password',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize!,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextField(
-                          controller: passwordCtl,
-                          keyboardType: TextInputType.visiblePassword,
-                          obscureText: !isCheckedPassword,
-                          cursorColor: Colors.black,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleSmall!.fontSize!,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: isTyping ? '' : 'Enter your password',
-                            hintStyle: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey,
-                            ),
-                            prefixIcon: IconButton(
-                              onPressed: null,
-                              icon: SvgPicture.string(
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 2C9.243 2 7 4.243 7 7v2H6c-1.103 0-2 .897-2 2v9c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-9c0-1.103-.897-2-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v2H9V7zm9.002 13H13v-2.278c.595-.347 1-.985 1-1.722 0-1.103-.897-2-2-2s-2 .897-2 2c0 .736.405 1.375 1 1.722V20H6v-9h12l.002 9z"></path></svg>',
-                                color: Colors.grey,
-                              ),
-                            ),
-                            suffixIcon: IconButton(
-                              onPressed: () {
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              if (emailCtl.text.isEmpty) {
                                 setState(() {
-                                  isCheckedPassword = !isCheckedPassword;
+                                  showNotification('Email address is required');
                                 });
-                              },
-                              icon: Icon(
-                                isCheckedPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.grey,
+                                return;
+                              }
+
+                              if (!isValidEmail(emailCtl.text)) {
+                                setState(() {
+                                  showNotification('Invalid email address');
+                                });
+                                return;
+                              }
+
+                              // Password validation
+                              if (passwordCtl.text.isEmpty) {
+                                setState(() {
+                                  showNotification(
+                                    'Please enter your password',
+                                  );
+                                });
+                                return;
+                              } else if (!isValidPassword(passwordCtl.text)) {
+                                setState(() {
+                                  showNotification(
+                                    'Use a password longer than 8 characters, \nincluding at least one uppercase letter, \none lowercase letter, and one special character.',
+                                  );
+                                });
+                                return;
+                              }
+
+                              setState(() {
+                                showNotification('');
+                              });
+
+                              checkAndContinue();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(width, height * 0.05),
+                              backgroundColor: Color(0xFF007AFF),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            constraints: BoxConstraints(
-                              maxHeight: height * 0.05,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * 0.02,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
+                            child: Text(
+                              'Continue',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                        if (textNotification.isNotEmpty)
-                          SizedBox(height: height * 0.02),
-                        if (textNotification.isNotEmpty)
-                          Text(
-                            textNotification,
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.red, // สีสำหรับแจ้งเตือน
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            if (emailCtl.text.isEmpty) {
-                              setState(() {
-                                showNotification('Email address is required');
-                              });
-                              return;
-                            }
-
-                            if (!isValidEmail(emailCtl.text)) {
-                              setState(() {
-                                showNotification('Invalid email address');
-                              });
-                              return;
-                            }
-
-                            // Password validation
-                            if (passwordCtl.text.isEmpty) {
-                              setState(() {
-                                showNotification('Please enter your password');
-                              });
-                              return;
-                            } else if (!isValidPassword(passwordCtl.text)) {
-                              setState(() {
-                                showNotification(
-                                  'Password must contain at least 8 digits\nor lowercase letters',
-                                );
-                              });
-                              return;
-                            }
-
-                            setState(() {
-                              showNotification('');
-                            });
-
-                            checkAndContinue();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(width, height * 0.05),
-                            backgroundColor: Color(0xFF007AFF),
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Continue',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1836,12 +1842,19 @@ class _ManageuserPageState extends State<ManageuserPage> {
   }
 
   bool isValidPassword(String password) {
-    if (password.length < 8) return false;
+    // ความยาวมากกว่า 8
+    if (password.length <= 8) return false;
 
-    // นับจำนวนตัวเลขและตัวพิมพ์เล็กรวมกัน
-    int count = RegExp(r'[0-9a-z]').allMatches(password).length;
+    // อย่างน้อย 1 ตัวพิมพ์ใหญ่
+    if (!RegExp(r'[A-Z]').hasMatch(password)) return false;
 
-    return count >= 8;
+    // อย่างน้อย 1 ตัวพิมพ์เล็ก
+    if (!RegExp(r'[a-z]').hasMatch(password)) return false;
+
+    // อย่างน้อย 1 ตัวอักษรพิเศษ
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) return false;
+
+    return true;
   }
 
   void disableUser(int userid, String email, String isActive) async {

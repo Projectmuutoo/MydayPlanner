@@ -280,7 +280,7 @@ class AppDataShareBoardFunction {
           return StatefulBuilder(
             builder: (BuildContext context, StateSetter setModalState) {
               return SizedBox(
-                height: height * 0.94,
+                height: height * 0.9,
                 child: Scaffold(
                   body: Container(
                     decoration: BoxDecoration(
@@ -1469,7 +1469,6 @@ class AppDataShareShowEditInfo {
                                         pageSend != 'boardShowTasks')
                                       GestureDetector(
                                         onTap: () {
-                                          checkExpiresTokenBoard(board.boardId);
                                           AppDataShareBoardFunction().shareTask(
                                             context,
                                             board.boardId,
@@ -2783,6 +2782,13 @@ class AppDataLoadNewRefreshToken {
       box.write('accessToken', reponse['accessToken']);
     } else if (loadtokennew.statusCode == 403 ||
         loadtokennew.statusCode == 401) {
+      final currentUserProfile = box.read('userProfile');
+      if (currentUserProfile == null) {
+        Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+        return;
+      }
+      final userEmail = currentUserProfile['email'];
+
       Get.defaultDialog(
         title: '',
         titlePadding: EdgeInsets.zero,
@@ -2821,10 +2827,6 @@ class AppDataLoadNewRefreshToken {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              final userEmail = currentUserProfile['email'];
-              if (userEmail == null) return;
-
               await FirebaseFirestore.instance
                   .collection('usersLogin')
                   .doc(userEmail)

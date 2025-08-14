@@ -544,11 +544,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                           children: [
                             GestureDetector(
                               onTap: () {
-                                checkExpiresTokenBoard(
-                                  int.parse(
-                                    context.read<Appdata>().boardDatas.idBoard,
-                                  ),
-                                );
                                 AppDataShareBoardFunction().shareTask(
                                   context,
                                   int.parse(

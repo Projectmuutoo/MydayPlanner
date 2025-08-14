@@ -12,7 +12,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -46,7 +45,6 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   void _initializeApp() {
-    final appData = Provider.of<Appdata>(context, listen: false);
     final userProfile = box.read('userProfile');
 
     if (_isFromLogout) {
@@ -69,13 +67,13 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     if (!_isFromLogout) {
-      _startFirebaseListenerWithTimeout(appData, userProfile);
+      _startFirebaseListenerWithTimeout(userProfile);
     } else {
       goToPage();
     }
   }
 
-  void _startFirebaseListenerWithTimeout(Appdata appData, userProfile) {
+  void _startFirebaseListenerWithTimeout(dynamic userProfile) {
     bool hasNavigated = false;
 
     Timer timeoutTimer = Timer(Duration(seconds: 5), () {

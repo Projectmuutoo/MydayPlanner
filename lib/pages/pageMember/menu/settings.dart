@@ -1085,7 +1085,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.005),
                 Text(
-                  'Use a password at least 8 letters long, or at least 8 characters long with both letters and numbers.',
+                  'Use a password longer than 8 characters, including at least one uppercase letter, one lowercase letter, and one special character.',
                   style: TextStyle(
                     fontSize: Get.textTheme.labelMedium!.fontSize!,
                     color: Colors.black,
@@ -1866,12 +1866,19 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   bool isValidPassword(String password) {
-    if (password.length < 8) return false;
+    // ความยาวมากกว่า 8
+    if (password.length <= 8) return false;
 
-    // นับจำนวนตัวเลขและตัวพิมพ์เล็กรวมกัน
-    int count = RegExp(r'[0-9a-z]').allMatches(password).length;
+    // อย่างน้อย 1 ตัวพิมพ์ใหญ่
+    if (!RegExp(r'[A-Z]').hasMatch(password)) return false;
 
-    return count >= 8;
+    // อย่างน้อย 1 ตัวพิมพ์เล็ก
+    if (!RegExp(r'[a-z]').hasMatch(password)) return false;
+
+    // อย่างน้อย 1 ตัวอักษรพิเศษ
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) return false;
+
+    return true;
   }
 
   Future<http.Response> updateProfile({
@@ -2120,9 +2127,9 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
 
-      await _performCleanup();
+      _performCleanup();
     } catch (e) {
-      await _performCleanup();
+      _performCleanup();
     }
   }
 
@@ -2134,20 +2141,19 @@ class _SettingsPageState extends State<SettingsPage> {
       final userEmail = userProfile['email'];
       if (userEmail == null) return;
 
-      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-
-      await FirebaseFirestore.instance
-          .collection('usersLogin')
-          .doc(userEmail)
-          .update({'deviceName': FieldValue.delete()});
-      await googleSignIn.initialize();
-      await googleSignIn.signOut();
-      await FirebaseAuth.instance.signOut();
-      await storage.deleteAll();
       box.remove('userDataAll');
       box.remove('userLogin');
       box.remove('userProfile');
       box.remove('accessToken');
+      Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
+      await googleSignIn.initialize();
+      await googleSignIn.signOut();
+      await FirebaseAuth.instance.signOut();
+      await storage.deleteAll();
+      await FirebaseFirestore.instance
+          .collection('usersLogin')
+          .doc(userEmail)
+          .update({'deviceName': FieldValue.delete()});
     } catch (e) {
       Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
     }

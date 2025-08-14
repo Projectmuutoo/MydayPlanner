@@ -2650,7 +2650,10 @@ class HomePageState extends State<HomePage> {
   void checkBoardGroupActive() async {
     final rawData = box.read('userDataAll');
     final userProfile = box.read('userProfile');
-    if (rawData == null || userProfile == null) return;
+    if (rawData == null || userProfile == null) {
+      _timer?.cancel();
+      return;
+    }
 
     final userEmail = userProfile['email'];
     final rawDataResult = AllDataUserGetResponst.fromJson(rawData);
@@ -2690,6 +2693,12 @@ class HomePageState extends State<HomePage> {
         );
 
         if (response.statusCode == 403) {
+          final rawData = box.read('userDataAll');
+          final userProfile = box.read('userProfile');
+          if (rawData == null || userProfile == null) {
+            _timer?.cancel();
+            return;
+          }
           await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           response = await http.get(
             Uri.parse("$url/user/data"),

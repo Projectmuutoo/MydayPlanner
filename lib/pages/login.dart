@@ -572,7 +572,6 @@ class _LoginPageState extends State<LoginPage> {
       await googleSignIn.initialize();
       GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      loadingDialog();
       GoogleLoginUserPostRequest jsonLoginGoogleUser =
           GoogleLoginUserPostRequest(
             email: googleUser.email,
@@ -580,6 +579,7 @@ class _LoginPageState extends State<LoginPage> {
             profile: googleUser.photoUrl.toString(),
           );
 
+      loadingDialog();
       var responseLoginGoogle = await http.post(
         Uri.parse("$url/auth/googlelogin"),
         headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -592,6 +592,9 @@ class _LoginPageState extends State<LoginPage> {
         await googleSignIn.signOut();
         await FirebaseAuth.instance.signOut();
         showNotification(results['message']);
+        setState(() {
+          loadingDialogGoogle = false;
+        });
         return;
       }
 
@@ -599,13 +602,16 @@ class _LoginPageState extends State<LoginPage> {
         responseLoginGoogle.body,
       );
       if (responseGoogle.success) {
+        setState(() {
+          loadingDialogGoogle = false;
+        });
+        loadingDialog();
         await storage.write(
           key: 'refreshToken',
           value: responseGoogle.token.refreshToken,
         );
         box.write('accessToken', responseGoogle.token.accessToken);
 
-        loadingDialog();
         final responseAll = await http.get(
           Uri.parse("$url/user/data"),
           headers: {
