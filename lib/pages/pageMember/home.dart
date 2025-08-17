@@ -3221,9 +3221,6 @@ class HomePageState extends State<HomePage> {
                             focusedBoardId = null;
                           });
                         }
-                        AppDataShareShowEditInfo.checkExpiresTokenBoard(
-                          board.boardId,
-                        );
                         AppDataShareShowEditInfo.showEditInfo(
                           context,
                           board,
@@ -3641,145 +3638,131 @@ class HomePageState extends State<HomePage> {
                 bottom:
                     MediaQuery.of(context).viewInsets.bottom + height * 0.02,
               ),
-              child: SizedBox(
-                height: height * 0.18,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'New Board',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleLarge!.fontSize!,
-                                fontWeight: FontWeight.w500,
+              child: SafeArea(
+                child: SizedBox(
+                  height: height * 0.18,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'New Board',
+                                style: TextStyle(
+                                  fontSize: Get.textTheme.titleLarge!.fontSize!,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        TextField(
-                          controller: boardCtl,
-                          focusNode: boardFocusNode,
-                          keyboardType: TextInputType.text,
-                          cursorColor: Color(0xFF007AFF),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: Get.textTheme.titleMedium!.fontSize!,
+                            ],
                           ),
-                          decoration: InputDecoration(
-                            hintText: isTyping ? '' : 'Enter your board name',
-                            hintStyle: TextStyle(
+                          TextField(
+                            controller: boardCtl,
+                            focusNode: boardFocusNode,
+                            keyboardType: TextInputType.text,
+                            cursorColor: Color(0xFF007AFF),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
                               fontSize: Get.textTheme.titleMedium!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                              color: Color(0x4D000000),
                             ),
-                            constraints: BoxConstraints(
-                              maxHeight: height * 0.05,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: width * 0.05,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 0.5),
+                            decoration: InputDecoration(
+                              hintText: isTyping ? '' : 'Enter your board name',
+                              hintStyle: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                                color: Color(0x4D000000),
+                              ),
+                              constraints: BoxConstraints(
+                                maxHeight: height * 0.05,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: width * 0.05,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    if (textError.isNotEmpty)
-                      Text(
-                        textError,
-                        style: TextStyle(
-                          fontSize: Get.textTheme.labelMedium!.fontSize!,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.red,
-                        ),
+                        ],
                       ),
-                    Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            final String boardName = boardCtl.text.trim();
-                            if (boardCtl.text.trim().isEmpty) {
-                              if (!mounted) return;
-                              setState1(() {
-                                textError = 'Please enter your board name';
-                              });
-                              return;
-                            }
-                            int tempId = Random().nextInt(100000);
-                            Board tempBoard = Board(
-                              boardId: tempId,
-                              boardName: boardName,
-                              createdAt: DateTime.now().toIso8601String(),
-                              createdBy: box.read('userProfile')['userid'],
-                              createdByUser: CreatedByUser(
-                                email: box.read('userProfile')['email'],
-                                name: box.read('userProfile')['name'],
-                                profile: box.read('userProfile')['profile'],
-                                userId: box.read('userProfile')['userid'],
-                              ),
-                            );
-                            Boardgroup tempBoardGroup = Boardgroup(
-                              boardId: tempId,
-                              boardName: boardName,
-                              createdAt: DateTime.now().toIso8601String(),
-                              createdBy: box.read('userProfile')['userid'],
-                              token: '',
-                              createdByUser: CreatedByUser(
-                                email: box.read('userProfile')['email'],
-                                name: box.read('userProfile')['name'],
-                                profile: box.read('userProfile')['profile'],
-                                userId: box.read('userProfile')['userid'],
-                              ),
-                            );
+                      if (textError.isNotEmpty)
+                        Text(
+                          textError,
+                          style: TextStyle(
+                            fontSize: Get.textTheme.labelMedium!.fontSize!,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.red,
+                          ),
+                        ),
+                      Column(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              final String boardName = boardCtl.text.trim();
+                              if (boardCtl.text.trim().isEmpty) {
+                                if (!mounted) return;
+                                setState1(() {
+                                  textError = 'Please enter your board name';
+                                });
+                                return;
+                              }
+                              int tempId = Random().nextInt(100000);
+                              Board tempBoard = Board(
+                                boardId: tempId,
+                                boardName: boardName,
+                                createdAt: DateTime.now().toIso8601String(),
+                                createdBy: box.read('userProfile')['userid'],
+                                createdByUser: CreatedByUser(
+                                  email: box.read('userProfile')['email'],
+                                  name: box.read('userProfile')['name'],
+                                  profile: box.read('userProfile')['profile'],
+                                  userId: box.read('userProfile')['userid'],
+                                ),
+                              );
+                              Boardgroup tempBoardGroup = Boardgroup(
+                                boardId: tempId,
+                                boardName: boardName,
+                                createdAt: DateTime.now().toIso8601String(),
+                                createdBy: box.read('userProfile')['userid'],
+                                token: '',
+                                createdByUser: CreatedByUser(
+                                  email: box.read('userProfile')['email'],
+                                  name: box.read('userProfile')['name'],
+                                  profile: box.read('userProfile')['profile'],
+                                  userId: box.read('userProfile')['userid'],
+                                ),
+                              );
 
-                            final appData = Provider.of<Appdata>(
-                              context,
-                              listen: false,
-                            );
-                            var existingData = AllDataUserGetResponst.fromJson(
-                              box.read('userDataAll'),
-                            );
+                              final appData = Provider.of<Appdata>(
+                                context,
+                                listen: false,
+                              );
+                              var existingData =
+                                  AllDataUserGetResponst.fromJson(
+                                    box.read('userDataAll'),
+                                  );
 
-                            await Future.delayed(Duration(milliseconds: 100));
-                            startLoading(tempId);
-                            Get.back();
-                            Future.microtask(() async {
-                              if (privateFontWeight == FontWeight.w600) {
-                                existingData.board.add(tempBoard);
-                                appData.showMyBoards.addCreatedBoard(tempBoard);
-                                box.write('userDataAll', existingData.toJson());
+                              await Future.delayed(Duration(milliseconds: 100));
+                              startLoading(tempId);
+                              Get.back();
+                              Future.microtask(() async {
+                                if (privateFontWeight == FontWeight.w600) {
+                                  existingData.board.add(tempBoard);
+                                  appData.showMyBoards.addCreatedBoard(
+                                    tempBoard,
+                                  );
+                                  box.write(
+                                    'userDataAll',
+                                    existingData.toJson(),
+                                  );
 
-                                var responseCreateBoradList = await http.post(
-                                  Uri.parse("$url/board"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8",
-                                    "Authorization":
-                                        "Bearer ${box.read('accessToken')}",
-                                  },
-                                  body: createBoardListsPostRequestToJson(
-                                    CreateBoardListsPostRequest(
-                                      boardName: boardName,
-                                      createdBy: box.read(
-                                        'userProfile',
-                                      )['userid'],
-                                      isGroup: '0',
-                                    ),
-                                  ),
-                                );
-                                if (responseCreateBoradList.statusCode == 403) {
-                                  await AppDataLoadNewRefreshToken()
-                                      .loadNewRefreshToken();
-                                  responseCreateBoradList = await http.post(
+                                  var responseCreateBoradList = await http.post(
                                     Uri.parse("$url/board"),
                                     headers: {
                                       "Content-Type":
@@ -3797,81 +3780,88 @@ class HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                   );
-                                }
-                                if (responseCreateBoradList.statusCode == 201) {
-                                  var data = jsonDecode(
-                                    responseCreateBoradList.body,
-                                  );
-                                  // สร้างบอร์ดจริง
-                                  Board realBoard = Board(
-                                    boardId: data['boardID'],
-                                    boardName: boardName,
-                                    createdAt: DateTime.now().toIso8601String(),
-                                    createdBy: box.read(
-                                      'userProfile',
-                                    )['userid'],
-                                    createdByUser: CreatedByUser(
-                                      email: box.read('userProfile')['email'],
-                                      name: box.read('userProfile')['name'],
-                                      profile: box.read(
+                                  if (responseCreateBoradList.statusCode ==
+                                      403) {
+                                    await AppDataLoadNewRefreshToken()
+                                        .loadNewRefreshToken();
+                                    responseCreateBoradList = await http.post(
+                                      Uri.parse("$url/board"),
+                                      headers: {
+                                        "Content-Type":
+                                            "application/json; charset=utf-8",
+                                        "Authorization":
+                                            "Bearer ${box.read('accessToken')}",
+                                      },
+                                      body: createBoardListsPostRequestToJson(
+                                        CreateBoardListsPostRequest(
+                                          boardName: boardName,
+                                          createdBy: box.read(
+                                            'userProfile',
+                                          )['userid'],
+                                          isGroup: '0',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  if (responseCreateBoradList.statusCode ==
+                                      201) {
+                                    var data = jsonDecode(
+                                      responseCreateBoradList.body,
+                                    );
+                                    // สร้างบอร์ดจริง
+                                    Board realBoard = Board(
+                                      boardId: data['boardID'],
+                                      boardName: boardName,
+                                      createdAt: DateTime.now()
+                                          .toIso8601String(),
+                                      createdBy: box.read(
                                         'userProfile',
-                                      )['profile'],
-                                      userId: box.read('userProfile')['userid'],
-                                    ),
+                                      )['userid'],
+                                      createdByUser: CreatedByUser(
+                                        email: box.read('userProfile')['email'],
+                                        name: box.read('userProfile')['name'],
+                                        profile: box.read(
+                                          'userProfile',
+                                        )['profile'],
+                                        userId: box.read(
+                                          'userProfile',
+                                        )['userid'],
+                                      ),
+                                    );
+                                    await completeLoading();
+                                    appData.showMyBoards.addCreatedBoard(
+                                      realBoard,
+                                    );
+                                    appData.showMyBoards.removeCreatedBoardById(
+                                      tempId,
+                                    );
+                                    existingData.board.removeWhere(
+                                      (b) => b.boardId == tempId,
+                                    );
+                                    existingData.board.add(realBoard);
+                                    box.write(
+                                      'userDataAll',
+                                      existingData.toJson(),
+                                    );
+
+                                    // ปิดหน้าต่างและเคลียร์ฟอร์ม
+                                    if (!mounted) return;
+                                    setState(() {
+                                      boardCtl.clear();
+                                      textError = '';
+                                    });
+                                  }
+                                } else if (groupFontWeight == FontWeight.w600) {
+                                  existingData.boardgroup.add(tempBoardGroup);
+                                  appData.showMyBoards.addMemberBoard(
+                                    tempBoardGroup,
                                   );
-                                  await completeLoading();
-                                  appData.showMyBoards.addCreatedBoard(
-                                    realBoard,
-                                  );
-                                  appData.showMyBoards.removeCreatedBoardById(
-                                    tempId,
-                                  );
-                                  existingData.board.removeWhere(
-                                    (b) => b.boardId == tempId,
-                                  );
-                                  existingData.board.add(realBoard);
                                   box.write(
                                     'userDataAll',
                                     existingData.toJson(),
                                   );
 
-                                  // ปิดหน้าต่างและเคลียร์ฟอร์ม
-                                  if (!mounted) return;
-                                  setState(() {
-                                    boardCtl.clear();
-                                    textError = '';
-                                  });
-                                }
-                              } else if (groupFontWeight == FontWeight.w600) {
-                                existingData.boardgroup.add(tempBoardGroup);
-                                appData.showMyBoards.addMemberBoard(
-                                  tempBoardGroup,
-                                );
-                                box.write('userDataAll', existingData.toJson());
-
-                                var responseCreateBoradGroup = await http.post(
-                                  Uri.parse("$url/board"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8",
-                                    "Authorization":
-                                        "Bearer ${box.read('accessToken')}",
-                                  },
-                                  body: createBoardListsPostRequestToJson(
-                                    CreateBoardListsPostRequest(
-                                      boardName: boardName,
-                                      createdBy: box.read(
-                                        'userProfile',
-                                      )['userid'],
-                                      isGroup: '1',
-                                    ),
-                                  ),
-                                );
-                                if (responseCreateBoradGroup.statusCode ==
-                                    403) {
-                                  await AppDataLoadNewRefreshToken()
-                                      .loadNewRefreshToken();
-                                  responseCreateBoradGroup = await http.post(
+                                  var responseCreateBoradGroup = await http.post(
                                     Uri.parse("$url/board"),
                                     headers: {
                                       "Content-Type":
@@ -3889,75 +3879,101 @@ class HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                   );
-                                }
-                                if (responseCreateBoradGroup.statusCode ==
-                                    201) {
-                                  var data = jsonDecode(
-                                    responseCreateBoradGroup.body,
-                                  );
-                                  // สร้างบอร์ดจริง
-                                  Boardgroup realBoard = Boardgroup(
-                                    boardId: data['boardID'],
-                                    boardName: boardName,
-                                    createdAt: DateTime.now().toIso8601String(),
-                                    createdBy: box.read(
-                                      'userProfile',
-                                    )['userid'],
-                                    token: data['deep_link'],
-                                    createdByUser: CreatedByUser(
-                                      email: box.read('userProfile')['email'],
-                                      name: box.read('userProfile')['name'],
-                                      profile: box.read(
+                                  if (responseCreateBoradGroup.statusCode ==
+                                      403) {
+                                    await AppDataLoadNewRefreshToken()
+                                        .loadNewRefreshToken();
+                                    responseCreateBoradGroup = await http.post(
+                                      Uri.parse("$url/board"),
+                                      headers: {
+                                        "Content-Type":
+                                            "application/json; charset=utf-8",
+                                        "Authorization":
+                                            "Bearer ${box.read('accessToken')}",
+                                      },
+                                      body: createBoardListsPostRequestToJson(
+                                        CreateBoardListsPostRequest(
+                                          boardName: boardName,
+                                          createdBy: box.read(
+                                            'userProfile',
+                                          )['userid'],
+                                          isGroup: '1',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  if (responseCreateBoradGroup.statusCode ==
+                                      201) {
+                                    var data = jsonDecode(
+                                      responseCreateBoradGroup.body,
+                                    );
+                                    // สร้างบอร์ดจริง
+                                    Boardgroup realBoard = Boardgroup(
+                                      boardId: data['boardID'],
+                                      boardName: boardName,
+                                      createdAt: DateTime.now()
+                                          .toIso8601String(),
+                                      createdBy: box.read(
                                         'userProfile',
-                                      )['profile'],
-                                      userId: box.read('userProfile')['userid'],
-                                    ),
-                                  );
-                                  await completeLoading();
-                                  appData.showMyBoards.addMemberBoard(
-                                    realBoard,
-                                  );
-                                  appData.showMyBoards.removeMemberBoardById(
-                                    tempId,
-                                  );
-                                  existingData.boardgroup.removeWhere(
-                                    (b) => b.boardId == tempId,
-                                  );
-                                  existingData.boardgroup.add(realBoard);
-                                  box.write(
-                                    'userDataAll',
-                                    existingData.toJson(),
-                                  );
+                                      )['userid'],
+                                      token: data['deep_link'],
+                                      createdByUser: CreatedByUser(
+                                        email: box.read('userProfile')['email'],
+                                        name: box.read('userProfile')['name'],
+                                        profile: box.read(
+                                          'userProfile',
+                                        )['profile'],
+                                        userId: box.read(
+                                          'userProfile',
+                                        )['userid'],
+                                      ),
+                                    );
+                                    await completeLoading();
+                                    appData.showMyBoards.addMemberBoard(
+                                      realBoard,
+                                    );
+                                    appData.showMyBoards.removeMemberBoardById(
+                                      tempId,
+                                    );
+                                    existingData.boardgroup.removeWhere(
+                                      (b) => b.boardId == tempId,
+                                    );
+                                    existingData.boardgroup.add(realBoard);
+                                    box.write(
+                                      'userDataAll',
+                                      existingData.toJson(),
+                                    );
 
-                                  // ปิดหน้าต่างและเคลียร์ฟอร์ม
-                                  if (!mounted) return;
-                                  setState(() {
-                                    boardCtl.clear();
-                                    textError = '';
-                                  });
+                                    // ปิดหน้าต่างและเคลียร์ฟอร์ม
+                                    if (!mounted) return;
+                                    setState(() {
+                                      boardCtl.clear();
+                                      textError = '';
+                                    });
+                                  }
                                 }
-                              }
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(width, height * 0.05),
-                            backgroundColor: Color(0xFF007AFF),
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(width, height * 0.05),
+                              backgroundColor: Color(0xFF007AFF),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Create new board',
+                              style: TextStyle(
+                                fontSize: Get.textTheme.titleMedium!.fontSize!,
+                                fontWeight: FontWeight.normal,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            'Create new board',
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleMedium!.fontSize!,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

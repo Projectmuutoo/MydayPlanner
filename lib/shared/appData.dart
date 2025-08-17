@@ -249,6 +249,15 @@ class AppDataShareBoardFunction {
     int boardId, {
     required Future<void> Function() loadDataAsync,
   }) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        content: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
+    );
     var result = await FirebaseFirestore.instance
         .collection('Boards')
         .doc(boardId.toString())
@@ -270,6 +279,7 @@ class AppDataShareBoardFunction {
           (box.read('userProfile')['userid'] ?? '');
       final boardid = data['BoardID'].toString();
       final boardName = data['BoardName'].toString();
+      Get.back();
 
       showModalBottomSheet(
         context: context,
@@ -283,6 +293,7 @@ class AppDataShareBoardFunction {
                 height: height * 0.9,
                 child: Scaffold(
                   body: Container(
+                    padding: EdgeInsets.only(top: height * 0.01),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.vertical(
@@ -294,7 +305,7 @@ class AppDataShareBoardFunction {
                         // Scrollable content
                         Expanded(
                           child: Padding(
-                            padding: EdgeInsets.all(16),
+                            padding: EdgeInsets.all(10),
                             child: ListView(
                               children: [
                                 // Handle bar
@@ -308,7 +319,7 @@ class AppDataShareBoardFunction {
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 16),
+                                SizedBox(height: 10),
 
                                 // Title
                                 Text(
@@ -1468,7 +1479,12 @@ class AppDataShareShowEditInfo {
                                     if (boardToken.isNotEmpty &&
                                         pageSend != 'boardShowTasks')
                                       GestureDetector(
-                                        onTap: () {
+                                        onTap: () async {
+                                          if (pageSend == null) {
+                                            await checkExpiresTokenBoard(
+                                              board.boardId,
+                                            );
+                                          }
                                           AppDataShareBoardFunction().shareTask(
                                             context,
                                             board.boardId,
@@ -2416,7 +2432,7 @@ class AppDataShareShowEditInfo {
                 );
                 if (response2.statusCode == 403) {
                   await AppDataLoadNewRefreshToken().loadNewRefreshToken();
-                  response = await http.get(
+                  response2 = await http.get(
                     Uri.parse("$url/user/data"),
                     headers: {
                       "Content-Type": "application/json; charset=utf-8",
@@ -2428,6 +2444,23 @@ class AppDataShareShowEditInfo {
                   final newDataJson = allDataUserGetResponstFromJson(
                     response2.body,
                   );
+                  final result = await FirebaseFirestore.instance
+                      .collection('Notifications')
+                      .doc(userProfiles['email'].toString())
+                      .collection('InviteJoin')
+                      .get();
+
+                  final data = result.docs;
+                  for (var doc in data) {
+                    if (doc['BoardId'] == boardId) {
+                      FirebaseFirestore.instance
+                          .collection('Notifications')
+                          .doc(userProfiles['email'].toString())
+                          .collection('InviteJoin')
+                          .doc('${boardId}from-${doc['Inviter']}')
+                          .delete();
+                    }
+                  }
                   box.write('userDataAll', newDataJson.toJson());
                   Get.snackbar('Successfully exited the board.', '');
                   Get.offAll(() => NavbarPage());

@@ -4146,6 +4146,23 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                   final newDataJson = model.allDataUserGetResponstFromJson(
                     response2.body,
                   );
+                  final result = await FirebaseFirestore.instance
+                      .collection('Notifications')
+                      .doc(userProfiles['email'].toString())
+                      .collection('InviteJoin')
+                      .get();
+
+                  final data = result.docs;
+                  for (var doc in data) {
+                    if (doc['BoardId'] == boardId) {
+                      FirebaseFirestore.instance
+                          .collection('Notifications')
+                          .doc(userProfiles['email'].toString())
+                          .collection('InviteJoin')
+                          .doc('${boardId}from-${doc['Inviter']}')
+                          .delete();
+                    }
+                  }
                   box.write('userDataAll', newDataJson.toJson());
                   Get.snackbar('Successfully exited the board.', '');
                   Get.offAll(() => NavbarPage());

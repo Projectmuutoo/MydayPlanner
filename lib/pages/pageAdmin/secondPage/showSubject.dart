@@ -191,36 +191,53 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: width * 0.05),
                 child: Column(
-                  children: [
-                    Expanded(
-                      child: Scrollbar(
-                        interactive: true,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: isLoadings || showShimmer
-                                ? List.generate(
-                                    itemCount,
-                                    (index) => Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: height * 0.01,
-                                      ),
-                                      child: Shimmer.fromColors(
-                                        baseColor: Color(0xFFF7F7F7),
-                                        highlightColor: Colors.grey[300]!,
-                                        child: Container(
-                                          width: width,
-                                          height: height * 0.065,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : [
+                  children: isLoadings || showShimmer
+                      ? List.generate(
+                          itemCount,
+                          (index) => Padding(
+                            padding: EdgeInsets.only(bottom: height * 0.01),
+                            child: Shimmer.fromColors(
+                              baseColor: Color(0xFFF7F7F7),
+                              highlightColor: Colors.grey[300]!,
+                              child: Container(
+                                width: width,
+                                height: height * 0.065,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : reportData
+                            .where(
+                              (item) =>
+                                  item['Category'] ==
+                                  context.read<Appdata>().subject.subjectReport,
+                            )
+                            .isEmpty
+                      ? [
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                "No data report",
+                                style: TextStyle(
+                                  fontSize:
+                                      Get.textTheme.titleMedium!.fontSize!,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]
+                      : [
+                          Expanded(
+                            child: Scrollbar(
+                              interactive: true,
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: [
                                     ...reportData
                                         .where(
                                           (item) =>
@@ -346,11 +363,11 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
                                           );
                                         }),
                                   ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ],
+                        ],
                 ),
               ),
             ),

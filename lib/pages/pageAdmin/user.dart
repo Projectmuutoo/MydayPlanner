@@ -210,114 +210,93 @@ class _UserPageState extends State<UserPage> {
                                                   ? width * 0.02
                                                   : 0.0,
                                             ),
-                                            child: Material(
-                                              color: Color(0xFFF2F2F6),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: InkWell(
-                                                onTap: () {},
+                                            child: Container(
+                                              width: width,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: width * 0.03,
+                                                vertical: height * 0.01,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Color(0xFFF2F2F6),
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                child: Container(
-                                                  width: width,
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: width * 0.03,
-                                                    vertical: height * 0.01,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      data['email'].length > 25
-                                                          ? SizedBox(
-                                                              height:
-                                                                  height *
-                                                                  0.025,
-                                                              width:
-                                                                  width * 0.45,
-                                                              child: Marquee(
-                                                                text:
-                                                                    data['email'],
-                                                                style: TextStyle(
-                                                                  fontSize: Get
-                                                                      .textTheme
-                                                                      .titleSmall!
-                                                                      .fontSize!,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .normal,
-                                                                ),
-                                                                scrollAxis: Axis
-                                                                    .horizontal,
-                                                                blankSpace:
-                                                                    20.0,
-                                                                velocity: 30.0,
-                                                                pauseAfterRound:
-                                                                    Duration(
-                                                                      seconds:
-                                                                          1,
-                                                                    ),
-                                                                startPadding: 0,
-                                                                accelerationDuration:
-                                                                    Duration(
-                                                                      seconds:
-                                                                          1,
-                                                                    ),
-                                                                accelerationCurve:
-                                                                    Curves
-                                                                        .linear,
-                                                                decelerationDuration:
-                                                                    Duration(
-                                                                      milliseconds:
-                                                                          500,
-                                                                    ),
-                                                                decelerationCurve:
-                                                                    Curves
-                                                                        .easeOut,
-                                                              ),
-                                                            )
-                                                          : Text(
-                                                              data['email'],
-                                                              style: TextStyle(
-                                                                fontSize: Get
-                                                                    .textTheme
-                                                                    .titleSmall!
-                                                                    .fontSize!,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .normal,
-                                                              ),
-                                                            ),
-                                                      Row(
-                                                        children: [
-                                                          Text(
-                                                            timeAgo(
-                                                              data['updated_at'],
-                                                            ),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  data['email'].length > 25
+                                                      ? SizedBox(
+                                                          height:
+                                                              height * 0.025,
+                                                          width: width * 0.45,
+                                                          child: Marquee(
+                                                            text: data['email'],
                                                             style: TextStyle(
                                                               fontSize: Get
                                                                   .textTheme
-                                                                  .labelMedium!
+                                                                  .titleSmall!
                                                                   .fontSize!,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .normal,
-                                                              color: Colors
-                                                                  .black54,
                                                             ),
+                                                            scrollAxis:
+                                                                Axis.horizontal,
+                                                            blankSpace: 20.0,
+                                                            velocity: 30.0,
+                                                            pauseAfterRound:
+                                                                Duration(
+                                                                  seconds: 1,
+                                                                ),
+                                                            startPadding: 0,
+                                                            accelerationDuration:
+                                                                Duration(
+                                                                  seconds: 1,
+                                                                ),
+                                                            accelerationCurve:
+                                                                Curves.linear,
+                                                            decelerationDuration:
+                                                                Duration(
+                                                                  milliseconds:
+                                                                      500,
+                                                                ),
+                                                            decelerationCurve:
+                                                                Curves.easeOut,
                                                           ),
-                                                        ],
+                                                        )
+                                                      : Text(
+                                                          data['email'],
+                                                          style: TextStyle(
+                                                            fontSize: Get
+                                                                .textTheme
+                                                                .titleSmall!
+                                                                .fontSize!,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .normal,
+                                                          ),
+                                                        ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        timeAgo(
+                                                          data['updated_at'],
+                                                        ),
+                                                        style: TextStyle(
+                                                          fontSize: Get
+                                                              .textTheme
+                                                              .labelMedium!
+                                                              .fontSize!,
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          color: Colors.black54,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
-                                                ),
+                                                ],
                                               ),
                                             ),
                                           );

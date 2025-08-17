@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:math' show Random;
 
@@ -975,7 +974,6 @@ class NotificationService {
 
         if (response.actionId == 'SNOOZE') {
           // ทำงานเมื่อกด Snooze
-          log("User tapped Snooze");
           final data = jsonDecode(payload!) as Map<String, dynamic>;
           String taskid = data['taskid'];
           snooze(taskid);
@@ -989,7 +987,8 @@ class NotificationService {
 
         if (payload != null) {
           if (payload == 'notification') {
-            Get.to(() => NotificationPage());
+            _NavbarPageState.pendingIndex = 4;
+            Get.offAll(() => NavbarPage());
           } else {
             final rawData = box.read('userDataAll');
             if (rawData == null) return;
@@ -1097,7 +1096,6 @@ class NotificationService {
     final index = existingData.tasks.indexWhere(
       (t) => t.taskId.toString() == id,
     );
-    log(index.toString());
     if (index == -1) return; // ออกจากฟังก์ชัน ถ้าไม่เจอ task
 
     // เปลี่ยนสถานะของ task เป็นเสร็จสิ้น

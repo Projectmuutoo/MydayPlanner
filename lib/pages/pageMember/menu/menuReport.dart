@@ -19,7 +19,6 @@ class MenureportPage extends StatefulWidget {
 class _MenureportPageState extends State<MenureportPage> {
   bool openSubject = false;
   var box = GetStorage();
-
   String? selectedSubject;
   int selectedIndex = 0;
   TextEditingController detailsCtl = TextEditingController();
