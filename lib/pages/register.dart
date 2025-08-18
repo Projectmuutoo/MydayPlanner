@@ -1385,7 +1385,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           Row(
                             children: [
-                              InkWell(
+                              GestureDetector(
                                 onTap: () {
                                   blockOTP = false;
                                   Get.back();
@@ -1441,7 +1441,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           Row(
                             children: [
                               Text(
-                                'We will send the otp code to the email you entered',
+                                'We will send an OTP code to the email address',
                                 style: TextStyle(
                                   fontSize: Get.textTheme.titleSmall!.fontSize,
                                   fontWeight: FontWeight.normal,
@@ -1474,6 +1474,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               fontSize: Get.textTheme.titleSmall!.fontSize,
                             ),
                             decoration: InputDecoration(
+                              enabled: false,
                               hintText: isTyping
                                   ? ''
                                   : 'Enter your email address…',
@@ -1500,6 +1501,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 borderSide: BorderSide(width: 0.5),
                               ),
                               focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(width: 0.5),
+                              ),
+                              disabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide(width: 0.5),
                               ),

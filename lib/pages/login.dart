@@ -969,7 +969,7 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Row(
                             children: [
-                              InkWell(
+                              GestureDetector(
                                 onTap: () async {
                                   blockOTP = false;
                                   await googleSignIn.signOut();
@@ -1176,7 +1176,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               fixedSize: Size(width, height * 0.04),
-                              backgroundColor: Colors.black54,
+                              backgroundColor: Color(0xFF007AFF),
                               elevation: 1,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

@@ -1045,6 +1045,9 @@ class NotificationService {
     required String body,
     String payload = 'default_payload',
   }) {
+    Future.delayed(Duration(seconds: 5), () {
+      _NavbarPageState().fetchDataOnResume();
+    });
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
           'default_channel',

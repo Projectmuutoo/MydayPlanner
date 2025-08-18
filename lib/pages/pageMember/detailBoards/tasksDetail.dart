@@ -5753,14 +5753,29 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                       onPressed: () async {
                         try {
                           // เลือกไฟล์จากเครื่อง
-                          FilePickerResult?
-                          result = await FilePicker.platform.pickFiles(
-                            type: FileType.any, // หรือระบุประเภทไฟล์ที่ต้องการ
-                            allowMultiple: false, // เลือกได้ไฟล์เดียว
-                          );
+                          FilePickerResult? result = await FilePicker.platform
+                              .pickFiles(
+                                type: FileType.any,
+                                allowMultiple: false,
+                              );
 
                           if (result != null) {
                             PlatformFile file = result.files.first;
+
+                            // ✅ ตรวจสอบขนาดไฟล์ (ไม่เกิน 10 MB)
+                            const maxFileSize = 10 * 1024 * 1024; // 10 MB
+                            if (file.size > maxFileSize) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'File size must be less than 10 MB',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return; // ❌ หยุดการทำงาน ไม่ให้เลือกไฟล์นี้
+                            }
+
                             setState(() {
                               selectedFileName = file.name;
                               selectedFilePath = file.path ?? '';
@@ -5774,7 +5789,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             }
                           }
                         } catch (e) {
-                          // จัดการ error
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Error selecting file: $e'),
