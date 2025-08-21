@@ -161,7 +161,7 @@ class _NavbarPageState extends State<NavbarPage>
     checkExpiresRefreshToken();
     checkInSystem();
     startRealtimeMonitoring();
-    _timer2 = Timer.periodic(Duration(seconds: 1), (_) async {
+    _timer2 = Timer.periodic(Duration(seconds: 10), (_) {
       showNotificationsCount();
     });
     _setupUriListener();
@@ -720,7 +720,7 @@ class _NavbarPageState extends State<NavbarPage>
           }
         });
 
-    _timer = Timer.periodic(Duration(seconds: 10), (_) {
+    _timer = Timer.periodic(Duration(seconds: 30), (_) {
       if (createdAtDate == null) return;
 
       DateTime expiryDate = createdAtDate!.add(Duration(seconds: expiresIn!));
@@ -1044,6 +1044,7 @@ class NotificationService {
     required String title,
     required String body,
     String payload = 'default_payload',
+    String type = 'default_type',
   }) {
     Future.delayed(Duration(seconds: 5), () {
       _NavbarPageState().fetchDataOnResume();
@@ -1058,7 +1059,7 @@ class NotificationService {
           ticker: 'ticker',
           icon: '@drawable/logo',
           color: Color(0xFF3B82F6),
-          actions: payload != 'notification'
+          actions: type == 'due' || type == 'snooze'
               ? <AndroidNotificationAction>[
                   AndroidNotificationAction(
                     'SNOOZE',
@@ -1125,6 +1126,7 @@ class NotificationService {
         },
       );
     }
+    _NavbarPageState().fetchDataOnResume();
   }
 
   static Future<void> snooze(String id) async {

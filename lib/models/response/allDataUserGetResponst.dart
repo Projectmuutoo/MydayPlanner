@@ -138,7 +138,6 @@ class Boardgroup {
 }
 
 class Task {
-  List<Assigned> assigned;
   List<Attachment> attachments;
   dynamic boardId;
   List<Checklist> checklists;
@@ -152,7 +151,6 @@ class Task {
   String taskName;
 
   Task({
-    required this.assigned,
     required this.attachments,
     required this.boardId,
     required this.checklists,
@@ -167,9 +165,6 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-    assigned: List<Assigned>.from(
-      json["Assigned"].map((x) => Assigned.fromJson(x)),
-    ),
     attachments: List<Attachment>.from(
       json["Attachments"].map((x) => Attachment.fromJson(x)),
     ),
@@ -190,7 +185,6 @@ class Task {
   );
 
   Map<String, dynamic> toJson() => {
-    "Assigned": List<dynamic>.from(assigned.map((x) => x.toJson())),
     "Attachments": List<dynamic>.from(attachments.map((x) => x.toJson())),
     "BoardID": boardId,
     "Checklists": List<dynamic>.from(checklists.map((x) => x.toJson())),
@@ -202,42 +196,6 @@ class Task {
     "Status": status,
     "TaskID": taskId,
     "TaskName": taskName,
-  };
-}
-
-class Assigned {
-  int assId;
-  String assignAt;
-  String email;
-  int taskId;
-  int userId;
-  String userName;
-
-  Assigned({
-    required this.assId,
-    required this.assignAt,
-    required this.email,
-    required this.taskId,
-    required this.userId,
-    required this.userName,
-  });
-
-  factory Assigned.fromJson(Map<String, dynamic> json) => Assigned(
-    assId: json["AssID"],
-    assignAt: json["AssignAt"],
-    email: json["Email"],
-    taskId: json["TaskID"],
-    userId: json["UserID"],
-    userName: json["UserName"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "AssID": assId,
-    "AssignAt": assignAt,
-    "Email": email,
-    "TaskID": taskId,
-    "UserID": userId,
-    "UserName": userName,
   };
 }
 
@@ -280,14 +238,12 @@ class Attachment {
 class Checklist {
   int checklistId;
   String checklistName;
-  String createdAt;
   String status;
   int taskId;
 
   Checklist({
     required this.checklistId,
     required this.checklistName,
-    required this.createdAt,
     required this.status,
     required this.taskId,
   });
@@ -295,7 +251,6 @@ class Checklist {
   factory Checklist.fromJson(Map<String, dynamic> json) => Checklist(
     checklistId: json["ChecklistID"],
     checklistName: json["ChecklistName"],
-    createdAt: json["CreatedAt"],
     status: json["Status"],
     taskId: json["TaskID"],
   );
@@ -303,7 +258,6 @@ class Checklist {
   Map<String, dynamic> toJson() => {
     "ChecklistID": checklistId,
     "ChecklistName": checklistName,
-    "CreatedAt": createdAt,
     "Status": status,
     "TaskID": taskId,
   };
@@ -314,7 +268,7 @@ class Notification {
   String createdAt;
   String dueDate;
   String isSend;
-  int notificationId;
+  int? notificationId;
   String recurringPattern;
   int taskId;
 

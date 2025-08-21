@@ -109,6 +109,33 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       child: Scaffold(
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: width * 0.05,
+              right: width * 0.05,
+              bottom: height * 0.01,
+            ),
+            child: Row(
+              children: [
+                SvgPicture.string(
+                  '<svg fill="#000000" height="64px" width="64px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 276.715 276.715" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M138.357,0C62.066,0,0,62.066,0,138.357s62.066,138.357,138.357,138.357s138.357-62.066,138.357-138.357 S214.648,0,138.357,0z M138.357,258.715C71.992,258.715,18,204.723,18,138.357S71.992,18,138.357,18 s120.357,53.992,120.357,120.357S204.723,258.715,138.357,258.715z"></path> <path d="M194.798,160.903c-4.188-2.677-9.753-1.454-12.432,2.732c-8.694,13.593-23.503,21.708-39.614,21.708 c-25.908,0-46.985-21.078-46.985-46.986s21.077-46.986,46.985-46.986c15.633,0,30.2,7.747,38.968,20.723 c2.782,4.117,8.375,5.201,12.496,2.418c4.118-2.782,5.201-8.377,2.418-12.496c-12.118-17.937-32.262-28.645-53.882-28.645 c-35.833,0-64.985,29.152-64.985,64.986s29.152,64.986,64.985,64.986c22.281,0,42.759-11.218,54.778-30.009 C200.208,169.147,198.985,163.582,194.798,160.903z"></path> </g> </g></svg>',
+                  height: height * 0.015,
+                  fit: BoxFit.contain,
+                  color: Colors.black54,
+                ),
+                Text(
+                  ' 2154 & 2172, ${getCurrentDayAndDate()} Mydayplanner.',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.labelMedium!.fontSize!,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -519,27 +546,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          height: selectLogin ? height * 0.01 : height * 0.05,
-                        ),
-                        Row(
-                          children: [
-                            SvgPicture.string(
-                              '<svg fill="#000000" height="64px" width="64px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 276.715 276.715" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M138.357,0C62.066,0,0,62.066,0,138.357s62.066,138.357,138.357,138.357s138.357-62.066,138.357-138.357 S214.648,0,138.357,0z M138.357,258.715C71.992,258.715,18,204.723,18,138.357S71.992,18,138.357,18 s120.357,53.992,120.357,120.357S204.723,258.715,138.357,258.715z"></path> <path d="M194.798,160.903c-4.188-2.677-9.753-1.454-12.432,2.732c-8.694,13.593-23.503,21.708-39.614,21.708 c-25.908,0-46.985-21.078-46.985-46.986s21.077-46.986,46.985-46.986c15.633,0,30.2,7.747,38.968,20.723 c2.782,4.117,8.375,5.201,12.496,2.418c4.118-2.782,5.201-8.377,2.418-12.496c-12.118-17.937-32.262-28.645-53.882-28.645 c-35.833,0-64.985,29.152-64.985,64.986s29.152,64.986,64.985,64.986c22.281,0,42.759-11.218,54.778-30.009 C200.208,169.147,198.985,163.582,194.798,160.903z"></path> </g> </g></svg>',
-                              height: height * 0.015,
-                              fit: BoxFit.contain,
-                              color: Colors.black54,
-                            ),
-                            Text(
-                              ' 2154 & 2172, ${getCurrentDayAndDate()} Mydayplanner.',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ],
@@ -567,6 +573,7 @@ class _LoginPageState extends State<LoginPage> {
       url = await loadAPIEndpoint();
       setState(() {
         loadingDialogGoogle = true;
+        showNotification('');
       });
 
       await googleSignIn.initialize();
@@ -621,6 +628,9 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         if (responseAll.statusCode != 200) {
+          await googleSignIn.signOut();
+          await FirebaseAuth.instance.signOut();
+          showNotification('Something went wrong. Please try again.');
           Get.back();
           return;
         }
@@ -671,6 +681,8 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
         setState(() {
           loadingDialogGoogle = false;
         });
@@ -733,7 +745,105 @@ class _LoginPageState extends State<LoginPage> {
       Get.back();
 
       if (responseGetuser.statusCode == 403) {
-        showNotification('Your account must verify your email first');
+        if (!mounted) return;
+        final results = await FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(emailCtl.text.trim())
+            .get();
+        final data = results.data();
+        if (data != null && data['password'] == 'needToChange') {
+          Get.defaultDialog(
+            title: "",
+            titlePadding: EdgeInsets.zero,
+            backgroundColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+              vertical: MediaQuery.of(context).size.height * 0.02,
+            ),
+            content: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/question.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Reset password?',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize!,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                SizedBox(height: MediaQuery.of(context).size.width * 0.02),
+                Text(
+                  'You must reset your password before confirming your email',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleSmall!.fontSize!,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                  Get.to(() => ResetpasswordPage());
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color(0xFF007AFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Reset password',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(
+                    MediaQuery.of(context).size.width,
+                    MediaQuery.of(context).size.height * 0.05,
+                  ),
+                  backgroundColor: Color(0xFFE7F3FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                ),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleMedium!.fontSize!,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        if (data != null && data['password'] == 'needToChange') {
+          showNotification('Your password needs to be changed');
+          return;
+        } else {
+          showNotification('Your account must verify your email first');
+        }
         Get.defaultDialog(
           title: "",
           titlePadding: EdgeInsets.zero,
@@ -845,6 +955,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (responseAll.statusCode != 200) {
+        showNotification('Something went wrong. Please try again.');
         Get.back();
         return;
       }
@@ -940,6 +1051,9 @@ class _LoginPageState extends State<LoginPage> {
       isScrollControlled: true,
       isDismissible: false,
       enableDrag: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {

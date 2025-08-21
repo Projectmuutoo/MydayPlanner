@@ -408,7 +408,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                 children: [
                   // Header Container
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(16),
                     color: Colors.white,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,12 +416,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                         Row(
                           children: [
                             // Back Button
-                            IconButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, 'refresh'),
-                              icon: const Icon(Icons.arrow_back),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context, 'refresh'),
+                              child: const Icon(Icons.arrow_back),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 12),
 
                             // Title - แก้ไข Layout ของ Column
                             Expanded(
@@ -504,7 +503,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                           // กรอบครอบส่วนที่ต้องการ
                           Container(
                             margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -968,7 +967,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       final dateTime = DateTime.parse(timestampStr);
       final formattedDate = DateFormat(
         'dd MMM yyyy HH:mm',
-        'th',
+        'en',
       ).format(dateTime);
       return 'Created at $formattedDate';
     } catch (e) {
@@ -1791,10 +1790,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       } else {
         // สำหรับ Individual Task
+
         isSend = firstNotification['IsSend'] ?? true;
+        String dateSource = firstNotification['DueDate'].isNotEmpty
+            ? firstNotification['DueDate']
+            : firstNotification['CreatedAt'];
+
         if (firstNotification['DueDate'] != null) {
           // แปลงจาก UTC เป็น local time
-          dueDate = DateTime.parse(firstNotification['DueDate']).toLocal();
+          dueDate = DateTime.parse(dateSource).toLocal();
         }
       }
 
@@ -1984,8 +1988,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       }
     } else {
+      String dateSource = notification['DueDate'].isNotEmpty
+          ? notification['DueDate']
+          : notification['CreatedAt'];
       if (notification['DueDate'] != null) {
-        return DateTime.parse(notification['DueDate']);
+        return DateTime.parse(dateSource);
       }
     }
     return null;
@@ -2673,10 +2680,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       int? index;
       int? notificationId;
       String? boardId;
-
+      log((combinedData).toString());
       if (isGroupTask) {
         taskId = combinedData['task']['taskID'];
-        notificationId = combinedData['notifications'][0]['notificationID'];
+        if (combinedData['notifications'] != null &&
+            combinedData['notifications'].isNotEmpty) {
+          notificationId = combinedData['notifications'][0]['notificationID'];
+        } else {
+          notificationId = null;
+        }
         boardId = combinedData['board']['BoardID'].toString();
         if (taskId == null) {
           log('Error: taskId is null for group task');
@@ -2700,12 +2712,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         return;
       }
 
-      // ตรวจสอบว่า notification มีอยู่จริง
-      if (existingData.tasks[index].notifications.isEmpty) {
-        log('Error: No notifications found for this task');
-        return;
-      }
-
       DateTime dueDate;
       if (selectedReminder != null && selectedReminder!.isNotEmpty) {
         if (selectedReminder!.startsWith('Custom:')) {
@@ -2716,6 +2722,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       } else {
         dueDate = DateTime.now();
       }
+
       DateTime? beforeDueDate;
       if (!_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
         beforeDueDate = calculateNotificationTime(
@@ -2734,13 +2741,90 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // อัพเดทข้อมูลใน existingData
       final newDueDateString = dueDate.toUtc().toIso8601String();
-      final newBeforeDueDateString =
-          selectedBeforeMinutes != null && beforeDueDate != null
+      final newBeforeDueDateString = selectedBeforeMinutes != null
           ? beforeDueDate.toUtc().toIso8601String()
           : null;
       final newIsSend = '0';
       final newRecurringPattern = (selectedRepeat ?? 'Onetime').toLowerCase();
 
+      // ตรวจสอบว่า notification มีอยู่จริง
+      if (existingData.tasks[index].notifications.isEmpty) {
+        log('Error: No notifications found for this task');
+        final url = await loadAPIEndpoint();
+        var requestBody = {
+          "due_date": newDueDateString,
+          "before_due_date": newBeforeDueDateString,
+          "recurring_pattern": newRecurringPattern,
+          "is_send": newIsSend,
+        };
+
+        var headers = {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Bearer ${box.read('accessToken')}",
+        };
+
+        var response = await http.put(
+          Uri.parse("$url/notification/update/$taskId"),
+          headers: headers,
+          body: json.encode(requestBody),
+        );
+
+        if (response.statusCode == 403) {
+          log("Token expired, refreshing...");
+          await loadNewRefreshToken();
+          headers["Authorization"] = "Bearer ${box.read('accessToken')}";
+
+          response = await http.put(
+            Uri.parse("$url/notification/update/$taskId"),
+            headers: headers,
+            body: json.encode(requestBody),
+          );
+        }
+
+        if (response.statusCode == 201) {
+          // API สำเร็จ
+          log("✅ API request successful");
+          final body = json.decode(response.body);
+          // Setup notification
+          await _setupTaskNotifications(
+            body['notification']['task_id'],
+            body['notification']['notification_id'],
+            dueDate,
+            appData,
+            isGroupTask,
+            boardId!,
+          );
+          final newNotification = data.Notification(
+            beforeDueDate: selectedBeforeMinutes != null
+                ? beforeDueDate.toUtc().toIso8601String()
+                : '',
+            createdAt: DateTime.now().toIso8601String(),
+            dueDate: newDueDateString,
+            isSend: newIsSend,
+            notificationId: body['notification']['notification_id'],
+            recurringPattern: newRecurringPattern,
+            taskId: body['notification']['task_id'],
+          );
+
+          existingData.tasks[index].notifications.add(newNotification);
+
+          // อัพเดท storage ด้วย task ที่เพิ่งมี notification
+          box.write('userDataAll', existingData.toJson());
+
+          // แสดง success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Due date updated successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            setState(() {});
+            loadDataAsync();
+          }
+        }
+        return;
+      }
       // 1. อัพเดท local storage
       existingData.tasks[index].notifications[0].dueDate = newDueDateString;
       existingData.tasks[index].notifications[0].isSend = newIsSend;
@@ -2752,7 +2836,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       if (!isGroupTask && currentTask != null) {
         // สร้าง Task object ใหม่ที่มีข้อมูลอัปเดท
         final updatedTask = data.Task(
-          assigned: currentTask.assigned,
           attachments: currentTask.attachments,
           boardId: currentTask.boardId,
           checklists: currentTask.checklists,
@@ -2831,15 +2914,17 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           body: json.encode(requestBody),
         );
       }
-
-      if (response.statusCode == 200) {
+      log(response.body.toString());
+      if (response.statusCode == 200 || response.statusCode == 201) {
         // API สำเร็จ
         log("✅ API request successful");
-
+        final body = jsonDecode(response.body);
         // Setup notification
         _setupTaskNotifications(
           taskId,
-          notificationId!,
+          response.statusCode == 201
+              ? body['notification']['notification_id']
+              : notificationId!,
           dueDate,
           appData,
           isGroupTask,
@@ -2943,6 +3028,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     bool isGroupTask,
     String boardiD,
   ) async {
+    await _waitForDocumentCreation(realTaskId, notificationID, isGroupTask);
     await FirebaseFirestore.instance
         .collection(isGroupTask ? 'BoardTasks' : 'Notifications')
         .doc(
@@ -2979,6 +3065,45 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                 'isNotiRemindShow': false,
               },
             });
+      }
+    }
+  }
+
+  Future<void> _waitForDocumentCreation(
+    int realId,
+    int notificationID,
+    bool isGroupTask,
+  ) async {
+    int maxRetries = 10; // จำกัดจำนวนครั้งที่ลอง
+    int retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        DocumentSnapshot doc;
+
+        doc = await FirebaseFirestore.instance
+            .collection(isGroupTask ? 'BoardTasks' : 'Notifications')
+            .doc(
+              isGroupTask
+                  ? realId.toString()
+                  : box.read('userProfile')['email'],
+            )
+            .collection(isGroupTask ? 'Notifications' : 'Tasks')
+            .doc(notificationID.toString())
+            .get();
+
+        if (doc.exists) {
+          // Document ถูกสร้างแล้ว สามารถทำงานต่อได้
+          return;
+        }
+
+        // หาก document ยังไม่ถูกสร้าง รอ 500ms แล้วลองใหม่
+        retryCount++;
+        await Future.delayed(Duration(milliseconds: 500));
+      } catch (e) {
+        // หากเกิดข้อผิดพลาด รอ 500ms แล้วลองใหม่
+        retryCount++;
+        await Future.delayed(Duration(milliseconds: 500));
       }
     }
   }
@@ -4313,6 +4438,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       }
     } catch (e) {
       log('Exception during description update: $e');
+      if (!mounted) return;
       setState(() {
         if (isgroup) {
           combinedData['task']['description'] = oldDescription ?? "";
@@ -4364,7 +4490,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   'status': item.status,
                   'checklist_id': item.checklistId,
                   'task_id': item.taskId,
-                  'created_at': item.createdAt,
                 };
               } else {
                 // สร้าง copy ของ Map เพื่อป้องกันการ reference ไปยัง object เดียวกัน
@@ -4461,7 +4586,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     final tempChecklist = data.Checklist(
       checklistId: tempChecklistId,
       checklistName: checklistName,
-      createdAt: DateTime.now().toIso8601String(),
       status: '0', // สถานะชั่วคราว
       taskId: taskId,
     );
@@ -4906,8 +5030,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                 checklistItem['checklistId'] ??
                 int.tryParse(checklistItem['id'] ?? ''),
             checklistName: checklistItem['checklist_name'] ?? '',
-            createdAt:
-                checklistItem['createdAt'] ?? DateTime.now().toIso8601String(),
             status: checklistItem['status'] ?? false,
             taskId: checklistItem['task_id'],
           );

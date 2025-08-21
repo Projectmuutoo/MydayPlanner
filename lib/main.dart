@@ -38,12 +38,14 @@ void main() async {
       'timestamp': message.data['timestamp'],
       'boardid': message.data['boardid'],
       'taskid': message.data['taskid'],
+      'type': message.data['type'],
     };
 
     NotificationService.showNotification(
       title: title,
       body: body,
       payload: message.data['payload'] ?? jsonEncode(payloadData),
+      type: message.data['type'] ?? '',
     );
   });
   FirebaseAuth.instance.setLanguageCode('th');
@@ -95,11 +97,17 @@ class MainApp extends StatelessWidget {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final title = message.notification?.title ?? '';
   final body = message.notification?.body ?? '';
-  final payload = message.data['payload'] ?? '';
+  final payloadData = {
+    'timestamp': message.data['timestamp'],
+    'boardid': message.data['boardid'],
+    'taskid': message.data['taskid'],
+    'type': message.data['type'] ?? '',
+  };
 
   NotificationService.showNotification(
     title: title,
     body: body,
-    payload: payload,
+    payload: message.data['payload'] ?? jsonEncode(payloadData),
+    type: message.data['type'],
   );
 }

@@ -193,19 +193,48 @@ class HomePageState extends State<HomePage> {
                                               size: height * 0.04,
                                             ),
                                           )
-                                        : Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.black12,
-                                            ),
-                                            child: Image.network(
-                                              context
-                                                  .watch<Appdata>()
+                                        : GestureDetector(
+                                            onTap: () {
+                                              final appData =
+                                                  Provider.of<Appdata>(
+                                                    context,
+                                                    listen: false,
+                                                  );
+                                              final profileUrl = appData
                                                   .changeMyProfileProvider
-                                                  .profile,
-                                              width: height * 0.06,
-                                              height: height * 0.06,
-                                              fit: BoxFit.cover,
+                                                  .profile;
+
+                                              if (profileUrl.isNotEmpty) {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => Dialog(
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        Get.back();
+                                                      },
+                                                      child: Image.network(
+                                                        profileUrl,
+                                                        fit: BoxFit.contain,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.black12,
+                                              ),
+                                              child: Image.network(
+                                                context
+                                                    .watch<Appdata>()
+                                                    .changeMyProfileProvider
+                                                    .profile,
+                                                width: height * 0.06,
+                                                height: height * 0.06,
+                                                fit: BoxFit.cover,
+                                              ),
                                             ),
                                           ),
                                   ),
@@ -2907,12 +2936,27 @@ class HomePageState extends State<HomePage> {
     List<Task> upcomingTasks = tasks
         .where((task) => task.boardId == "Today")
         .where((task) {
+          if (task.notifications.isEmpty) return false;
+
           final now = DateTime.now();
           final todayStart = DateTime(now.year, now.month, now.day).toLocal();
-          final todayEnd = todayStart.add(Duration(days: 1));
-          final dueDate = DateTime.parse(
-            task.notifications.first.dueDate,
-          ).toLocal().add(Duration(seconds: 10)); //บวก 10 วิเพื่อแสดง Time’s up
+          final todayEnd = todayStart.add(const Duration(days: 1));
+
+          final notificationWithDueDate = task.notifications.firstWhere(
+            (n) => n.dueDate.isNotEmpty,
+            orElse: () => task.notifications.first,
+          );
+
+          if (notificationWithDueDate.dueDate.isEmpty) return false;
+
+          DateTime? dueDate;
+          try {
+            dueDate = DateTime.parse(
+              notificationWithDueDate.dueDate,
+            ).toLocal().add(const Duration(seconds: 10));
+          } catch (e) {
+            return false;
+          }
 
           return dueDate.isBefore(todayEnd) &&
               todayEnd.isAfter(todayStart) &&
@@ -2920,22 +2964,30 @@ class HomePageState extends State<HomePage> {
         })
         .toList();
 
+    // sort ตาม dueDate
     upcomingTasks.sort((a, b) {
-      final aDueDate = a.notifications.firstWhere(
-        (data) => data.dueDate.isNotEmpty,
+      final aDue = a.notifications.firstWhere(
+        (n) => n.dueDate.isNotEmpty,
+        orElse: () => a.notifications.first,
       );
-      final bDueDate = b.notifications.firstWhere(
-        (data) => data.dueDate.isNotEmpty,
+      final bDue = b.notifications.firstWhere(
+        (n) => n.dueDate.isNotEmpty,
+        orElse: () => b.notifications.first,
       );
+
+      if (aDue.dueDate.isEmpty || bDue.dueDate.isEmpty) return 0;
+
       return DateTime.parse(
-        aDueDate.dueDate,
-      ).compareTo(DateTime.parse(bDueDate.dueDate));
+        aDue.dueDate,
+      ).compareTo(DateTime.parse(bDue.dueDate));
     });
 
     return upcomingTasks.take(3).toList();
   }
 
   String timeUntilDetailed(String timestamp) {
+    if (timestamp.isEmpty) return '';
+
     final DateTime targetTime = DateTime.parse(timestamp).toLocal();
     final DateTime now = DateTime.now();
     final Duration diff = targetTime.difference(now);
@@ -3619,11 +3671,15 @@ class HomePageState extends State<HomePage> {
     Future.delayed(Duration(milliseconds: 50), () {
       boardFocusNode.requestFocus();
     });
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {

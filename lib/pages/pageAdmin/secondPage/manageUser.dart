@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,9 +13,7 @@ import 'package:mydayplanner/models/request/createAdminPostRequest.dart';
 import 'package:mydayplanner/models/request/getUserByEmailPostRequest.dart';
 import 'package:mydayplanner/models/response/allUserGetResponse.dart';
 import 'package:http/http.dart' as http;
-import 'package:mydayplanner/pages/verifyOTP.dart';
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ManageuserPage extends StatefulWidget {
@@ -662,11 +659,11 @@ class _ManageuserPageState extends State<ManageuserPage> {
                                       horizontal: width * 0.02,
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(22),
+                                      borderRadius: BorderRadius.circular(14),
                                       borderSide: BorderSide(width: 1),
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(22),
+                                      borderRadius: BorderRadius.circular(14),
                                       borderSide: BorderSide(width: 1),
                                     ),
                                   ),
@@ -958,6 +955,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -1544,6 +1544,9 @@ class _ManageuserPageState extends State<ManageuserPage> {
       isDismissible: true,
       enableDrag: true,
       showDragHandle: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -1762,7 +1765,7 @@ class _ManageuserPageState extends State<ManageuserPage> {
                               ),
                             ),
                             child: Text(
-                              'Continue',
+                              'Sign up',
                               style: TextStyle(
                                 fontSize: Get.textTheme.titleMedium!.fontSize!,
                                 fontWeight: FontWeight.normal,
@@ -1823,7 +1826,80 @@ class _ManageuserPageState extends State<ManageuserPage> {
 
       Get.back();
       if (responseCreate.statusCode == 201) {
-        showModalConfirmEmail(emailCtl.text.trim());
+        FirebaseFirestore.instance
+            .collection('usersLogin')
+            .doc(emailCtl.text)
+            .set({'password': 'needToChange', 'updated_at': Timestamp.now()});
+        if (!mounted) return;
+        setState(() {
+          emailCtl.clear();
+          passwordCtl.clear();
+        });
+        Get.defaultDialog(
+          title: '',
+          titlePadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          barrierDismissible: false,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04,
+            vertical: MediaQuery.of(context).size.height * 0.02,
+          ),
+          content: WillPopScope(
+            onWillPop: () async => false,
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/aleart/success.png",
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                Text(
+                  'Successfully!!',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleLarge!.fontSize,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+                Text(
+                  'Successfully become an admin',
+                  style: TextStyle(
+                    fontSize: Get.textTheme.titleSmall!.fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(
+                  MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height * 0.05,
+                ),
+                backgroundColor: Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
+              ),
+              child: Text(
+                'OK!',
+                style: TextStyle(
+                  fontSize: Get.textTheme.titleMedium!.fontSize,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
       }
     }
   }
@@ -2200,276 +2276,5 @@ class _ManageuserPageState extends State<ManageuserPage> {
       // ถ้าเลิก focus ก็ยกเลิก timer
       _debounce?.cancel();
     }
-  }
-
-  void showModalConfirmEmail(String email) {
-    emailConfirmOtpCtl.text = email;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            double width = MediaQuery.of(context).size.width;
-            double height = MediaQuery.of(context).size.height;
-
-            return GestureDetector(
-              onTap: () {
-                if (emailConfirmOtpFocusNode.hasFocus) {
-                  emailConfirmOtpFocusNode.unfocus();
-                }
-              },
-              child: SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: width * 0.05,
-                    left: width * 0.05,
-                    top: height * 0.05,
-                    bottom:
-                        MediaQuery.of(context).viewInsets.bottom +
-                        height * 0.02,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  blockOTP = false;
-                                  emailCtl.clear();
-                                  passwordCtl.clear();
-                                  Get.back();
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: width * 0.01,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SvgPicture.string(
-                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z"></path></svg>',
-                                        color: Colors.grey,
-                                      ),
-                                      Text(
-                                        'back',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleLarge!
-                                              .fontSize,
-                                          fontWeight: FontWeight.normal,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Image.asset(
-                                "assets/images/LogoApp.png",
-                                height: height * 0.07,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: height * 0.01),
-                          Row(
-                            children: [
-                              Text(
-                                'Verify your email',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleLarge!.fontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'We will send the otp code to the email you entered',
-                                style: TextStyle(
-                                  fontSize: Get.textTheme.titleSmall!.fontSize,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: height * 0.01),
-                          Row(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(left: width * 0.03),
-                                child: Text(
-                                  'Email',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleSmall!.fontSize,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          TextField(
-                            controller: emailConfirmOtpCtl,
-                            focusNode: emailConfirmOtpFocusNode,
-                            keyboardType: TextInputType.emailAddress,
-                            cursorColor: Colors.black,
-                            style: TextStyle(
-                              fontSize: Get.textTheme.titleSmall!.fontSize,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: isTyping
-                                  ? ''
-                                  : 'Enter your email address…',
-                              hintStyle: TextStyle(
-                                fontSize: Get.textTheme.titleSmall!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.grey,
-                              ),
-                              prefixIcon: IconButton(
-                                onPressed: null,
-                                icon: SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>',
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              constraints: BoxConstraints(
-                                maxHeight: height * 0.05,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: width * 0.02,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(width: 0.5),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(width: 0.5),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: height * 0.02),
-                          if (blockOTP)
-                            Text(
-                              'Your email has been blocked because you requested otp overdue and you will be able to request otp again after $expiresAtEmail',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleSmall!.fontSize,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.red,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              if (blockOTP) {
-                                blockOTP = false;
-                                Get.back();
-                              } else {
-                                url = await loadAPIEndpoint();
-                                // แสดง Loading Dialog
-                                loadingDialog();
-                                var responseRef = await http.post(
-                                  Uri.parse("$url/auth/IdentityOTP"),
-                                  headers: {
-                                    "Content-Type":
-                                        "application/json; charset=utf-8",
-                                  },
-                                  body: jsonEncode({
-                                    "email": emailConfirmOtpCtl.text,
-                                  }),
-                                );
-
-                                Get.back();
-                                if (responseRef.statusCode == 200) {
-                                  Get.back();
-                                  setState(() {
-                                    showNotification('');
-                                    blockOTP = false;
-                                  });
-                                  var sendOTPResponse = jsonDecode(
-                                    responseRef.body,
-                                  );
-
-                                  //ส่ง email, otp, ref ไปยืนยันและ verify เมลหน้าต่อไป
-                                  var appData = Provider.of<Appdata>(
-                                    context,
-                                    listen: false,
-                                  );
-                                  appData.keepEmailToUserPageVerifyOTP.setEmail(
-                                    emailConfirmOtpCtl.text,
-                                  );
-                                  appData.keepEmailToUserPageVerifyOTP
-                                      .setPassword(passwordCtl.text);
-                                  appData.keepEmailToUserPageVerifyOTP.setRef(
-                                    sendOTPResponse['ref'],
-                                  );
-                                  appData.keepEmailToUserPageVerifyOTP.setCase(
-                                    'verifyEmail-Admin',
-                                  );
-                                  Get.to(() => VerifyotpPage());
-                                } else {
-                                  var result = await FirebaseFirestore.instance
-                                      .collection('EmailBlocked')
-                                      .doc(email)
-                                      .collection('OTPRecords_verify')
-                                      .doc(email)
-                                      .get();
-                                  var data = result.data();
-                                  if (data != null) {
-                                    setState(() {
-                                      blockOTP = true;
-                                      expiresAtEmail =
-                                          formatTimestampTo12HourTimeWithSeconds(
-                                            data['expiresAt'] as Timestamp,
-                                          );
-                                    });
-                                  }
-                                }
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(width, height * 0.04),
-                              backgroundColor: Colors.black,
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              blockOTP ? 'Back' : 'Request code',
-                              style: TextStyle(
-                                fontSize: Get.textTheme.titleSmall!.fontSize,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 }

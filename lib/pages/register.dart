@@ -794,7 +794,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               color: coloralearRecaptcha,
                             ),
                           ),
-                        SizedBox(height: height * 0.02),
+                        SizedBox(height: height * 0.01),
                         ElevatedButton(
                           onPressed: register,
                           style: ElevatedButton.styleFrom(
@@ -1076,6 +1076,7 @@ class _RegisterPageState extends State<RegisterPage> {
           emailFocusNode.unfocus();
           passwordFocusNode.unfocus();
           confirmPasswordFocusNode.unfocus();
+          if (!mounted) return;
           Get.defaultDialog(
             title: '',
             titlePadding: EdgeInsets.zero,
@@ -1356,6 +1357,9 @@ class _RegisterPageState extends State<RegisterPage> {
       isScrollControlled: true,
       isDismissible: false,
       enableDrag: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {

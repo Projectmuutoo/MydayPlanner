@@ -279,12 +279,32 @@ class AppDataShareBoardFunction {
           (box.read('userProfile')['userid'] ?? '');
       final boardid = data['BoardID'].toString();
       final boardName = data['BoardName'].toString();
+      var result3 = await FirebaseFirestore.instance
+          .collectionGroup('InviteJoin')
+          .where('BoardId', isEqualTo: boardid)
+          .get();
+      for (var doc in result3.docs) {
+        final result4 = await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(doc['recipient'])
+            .get();
+        boardUsers.add({
+          'Response': doc['Response'],
+          'Name': result4.data()?['Name'],
+          'Profile': result4.data()?['Profile'],
+          'Email': result4.data()?['Email'],
+          'UserID': result4.data()?['UserID'],
+        });
+      }
       Get.back();
 
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         builder: (BuildContext context) {
           double height = MediaQuery.of(context).size.height;
           return StatefulBuilder(
@@ -427,12 +447,21 @@ class AppDataShareBoardFunction {
                                   final userEmail =
                                       user['Email'] as String? ?? '';
                                   final userId = user['UserID'].toString();
+                                  final response = user['Response'];
 
+                                  if (response != null &&
+                                      response != 'Waiting') {
+                                    return SizedBox.shrink();
+                                  }
                                   return Container(
                                     margin: EdgeInsets.only(bottom: 8),
                                     padding: EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey[50],
+                                      color:
+                                          (response != null &&
+                                              response == 'Waiting')
+                                          ? Colors.grey[200]
+                                          : Colors.grey[50],
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
                                         color: Colors.grey[200]!,
@@ -562,6 +591,15 @@ class AppDataShareBoardFunction {
                                                 },
                                               );
                                             },
+                                          ),
+                                        SizedBox(height: 8),
+                                        if (response != null &&
+                                            response == 'Waiting')
+                                          Text(
+                                            response,
+                                            style: TextStyle(
+                                              color: Colors.orange,
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -908,6 +946,7 @@ class AppDataShareBoardFunction {
               'Invitation time': DateTime.now(),
               'notiCount': false,
               'updatedAt': Timestamp.now(),
+              'recipient': user.email,
             });
 
         final reciverEmail = user.email;
@@ -942,6 +981,32 @@ class AppDataShareBoardFunction {
         }
 
         if (response.statusCode == 200) {
+          await FirebaseFirestore.instance
+              .collection('Notifications')
+              .doc(user.email)
+              .set({
+                'Name': user.name,
+                'Profile': user.profile,
+                'Email': user.email,
+                'UserID': user.userId,
+              });
+          var result3 = await FirebaseFirestore.instance
+              .collectionGroup('InviteJoin')
+              .where('BoardId', isEqualTo: boardId)
+              .get();
+          for (var doc in result3.docs) {
+            final result4 = await FirebaseFirestore.instance
+                .collection('Notifications')
+                .doc(doc['recipient'])
+                .get();
+            boardUsers.add({
+              'Response': doc['Response'],
+              'Name': result4.data()?['Name'],
+              'Profile': result4.data()?['Profile'],
+              'Email': result4.data()?['Email'],
+              'UserID': result4.data()?['UserID'],
+            });
+          }
           await loadDataAsync();
           log('Invitation sent successfully to $reciverEmail');
         } else {
@@ -1385,6 +1450,9 @@ class AppDataShareShowEditInfo {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -1456,6 +1524,50 @@ class AppDataShareShowEditInfo {
                         SizedBox(width: width * 0.02),
                       ],
                     ),
+                    bottomNavigationBar:
+                        (boardToken.isNotEmpty &&
+                            pageSend != 'boardShowTasks' &&
+                            board.createdBy !=
+                                box.read('userProfile')['userid'])
+                        ? SafeArea(
+                            child: Material(
+                              color: Color(0xFFF2F2F6),
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+                                  leaveBoard(context, board.boardId.toString());
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: height * 0.01,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.logout_outlined,
+                                        color: Color(0xFFFF3A31),
+                                      ),
+                                      SizedBox(width: width * 0.01),
+                                      Text(
+                                        'Leave board',
+                                        style: TextStyle(
+                                          fontSize: Get
+                                              .textTheme
+                                              .titleMedium!
+                                              .fontSize!,
+                                          fontWeight: FontWeight.normal,
+                                          color: Color(0xFFFF3A31),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
                     body: SafeArea(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: width * 0.03),
@@ -2280,55 +2392,6 @@ class AppDataShareShowEditInfo {
                                         ),
                                       ),
                                     ),
-                              if (boardToken.isNotEmpty &&
-                                  pageSend != 'boardShowTasks' &&
-                                  board.createdBy !=
-                                      box.read('userProfile')['userid'])
-                                SizedBox(height: height * 0.07),
-                              if (boardToken.isNotEmpty &&
-                                  pageSend != 'boardShowTasks' &&
-                                  board.createdBy !=
-                                      box.read('userProfile')['userid'])
-                                Material(
-                                  color: Color(0xFFF2F2F6),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: InkWell(
-                                    onTap: () {
-                                      leaveBoard(
-                                        context,
-                                        board.boardId.toString(),
-                                      );
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: height * 0.01,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.logout_outlined,
-                                            color: Color(0xFFFF3A31),
-                                          ),
-                                          SizedBox(width: width * 0.01),
-                                          Text(
-                                            'Leave board',
-                                            style: TextStyle(
-                                              fontSize: Get
-                                                  .textTheme
-                                                  .titleMedium!
-                                                  .fontSize!,
-                                              fontWeight: FontWeight.normal,
-                                              color: Color(0xFFFF3A31),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),

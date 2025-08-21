@@ -130,6 +130,41 @@ class _UserPageState extends State<UserPage> {
         }
 
         return Scaffold(
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.to(() => ManageuserPage());
+                },
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size(width, height * 0.05),
+                  backgroundColor: Colors.grey,
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.string(
+                      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M16 2H8C4.691 2 2 4.691 2 8v13a1 1 0 0 0 1 1h13c3.309 0 6-2.691 6-6V8c0-3.309-2.691-6-6-6zm4 14c0 2.206-1.794 4-4 4H4V8c0-2.206 1.794-4 4-4h8c2.206 0 4 1.794 4 4v8z"></path><path d="M7 14.987v1.999h1.999l5.529-5.522-1.998-1.998zm8.47-4.465-1.998-2L14.995 7l2 1.999z"></path></svg>',
+                    ),
+                    SizedBox(width: width * 0.02),
+                    Text(
+                      'Manage',
+                      style: TextStyle(
+                        fontSize: Get.textTheme.titleMedium!.fontSize!,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           body: SafeArea(
             child: Center(
               child: RefreshIndicator(
@@ -431,42 +466,6 @@ class _UserPageState extends State<UserPage> {
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => ManageuserPage());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(width, height * 0.05),
-                              backgroundColor: Colors.grey,
-                              elevation: 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SvgPicture.string(
-                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M16 2H8C4.691 2 2 4.691 2 8v13a1 1 0 0 0 1 1h13c3.309 0 6-2.691 6-6V8c0-3.309-2.691-6-6-6zm4 14c0 2.206-1.794 4-4 4H4V8c0-2.206 1.794-4 4-4h8c2.206 0 4 1.794 4 4v8z"></path><path d="M7 14.987v1.999h1.999l5.529-5.522-1.998-1.998zm8.47-4.465-1.998-2L14.995 7l2 1.999z"></path></svg>',
-                                ),
-                                SizedBox(width: width * 0.02),
-                                Text(
-                                  'Manage',
-                                  style: TextStyle(
-                                    fontSize:
-                                        Get.textTheme.titleMedium!.fontSize!,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: height * 0.01),
                         ],
                       ),
                     ],

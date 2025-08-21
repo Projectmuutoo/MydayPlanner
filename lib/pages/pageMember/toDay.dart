@@ -139,20 +139,32 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
               : task.status == '0',
         )
         .where((task) {
-          //เก็บมาแสดงเฉพาะวันนี้เท่านั้น
           final now = DateTime.now();
           final todayStart = DateTime(now.year, now.month, now.day).toLocal();
           final todayEnd = todayStart.add(const Duration(days: 1));
-          final dueDate = DateTime.parse(
-            task.notifications.first.dueDate,
-          ).toLocal();
 
-          return dueDate.isBefore(todayEnd) && todayEnd.isAfter(todayStart);
+          String? dueDateString;
+          bool isUsingCreatedAt = false;
+
+          if (task.notifications.isNotEmpty &&
+              task.notifications.first.dueDate.isNotEmpty) {
+            dueDateString = task.notifications.first.dueDate;
+          } else {
+            dueDateString = task.createdAt;
+            isUsingCreatedAt = true;
+          }
+
+          final dueDate = DateTime.parse(dueDateString).toLocal();
+
+          if (isUsingCreatedAt) {
+            return dueDate.isAfter(todayStart) && dueDate.isBefore(todayEnd);
+          }
+
+          return dueDate.isBefore(todayEnd) && dueDate.isAfter(todayStart);
         })
         .toList();
 
     filteredTasks = sortTasks(filteredTasks); //เอา filtertask ที่ได้ไป sort
-
     setState(() {
       tasks = filteredTasks; //แสดง ui
     });
@@ -917,9 +929,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                                   ),
                                                                             Row(
                                                                               children: [
-                                                                                formatDateDisplay(
-                                                                                      data.notifications,
-                                                                                    ).isEmpty
+                                                                                creatingTasks[data.taskId.toString()] ==
+                                                                                        true
+                                                                                    ? SizedBox.shrink()
+                                                                                    : formatDateDisplay(
+                                                                                        data.notifications,
+                                                                                      ).isEmpty
                                                                                     ? SizedBox.shrink()
                                                                                     : Container(
                                                                                         decoration: BoxDecoration(
@@ -945,13 +960,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                                                   0.04,
                                                                                               fit: BoxFit.contain,
                                                                                               color: Colors.red,
-                                                                                            ),
-                                                                                            Text(
-                                                                                              " Due ",
-                                                                                              style: TextStyle(
-                                                                                                fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                color: Colors.red,
-                                                                                              ),
                                                                                             ),
                                                                                             Text(
                                                                                               formatDateDisplay(
@@ -1754,6 +1762,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: true,
       enableDrag: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -2108,6 +2119,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -2247,6 +2261,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -2807,7 +2824,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     if (trimmedTitle.isEmpty && trimmedDescription.isEmpty) return;
 
     //เก็บตามเงื่อนไขที่รับ remind มา
-    DateTime dueDate;
+    DateTime? dueDate;
     if (selectedReminder != null && selectedReminder!.isNotEmpty) {
       if (selectedReminder!.startsWith('Custom:')) {
         dueDate = customReminderDateTime!;
@@ -2815,14 +2832,22 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         dueDate = convertReminderToDateTime(selectedReminder!);
       }
     } else {
-      dueDate = DateTime.now();
+      dueDate = null;
     }
 
     DateTime? beforeDueDate;
-    if (!_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
-    } else {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    if (dueDate != null) {
+      if (!_isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      } else {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      }
     }
 
     //หาก title เป็นว่างและ description ไม่ว่างจะบันทึก title => Untitled
@@ -2835,21 +2860,20 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       taskName: titleToSave,
       description: descriptionToSave,
       createdAt: DateTime.now().toIso8601String(),
-      priority: selectedPriority == null ? '' : selectedPriority.toString(),
+      priority: selectedPriority == null ? '1' : selectedPriority.toString(),
       status: '0',
       attachments: [],
       checklists: [],
       createBy: userId,
       taskId: tempId,
-      assigned: [],
       boardId: "Today",
       notifications: [
         model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
               ? beforeDueDate.toUtc().toIso8601String()
               : '',
           createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
+          dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
           isSend: '0',
           notificationId: tempId,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
@@ -2920,7 +2944,7 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     String title,
     String description,
     String email,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
@@ -2936,13 +2960,15 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
           taskName: title,
           description: description,
           status: '0',
-          priority: selectedPriority == null ? '' : selectedPriority.toString(),
+          priority: selectedPriority == null
+              ? '1'
+              : selectedPriority.toString(),
           reminder: Reminder(
             beforeDueDate:
                 selectedBeforeMinutes != null && beforeDueDate != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
-            dueDate: dueDate.toUtc().toIso8601String(),
+            dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
         ),
@@ -2963,14 +2989,14 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
             description: description,
             status: '0',
             priority: selectedPriority == null
-                ? ''
+                ? '1'
                 : selectedPriority.toString(),
             reminder: Reminder(
               beforeDueDate:
                   selectedBeforeMinutes != null && beforeDueDate != null
                   ? beforeDueDate.toUtc().toIso8601String()
                   : '',
-              dueDate: dueDate.toUtc().toIso8601String(),
+              dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
           ),
@@ -2995,11 +3021,11 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
 
   Future<void> _replaceWithRealTask(
     String tempId,
-    int notificationID,
+    int? notificationID,
     int realId,
     model.Task tempTask,
     int userId,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
@@ -3015,35 +3041,42 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       checklists: [],
       createBy: userId,
       taskId: realId,
-      assigned: [],
       boardId: "Today",
-      notifications: [
-        model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
-              ? beforeDueDate.toUtc().toIso8601String()
-              : '',
-          createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: '0',
-          notificationId: notificationID,
-          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
-          taskId: realId,
-        ),
-      ],
+      notifications: notificationID != null
+          ? [
+              model.Notification(
+                beforeDueDate:
+                    selectedBeforeMinutes != null && beforeDueDate != null
+                    ? beforeDueDate.toUtc().toIso8601String()
+                    : '',
+                createdAt: DateTime.now().toIso8601String(),
+                dueDate: dueDate != null
+                    ? dueDate.toUtc().toIso8601String()
+                    : '',
+                isSend: '0',
+                notificationId: notificationID,
+                recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
+                taskId: realId,
+              ),
+            ]
+          : [],
     );
-
-    await _waitForDocumentCreation(realId, notificationID);
-    FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
-        .collection('Tasks')
-        .doc(notificationID.toString())
-        .update({
-          'isShow': dueDate.isAfter(DateTime.now())
-              ? false
-              : FieldValue.delete(),
-          'isNotiRemind': false,
-        });
+    if (notificationID != null) {
+      await _waitForDocumentCreation(realId, notificationID);
+      FirebaseFirestore.instance
+          .collection('Notifications')
+          .doc(box.read('userProfile')['email'])
+          .collection('Tasks')
+          .doc(notificationID.toString())
+          .update({
+            'isShow': dueDate != null
+                ? dueDate.isAfter(DateTime.now())
+                      ? false
+                      : FieldValue.delete()
+                : FieldValue.delete(),
+            'isNotiRemind': false,
+          });
+    }
 
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);
@@ -3170,8 +3203,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
   String formatDateDisplay(List<model.Notification> notifications) {
     if (notifications.isEmpty) return '';
 
+    String dateSource = notifications.first.dueDate.isNotEmpty
+        ? notifications.first.dueDate
+        : notifications.first.createdAt;
+
     final now = DateTime.now();
-    final dueDate = DateTime.parse(notifications.first.dueDate).toLocal();
+    final dueDate = DateTime.parse(dateSource).toLocal();
     final today = DateTime(now.year, now.month, now.day);
     final dueDateDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -3180,9 +3217,12 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
       if (dueDate.isAfter(now)) {
         final hour = dueDate.hour.toString().padLeft(2, '0');
         final minute = dueDate.minute.toString().padLeft(2, '0');
-        return '$hour:$minute';
+        return 'Due $hour:$minute';
+      } else {
+        final hour = dueDate.hour.toString().padLeft(2, '0');
+        final minute = dueDate.minute.toString().padLeft(2, '0');
+        return 'OverDue $hour:$minute';
       }
-      return '';
     }
 
     if (dueDateDay.isAtSameMomentAs(yesterday)) {

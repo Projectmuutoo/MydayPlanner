@@ -172,7 +172,6 @@ class AlltasksPageState extends State<AlltasksPage>
 
           // สร้าง Task object
           final firebaseTask = model.Task(
-            assigned: data['assigned'] ?? [],
             attachments: data['attachments'] ?? [],
             boardId: data['boardID'].toString(),
             checklists: data['checklists'] ?? [],
@@ -255,9 +254,9 @@ class AlltasksPageState extends State<AlltasksPage>
                     .toDate()
                     .toIso8601String(),
                 isSend: notifData['isSend'].toString(),
-                notificationId: notifData['notificationID'] ?? '',
+                notificationId: notifData['notificationID'] ?? 0,
                 recurringPattern: notifData['recurringPattern'] ?? '',
-                taskId: notifData['taskID'] ?? '',
+                taskId: notifData['taskID'] ?? 0,
               ),
             );
           }
@@ -272,7 +271,6 @@ class AlltasksPageState extends State<AlltasksPage>
               taskNotificationsMap[taskIdStr] ?? [];
 
           return model.Task(
-            assigned: task.assigned,
             attachments: task.attachments,
             boardId: task.boardId,
             checklists: task.checklists,
@@ -298,30 +296,130 @@ class AlltasksPageState extends State<AlltasksPage>
     final rawData = box.read('userDataAll');
     final tasksData = model.AllDataUserGetResponst.fromJson(rawData);
 
-    // กรองข้อมูล Local Tasks
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day).toLocal();
+    final todayEnd = todayStart.add(const Duration(days: 1));
+
+    // กรอง Local Tasks
     List<model.Task> localTasks = tasksData.tasks
         .where(
           (task) => (showArchived
               ? ['0', '1', '2'].contains(task.status)
               : task.status != '2'),
         )
+        .map((task) {
+          // เช็ค createdAt
+          if (task.notifications.isEmpty) {
+            final createdAtDate = DateTime.parse(task.createdAt).toLocal();
+            if (createdAtDate.isAfter(todayStart) &&
+                createdAtDate.isBefore(todayEnd)) {
+              // ✅ อยู่ในวันนี้ → สร้าง notification
+              return model.Task(
+                attachments: task.attachments,
+                boardId: task.boardId,
+                checklists: task.checklists,
+                createBy: task.createBy,
+                createdAt: task.createdAt,
+                description: task.description,
+                notifications: [
+                  model.Notification(
+                    beforeDueDate: task.createdAt,
+                    createdAt: task.createdAt,
+                    dueDate: task.createdAt,
+                    isSend: '0',
+                    notificationId: null,
+                    recurringPattern: 'onetime',
+                    taskId: task.taskId,
+                  ),
+                ],
+                priority: task.priority,
+                status: task.status,
+                taskId: task.taskId,
+                taskName: task.taskName,
+              );
+            } else {
+              // ❌ ไม่ใช่วันนี้ → ไม่สร้าง
+              return model.Task(
+                attachments: task.attachments,
+                boardId: task.boardId,
+                checklists: task.checklists,
+                createBy: task.createBy,
+                createdAt: task.createdAt,
+                description: task.description,
+                notifications: [],
+                priority: task.priority,
+                status: task.status,
+                taskId: task.taskId,
+                taskName: task.taskName,
+              );
+            }
+          }
+          return task;
+        })
         .toList();
 
-    // สร้าง Set ของ taskId ที่มีใน Firebase
-    Set<int> firebaseTaskIds = firebaseTasksList.map((t) => t.taskId).toSet();
+    // Firebase task → fallback เช่นเดียวกัน
+    List<model.Task> firebaseWithFallback = firebaseTasksList.map((task) {
+      if (task.notifications.isEmpty) {
+        final createdAtDate = DateTime.parse(task.createdAt).toLocal();
+        if (createdAtDate.isAfter(todayStart) &&
+            createdAtDate.isBefore(todayEnd)) {
+          return model.Task(
+            attachments: task.attachments,
+            boardId: task.boardId,
+            checklists: task.checklists,
+            createBy: task.createBy,
+            createdAt: task.createdAt,
+            description: task.description,
+            notifications: [
+              model.Notification(
+                beforeDueDate: task.createdAt,
+                createdAt: task.createdAt,
+                dueDate: task.createdAt,
+                isSend: '0',
+                notificationId: null,
+                recurringPattern: 'onetime',
+                taskId: task.taskId,
+              ),
+            ],
+            priority: task.priority,
+            status: task.status,
+            taskId: task.taskId,
+            taskName: task.taskName,
+          );
+        } else {
+          return model.Task(
+            attachments: task.attachments,
+            boardId: task.boardId,
+            checklists: task.checklists,
+            createBy: task.createBy,
+            createdAt: task.createdAt,
+            description: task.description,
+            notifications: [],
+            priority: task.priority,
+            status: task.status,
+            taskId: task.taskId,
+            taskName: task.taskName,
+          );
+        }
+      }
+      return task;
+    }).toList();
 
-    // กรอง Local Tasks ให้เหลือเฉพาะที่ไม่มีใน Firebase
+    // หาตัวที่ซ้ำ
+    Set<int> firebaseTaskIds = firebaseWithFallback
+        .map((t) => t.taskId)
+        .toSet();
+
     List<model.Task> filteredLocalTasks = localTasks
         .where((localTask) => !firebaseTaskIds.contains(localTask.taskId))
         .toList();
 
-    // รวม Firebase Tasks (มี priority สูงสุด) + Local Tasks ที่ไม่ซ้ำ
     List<model.Task> combinedTasks = [
-      ...firebaseTasksList, // Firebase tasks ก่อน (realtime)
-      ...filteredLocalTasks, // Local tasks ที่ไม่ซ้ำกับ Firebase
+      ...firebaseWithFallback,
+      ...filteredLocalTasks,
     ];
 
-    // เรียงลำดับตาม createdAt
     combinedTasks.sort((a, b) {
       DateTime dateA = DateTime.parse(a.createdAt);
       DateTime dateB = DateTime.parse(b.createdAt);
@@ -642,6 +740,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                   ),
                                   if (category != 'Past Due' &&
                                       category != 'Coming soon' &&
+                                      category != 'No Due Date' &&
                                       !hideMenu)
                                     Material(
                                       color: Colors.transparent,
@@ -650,6 +749,7 @@ class AlltasksPageState extends State<AlltasksPage>
                                         onTap:
                                             category != 'Past Due' &&
                                                 category != 'Coming soon' &&
+                                                category != 'No Due Date' &&
                                                 !hideMenu
                                             ? creatingTasks.isEmpty
                                                   ? () async {
@@ -1382,13 +1482,6 @@ class AlltasksPageState extends State<AlltasksPage>
                                                                                                               color: Colors.red,
                                                                                                             ),
                                                                                                             Text(
-                                                                                                              " Due ",
-                                                                                                              style: TextStyle(
-                                                                                                                fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                                color: Colors.red,
-                                                                                                              ),
-                                                                                                            ),
-                                                                                                            Text(
                                                                                                               formatDateDisplay(
                                                                                                                 data.notifications,
                                                                                                                 category,
@@ -1493,6 +1586,7 @@ class AlltasksPageState extends State<AlltasksPage>
                             if (!hideMenu &&
                                 category != 'Past Due' &&
                                 category != 'Coming soon' &&
+                                category != 'No Due Date' &&
                                 (categoryTasks.isNotEmpty ||
                                     focusedCategory == category))
                               Container(
@@ -2252,7 +2346,9 @@ class AlltasksPageState extends State<AlltasksPage>
       } else if (category == 'Tomorrow') {
         customReminderDateTime = null;
         selectedReminder = 'Tomorrow';
-      } else if (category != 'Past Due' && category != 'Coming soon') {
+      } else if (category != 'Past Due' &&
+          category != 'Coming soon' &&
+          category != 'No Due Date') {
         DateTime? selectedDateTime = parseDateFromCategory(category);
         if (selectedDateTime != null) {
           selectedReminder =
@@ -2268,7 +2364,7 @@ class AlltasksPageState extends State<AlltasksPage>
     final trimmedDescription = description.trim();
     if (trimmedTitle.isEmpty && trimmedDescription.isEmpty) return;
 
-    DateTime dueDate;
+    DateTime? dueDate;
     if (selectedReminder != null && selectedReminder!.isNotEmpty) {
       if (selectedReminder!.startsWith('Custom:')) {
         dueDate = customReminderDateTime!;
@@ -2276,14 +2372,22 @@ class AlltasksPageState extends State<AlltasksPage>
         dueDate = convertReminderToDateTime(selectedReminder!);
       }
     } else {
-      dueDate = DateTime.now();
+      dueDate = null;
     }
 
     DateTime? beforeDueDate;
-    if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
-    } else {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    if (dueDate != null) {
+      if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      } else {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      }
     }
 
     final titleToSave = trimmedTitle.isEmpty ? "Untitled" : trimmedTitle;
@@ -2294,21 +2398,20 @@ class AlltasksPageState extends State<AlltasksPage>
       taskName: titleToSave,
       description: descriptionToSave,
       createdAt: DateTime.now().toIso8601String(),
-      priority: selectedPriority == null ? '' : selectedPriority.toString(),
+      priority: selectedPriority == null ? '1' : selectedPriority.toString(),
       status: '0',
       attachments: [],
       checklists: [],
       createBy: userId,
       taskId: tempId,
-      assigned: [],
       boardId: "Today",
       notifications: [
         model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null
+          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
               ? beforeDueDate.toUtc().toIso8601String()
               : '',
           createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
+          dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
           isSend: '0',
           notificationId: tempId,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
@@ -2383,7 +2486,7 @@ class AlltasksPageState extends State<AlltasksPage>
     String title,
     String description,
     String email,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
@@ -2399,13 +2502,15 @@ class AlltasksPageState extends State<AlltasksPage>
           taskName: title,
           description: description,
           status: '0',
-          priority: selectedPriority == null ? '' : selectedPriority.toString(),
+          priority: selectedPriority == null
+              ? '1'
+              : selectedPriority.toString(),
           reminder: Reminder(
             beforeDueDate:
                 selectedBeforeMinutes != null && beforeDueDate != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
-            dueDate: dueDate.toUtc().toIso8601String(),
+            dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
         ),
@@ -2426,14 +2531,14 @@ class AlltasksPageState extends State<AlltasksPage>
             description: description,
             status: '0',
             priority: selectedPriority == null
-                ? ''
+                ? '1'
                 : selectedPriority.toString(),
             reminder: Reminder(
               beforeDueDate:
                   selectedBeforeMinutes != null && beforeDueDate != null
                   ? beforeDueDate.toUtc().toIso8601String()
                   : '',
-              dueDate: dueDate.toUtc().toIso8601String(),
+              dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
           ),
@@ -2458,11 +2563,11 @@ class AlltasksPageState extends State<AlltasksPage>
 
   Future<void> _replaceWithRealTask(
     String tempId,
-    int notificationID,
+    int? notificationID,
     int realId,
     model.Task tempTask,
     int userId,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
@@ -2477,40 +2582,55 @@ class AlltasksPageState extends State<AlltasksPage>
       checklists: [],
       createBy: userId,
       taskId: realId,
-      assigned: [],
       boardId: "Today",
-      notifications: [
-        model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
-              ? beforeDueDate.toUtc().toIso8601String()
-              : '',
-          createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: '0',
-          notificationId: notificationID,
-          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
-          taskId: realId,
-        ),
-      ],
+      notifications: notificationID != null
+          ? [
+              model.Notification(
+                beforeDueDate:
+                    selectedBeforeMinutes != null && beforeDueDate != null
+                    ? beforeDueDate.toUtc().toIso8601String()
+                    : '',
+                createdAt: DateTime.now().toIso8601String(),
+                dueDate: dueDate != null
+                    ? dueDate.toUtc().toIso8601String()
+                    : '',
+                isSend: '0',
+                notificationId: notificationID,
+                recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
+                taskId: realId,
+              ),
+            ]
+          : [],
     );
 
-    await _waitForDocumentCreation(realId, notificationID);
-    FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
-        .collection('Tasks')
-        .doc(notificationID.toString())
-        .update({
-          'isShow': dueDate.isAfter(DateTime.now())
-              ? false
-              : FieldValue.delete(),
-          'isNotiRemind': false,
-        });
+    if (notificationID != null) {
+      await _waitForDocumentCreation(realId, notificationID);
+      FirebaseFirestore.instance
+          .collection('Notifications')
+          .doc(box.read('userProfile')['email'])
+          .collection('Tasks')
+          .doc(notificationID.toString())
+          .update({
+            'isShow': dueDate != null
+                ? dueDate.isAfter(DateTime.now())
+                      ? false
+                      : FieldValue.delete()
+                : FieldValue.delete(),
+            'isNotiRemind': false,
+          });
+    }
 
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);
 
     await _updateLocalStorage(realTask, isTemp: false, tempIdToRemove: tempId);
+    _updateDisplayTasks(tasks);
+    if (mounted) {
+      setState(() {
+        creatingTasks.remove(tempId);
+        isCreatingTask = creatingTasks.isNotEmpty;
+      });
+    }
   }
 
   Future<void> _waitForDocumentCreation(int realId, int notificationID) async {
@@ -2778,7 +2898,7 @@ class AlltasksPageState extends State<AlltasksPage>
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
 
-    List<String> categories = ['Past Due', 'Today', 'Tomorrow'];
+    List<String> categories = ['No Due Date', 'Past Due', 'Today', 'Tomorrow'];
 
     // เพิ่มวันที่ 2-6 วันข้างหน้า
     for (int i = 2; i <= 6; i++) {
@@ -2873,8 +2993,12 @@ class AlltasksPageState extends State<AlltasksPage>
   ) {
     if (notifications.isEmpty) return '';
 
+    final dateSource = notifications.first.dueDate.isNotEmpty
+        ? notifications.first.dueDate
+        : notifications.first.createdAt;
+
     final now = DateTime.now();
-    final dueDate = DateTime.parse(notifications.first.dueDate).toLocal();
+    final dueDate = DateTime.parse(dateSource).toLocal();
     final today = DateTime(now.year, now.month, now.day);
     final dueDateDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -2892,9 +3016,12 @@ class AlltasksPageState extends State<AlltasksPage>
       if (dueDate.isAfter(now)) {
         final hour = dueDate.hour.toString().padLeft(2, '0');
         final minute = dueDate.minute.toString().padLeft(2, '0');
-        return '$hour:$minute';
+        return 'Due $hour:$minute';
+      } else {
+        final hour = dueDate.hour.toString().padLeft(2, '0');
+        final minute = dueDate.minute.toString().padLeft(2, '0');
+        return 'OverDue $hour:$minute';
       }
-      return '';
     }
 
     if (dueDateDay.isAtSameMomentAs(yesterday)) {
@@ -3380,6 +3507,9 @@ class AlltasksPageState extends State<AlltasksPage>
       context: context,
       isScrollControlled: true,
       enableDrag: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -3738,6 +3868,9 @@ class AlltasksPageState extends State<AlltasksPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -3877,6 +4010,9 @@ class AlltasksPageState extends State<AlltasksPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {

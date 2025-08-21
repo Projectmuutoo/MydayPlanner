@@ -224,7 +224,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
         // สร้าง Task object
         final task = model.Task(
-          assigned: data['assigned'] ?? [],
           attachments: data['attachments'] ?? [],
           boardId: data['boardID'].toString(),
           checklists: data['checklists'] ?? [],
@@ -298,9 +297,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                     .toDate()
                     .toIso8601String(),
                 isSend: notifData['isSend'].toString(),
-                notificationId: notifData['notificationID'] ?? '',
+                notificationId: notifData['notificationID'] ?? 0,
                 recurringPattern: notifData['recurringPattern'] ?? '',
-                taskId: notifData['taskID'] ?? '',
+                taskId: notifData['taskID'] ?? 0,
               ),
             );
           }
@@ -318,7 +317,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
           finalTasks.add(
             model.Task(
-              assigned: task.assigned,
               attachments: task.attachments,
               boardId: task.boardId,
               checklists: task.checklists,
@@ -933,6 +931,30 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                         .where((task) => task.status == status)
                         .toList();
 
+                    // sort ให้ overDuedate อยู่ท้าย
+                    filteredTasks.sort((a, b) {
+                      bool aOverdue = a.notifications.any((n) {
+                        final due = n.dueDate;
+                        if (due.toString().isEmpty) return false;
+                        final dueDateTime = DateTime.tryParse(due.toString());
+                        if (dueDateTime == null) return false;
+                        return dueDateTime.isBefore(DateTime.now());
+                      });
+
+                      bool bOverdue = b.notifications.any((n) {
+                        final due = n.dueDate;
+                        if (due.toString().isEmpty) return false;
+                        final dueDateTime = DateTime.tryParse(due.toString());
+                        if (dueDateTime == null) return false;
+                        return dueDateTime.isBefore(DateTime.now());
+                      });
+
+                      // ถ้า aOverdue = false และ bOverdue = true → a อยู่ก่อน b (return -1)
+                      // ถ้า aOverdue = true และ bOverdue = false → a อยู่หลัง b (return 1)
+                      if (aOverdue == bOverdue) return 0;
+                      return aOverdue ? 1 : -1;
+                    });
+
                     return Padding(
                       padding: EdgeInsets.symmetric(horizontal: width * 0.01),
                       child: Container(
@@ -1468,9 +1490,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                                         ),
                                                                                   Row(
                                                                                     children: [
-                                                                                      formatDateDisplay(
-                                                                                            data.notifications,
-                                                                                          ).isEmpty
+                                                                                      creatingTasks[data.taskId.toString()] ==
+                                                                                              true
+                                                                                          ? SizedBox.shrink()
+                                                                                          : formatDateDisplay(
+                                                                                              data.notifications,
+                                                                                            ).isEmpty
                                                                                           ? SizedBox.shrink()
                                                                                           : Container(
                                                                                               decoration: BoxDecoration(
@@ -1496,13 +1521,6 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
                                                                                                         0.04,
                                                                                                     fit: BoxFit.contain,
                                                                                                     color: Colors.red,
-                                                                                                  ),
-                                                                                                  Text(
-                                                                                                    " Due ",
-                                                                                                    style: TextStyle(
-                                                                                                      fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                      color: Colors.red,
-                                                                                                    ),
                                                                                                   ),
                                                                                                   Text(
                                                                                                     formatDateDisplay(
@@ -2978,7 +2996,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     if (trimmedTitle.isEmpty && trimmedDescription.isEmpty) return;
 
     //เก็บตามเงื่อนไขที่รับ remind มา
-    DateTime dueDate;
+    DateTime? dueDate;
     if (selectedReminder != null && selectedReminder!.isNotEmpty) {
       if (selectedReminder!.startsWith('Custom:')) {
         dueDate = customReminderDateTime!;
@@ -2986,14 +3004,22 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         dueDate = convertReminderToDateTime(selectedReminder!);
       }
     } else {
-      dueDate = DateTime.now();
+      dueDate = null;
     }
 
     DateTime? beforeDueDate;
-    if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
-    } else {
-      beforeDueDate = calculateNotificationTime(dueDate, selectedBeforeMinutes);
+    if (dueDate != null) {
+      if (!isValidNotificationTime(dueDate, selectedBeforeMinutes)) {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      } else {
+        beforeDueDate = calculateNotificationTime(
+          dueDate,
+          selectedBeforeMinutes,
+        );
+      }
     }
 
     //หาก title เป็นว่างและ description ไม่ว่างจะบันทึก title => Untitled
@@ -3007,21 +3033,21 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         taskName: titleToSave,
         description: descriptionToSave,
         createdAt: DateTime.now().toIso8601String(),
-        priority: selectedPriority == null ? '' : selectedPriority.toString(),
+        priority: selectedPriority == null ? '1' : selectedPriority.toString(),
         status: '0',
         attachments: [],
         checklists: [],
         createBy: userId,
         taskId: tempId,
-        assigned: [],
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
-            beforeDueDate: selectedBeforeMinutes != null
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
             createdAt: DateTime.now().toIso8601String(),
-            dueDate: dueDate.toUtc().toIso8601String(),
+            dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
             isSend: '0',
             notificationId: tempId,
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
@@ -3087,21 +3113,21 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         taskName: titleToSave,
         description: descriptionToSave,
         createdAt: DateTime.now().toIso8601String(),
-        priority: selectedPriority == null ? '' : selectedPriority.toString(),
+        priority: selectedPriority == null ? '1' : selectedPriority.toString(),
         status: '0',
         attachments: [],
         checklists: [],
         createBy: userId,
         taskId: tempId,
-        assigned: [],
         boardId: appData.boardDatas.idBoard.toString(),
         notifications: [
           model.Notification(
-            beforeDueDate: selectedBeforeMinutes != null
+            beforeDueDate:
+                selectedBeforeMinutes != null && beforeDueDate != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
             createdAt: DateTime.now().toIso8601String(),
-            dueDate: dueDate.toUtc().toIso8601String(),
+            dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
             isSend: '0',
             notificationId: tempId,
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
@@ -3144,7 +3170,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     String titleToSave,
     String descriptionToSave,
     String userEmail,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
     int userId,
     model.Task tempTask,
@@ -3180,9 +3206,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
   Future<void> _replaceWithRealTaskFirebase(
     int tempId,
     int realTaskId,
-    int notificationID,
+    int? notificationID,
     model.Task tempTask,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
     dynamic appData,
   ) async {
@@ -3212,13 +3238,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       taskName: tempTask.taskName,
       description: tempTask.description,
       createdAt: DateTime.now().toIso8601String(),
-      priority: selectedPriority == null ? '' : selectedPriority.toString(),
+      priority: selectedPriority == null ? '1' : selectedPriority.toString(),
       status: '0',
       attachments: [],
       checklists: [],
       createBy: tempTask.createBy,
       taskId: realTaskId,
-      assigned: [],
       boardId: appData.boardDatas.idBoard.toString(),
       notifications: [
         model.Notification(
@@ -3226,7 +3251,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
               ? beforeDueDate.toUtc().toIso8601String()
               : '',
           createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
+          dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
           isSend: '0',
           notificationId: notificationID,
           recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
@@ -3236,13 +3261,19 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     );
 
     _updateLocalStorage(realTask);
-
     loadDataAsync();
-    // 3. รอให้ Firebase document ถูกสร้าง
-    await _waitForDocumentCreation(realTaskId, notificationID, true);
-    // 4. ตั้งค่า notifications เบื้องหลัง
-    await _setupTaskNotifications(realTaskId, notificationID, dueDate, appData);
 
+    if (notificationID != null) {
+      // 3. รอให้ Firebase document ถูกสร้าง
+      await _waitForDocumentCreation(realTaskId, notificationID, true);
+      // 4. ตั้งค่า notifications เบื้องหลัง
+      await _setupTaskNotifications(
+        realTaskId,
+        notificationID,
+        dueDate,
+        appData,
+      );
+    }
     // 5. ✅ ลบ creating state เมื่อทำเสร็จแล้ว
     if (mounted) {
       setState(() {
@@ -3262,8 +3293,8 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
   Future<void> _setupTaskNotifications(
     int realTaskId,
-    int notificationID,
-    DateTime dueDate,
+    int? notificationID,
+    DateTime? dueDate,
     dynamic appData,
   ) async {
     // อัปเดต isShow
@@ -3273,12 +3304,13 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
         .collection('Notifications')
         .doc(notificationID.toString())
         .update({
-          'isShow': dueDate.isAfter(DateTime.now())
-              ? false
+          'isShow': dueDate != null
+              ? dueDate.isAfter(DateTime.now())
+                    ? false
+                    : FieldValue.delete()
               : FieldValue.delete(),
           'isNotiRemind': false,
         });
-
     // ตั้งค่า user notifications
     var boardUsersSnapshot = await FirebaseFirestore.instance
         .collection('Boards')
@@ -3305,7 +3337,7 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     String title,
     String description,
     String email,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     url = await loadAPIEndpoint();
@@ -3323,13 +3355,15 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
           taskName: title,
           description: description,
           status: '0',
-          priority: selectedPriority == null ? '' : selectedPriority.toString(),
+          priority: selectedPriority == null
+              ? '1'
+              : selectedPriority.toString(),
           reminder: Reminder(
             beforeDueDate:
                 selectedBeforeMinutes != null && beforeDueDate != null
                 ? beforeDueDate.toUtc().toIso8601String()
                 : '',
-            dueDate: dueDate.toUtc().toIso8601String(),
+            dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
             recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
           ),
         ),
@@ -3351,14 +3385,14 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
             description: description,
             status: '0',
             priority: selectedPriority == null
-                ? ''
+                ? '1'
                 : selectedPriority.toString(),
             reminder: Reminder(
               beforeDueDate:
                   selectedBeforeMinutes != null && beforeDueDate != null
                   ? beforeDueDate.toUtc().toIso8601String()
                   : '',
-              dueDate: dueDate.toUtc().toIso8601String(),
+              dueDate: dueDate != null ? dueDate.toUtc().toIso8601String() : '',
               recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
             ),
           ),
@@ -3383,11 +3417,11 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
 
   Future<void> _replaceWithRealTask(
     String tempId,
-    int notificationID,
+    int? notificationID,
     int realId,
     model.Task tempTask,
     int userId,
-    DateTime dueDate,
+    DateTime? dueDate,
     DateTime? beforeDueDate,
   ) async {
     if (!mounted) return;
@@ -3404,35 +3438,43 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       checklists: [],
       createBy: userId,
       taskId: realId,
-      assigned: [],
       boardId: appData.boardDatas.idBoard.toString(),
-      notifications: [
-        model.Notification(
-          beforeDueDate: selectedBeforeMinutes != null && beforeDueDate != null
-              ? beforeDueDate.toUtc().toIso8601String()
-              : '',
-          createdAt: DateTime.now().toIso8601String(),
-          dueDate: dueDate.toUtc().toIso8601String(),
-          isSend: '0',
-          notificationId: notificationID,
-          recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
-          taskId: realId,
-        ),
-      ],
+      notifications: notificationID != null
+          ? [
+              model.Notification(
+                beforeDueDate:
+                    selectedBeforeMinutes != null && beforeDueDate != null
+                    ? beforeDueDate.toUtc().toIso8601String()
+                    : '',
+                createdAt: DateTime.now().toIso8601String(),
+                dueDate: dueDate != null
+                    ? dueDate.toUtc().toIso8601String()
+                    : '',
+                isSend: '0',
+                notificationId: notificationID,
+                recurringPattern: (selectedRepeat ?? 'Onetime').toLowerCase(),
+                taskId: realId,
+              ),
+            ]
+          : [],
     );
 
-    await _waitForDocumentCreation(realId, notificationID, false);
-    FirebaseFirestore.instance
-        .collection('Notifications')
-        .doc(box.read('userProfile')['email'])
-        .collection('Tasks')
-        .doc(notificationID.toString())
-        .update({
-          'isShow': dueDate.isAfter(DateTime.now())
-              ? false
-              : FieldValue.delete(),
-          'isNotiRemind': false,
-        });
+    if (notificationID != null) {
+      await _waitForDocumentCreation(realId, notificationID, false);
+      FirebaseFirestore.instance
+          .collection('Notifications')
+          .doc(box.read('userProfile')['email'])
+          .collection('Tasks')
+          .doc(notificationID.toString())
+          .update({
+            'isShow': dueDate != null
+                ? dueDate.isAfter(DateTime.now())
+                      ? false
+                      : FieldValue.delete()
+                : FieldValue.delete(),
+            'isNotiRemind': false,
+          });
+    }
 
     tasks.removeWhere((t) => t.taskId.toString() == tempId);
     tasks.add(realTask);
@@ -3640,8 +3682,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
   String formatDateDisplay(List<model.Notification> notifications) {
     if (notifications.isEmpty) return '';
 
+    final dateSource = notifications.first.dueDate.isNotEmpty
+        ? notifications.first.dueDate
+        : notifications.first.createdAt;
+
     final now = DateTime.now();
-    final dueDate = DateTime.parse(notifications.first.dueDate).toLocal();
+    final dueDate = DateTime.parse(dateSource).toLocal();
     final today = DateTime(now.year, now.month, now.day);
     final dueDateDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -3651,9 +3697,12 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       if (dueDate.isAfter(now)) {
         final hour = dueDate.hour.toString().padLeft(2, '0');
         final minute = dueDate.minute.toString().padLeft(2, '0');
-        return '$hour:$minute';
+        return 'Due $hour:$minute';
+      } else {
+        final hour = dueDate.hour.toString().padLeft(2, '0');
+        final minute = dueDate.minute.toString().padLeft(2, '0');
+        return 'OverDue $hour:$minute';
       }
-      return '';
     }
 
     if (dueDateDay.isAtSameMomentAs(yesterday)) {
@@ -4338,6 +4387,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -4476,6 +4528,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
       context: context,
       isScrollControlled: true,
       enableDrag: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {
@@ -4827,6 +4882,9 @@ class _BoardshowtasksPageState extends State<BoardshowtasksPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState1) {

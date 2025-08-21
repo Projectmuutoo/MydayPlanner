@@ -661,6 +661,9 @@ class _ReportPageState extends State<ReportPage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
