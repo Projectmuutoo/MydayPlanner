@@ -101,7 +101,8 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
     addTasknameFocusNode.addListener(() {
       if (addTasknameFocusNode.hasFocus && addToday) {
         Future.delayed(Duration(milliseconds: 200), () {
-          _scrollToAddForm();
+          if (mounted) setState(() {});
+          if (!showArchived) _scrollToAddForm();
         });
       }
     });
@@ -436,6 +437,21 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                               child: Column(
                                 children: [
                                   ...sortTasks(tasks).map((data) {
+                                    final now = DateTime.now();
+                                    bool overDuedate = data.notifications.any((
+                                      n,
+                                    ) {
+                                      final due = n.dueDate;
+                                      if (due.toString().isEmpty) return false;
+
+                                      final dueDateTime = DateTime.tryParse(
+                                        due.toString(),
+                                      );
+                                      if (dueDateTime == null) return false;
+
+                                      return dueDateTime.isBefore(now);
+                                    });
+
                                     return TweenAnimationBuilder(
                                       tween: Tween<double>(
                                         begin: 0.0,
@@ -678,52 +694,97 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                   vertical: height * 0.005,
                                                   horizontal: width * 0.01,
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      selectedTaskIds.contains(
-                                                        data.taskId.toString(),
+                                                decoration: overDuedate
+                                                    ? BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          colors:
+                                                              selectedTaskIds
+                                                                  .contains(
+                                                                    data.taskId
+                                                                        .toString(),
+                                                                  )
+                                                              ? [
+                                                                  Colors
+                                                                      .black12,
+                                                                  Colors
+                                                                      .black12,
+                                                                ]
+                                                              : [
+                                                                  Colors.white,
+                                                                  Color(
+                                                                    0xFFFFE5E5,
+                                                                  ),
+                                                                ],
+                                                          begin: Alignment
+                                                              .centerLeft,
+                                                          end: Alignment
+                                                              .centerRight,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: Color(
+                                                            0xFFE2E8F0,
+                                                          ),
+                                                        ),
                                                       )
-                                                      ? Colors.black12
-                                                      : data.status == "2" &&
-                                                            hideMenu
-                                                      ? Colors.grey[100]
-                                                      : context
-                                                                .watch<
-                                                                  Appdata
-                                                                >()
-                                                                .showNotiTasks
-                                                                .taskId ==
-                                                            data.taskId
-                                                                .toString()
-                                                      ? Color(0xFFEFF6FF)
-                                                      : Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
-                                                    color:
-                                                        context
-                                                                .watch<
-                                                                  Appdata
-                                                                >()
-                                                                .showNotiTasks
-                                                                .taskId ==
-                                                            data.taskId
-                                                                .toString()
-                                                        ? Color(0xFF3B82F6)
-                                                        : Color(0xFFE2E8F0),
-                                                    width:
-                                                        context
-                                                                .watch<
-                                                                  Appdata
-                                                                >()
-                                                                .showNotiTasks
-                                                                .taskId ==
-                                                            data.taskId
-                                                                .toString()
-                                                        ? 1.5
-                                                        : 1,
-                                                  ),
-                                                ),
+                                                    : BoxDecoration(
+                                                        color:
+                                                            selectedTaskIds
+                                                                .contains(
+                                                                  data.taskId
+                                                                      .toString(),
+                                                                )
+                                                            ? Colors.black12
+                                                            : data.status ==
+                                                                      "2" &&
+                                                                  hideMenu
+                                                            ? Colors.grey[100]
+                                                            : context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                            ? Color(0xFFEFF6FF)
+                                                            : Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? Color(
+                                                                  0xFF3B82F6,
+                                                                )
+                                                              : Color(
+                                                                  0xFFE2E8F0,
+                                                                ),
+                                                          width:
+                                                              context
+                                                                      .watch<
+                                                                        Appdata
+                                                                      >()
+                                                                      .showNotiTasks
+                                                                      .taskId ==
+                                                                  data.taskId
+                                                                      .toString()
+                                                              ? 1.5
+                                                              : 1,
+                                                        ),
+                                                      ),
                                                 child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
@@ -930,7 +991,9 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                             Row(
                                                                               children: [
                                                                                 creatingTasks[data.taskId.toString()] ==
-                                                                                        true
+                                                                                            true ||
+                                                                                        data.status ==
+                                                                                            '2'
                                                                                     ? SizedBox.shrink()
                                                                                     : formatDateDisplay(
                                                                                         data.notifications,
@@ -973,50 +1036,53 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                                                                                           ],
                                                                                         ),
                                                                                       ),
-                                                                                FutureBuilder<
-                                                                                  String
-                                                                                >(
-                                                                                  future: showTimeRemineMeBefore(
-                                                                                    data.taskId,
-                                                                                  ),
-                                                                                  builder:
-                                                                                      (
-                                                                                        context,
-                                                                                        snapshot,
-                                                                                      ) {
-                                                                                        if (snapshot.hasData &&
-                                                                                            snapshot.data!.isNotEmpty) {
-                                                                                          return Row(
-                                                                                            children: [
-                                                                                              Padding(
-                                                                                                padding: EdgeInsets.symmetric(
-                                                                                                  horizontal:
-                                                                                                      width *
-                                                                                                      0.01,
-                                                                                                ),
-                                                                                                child: SvgPicture.string(
-                                                                                                  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
-                                                                                                  width:
-                                                                                                      width *
-                                                                                                      0.04,
-                                                                                                  fit: BoxFit.contain,
-                                                                                                  color: Colors.red,
-                                                                                                ),
-                                                                                              ),
-                                                                                              Text(
-                                                                                                snapshot.data!,
-                                                                                                style: TextStyle(
-                                                                                                  fontSize: Get.textTheme.labelMedium!.fontSize!,
-                                                                                                  color: Colors.red,
-                                                                                                ),
-                                                                                              ),
-                                                                                            ],
-                                                                                          );
-                                                                                        } else {
-                                                                                          return SizedBox.shrink();
-                                                                                        }
-                                                                                      },
-                                                                                ),
+                                                                                data.status ==
+                                                                                        '2'
+                                                                                    ? SizedBox.shrink()
+                                                                                    : FutureBuilder<
+                                                                                        String
+                                                                                      >(
+                                                                                        future: showTimeRemineMeBefore(
+                                                                                          data.taskId,
+                                                                                        ),
+                                                                                        builder:
+                                                                                            (
+                                                                                              context,
+                                                                                              snapshot,
+                                                                                            ) {
+                                                                                              if (snapshot.hasData &&
+                                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                                return Row(
+                                                                                                  children: [
+                                                                                                    Padding(
+                                                                                                      padding: EdgeInsets.symmetric(
+                                                                                                        horizontal:
+                                                                                                            width *
+                                                                                                            0.01,
+                                                                                                      ),
+                                                                                                      child: SvgPicture.string(
+                                                                                                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);transform: ;msFilter:;"><path d="M12 4c-4.879 0-9 4.121-9 9s4.121 9 9 9 9-4.121 9-9-4.121-9-9-9zm0 16c-3.794 0-7-3.206-7-7s3.206-7 7-7 7 3.206 7 7-3.206 7-7 7z"></path><path d="M13 12V8h-2v6h6v-2zm4.284-8.293 1.412-1.416 3.01 3-1.413 1.417zm-10.586 0-2.99 2.999L2.29 5.294l2.99-3z"></path></svg>',
+                                                                                                        width:
+                                                                                                            width *
+                                                                                                            0.04,
+                                                                                                        fit: BoxFit.contain,
+                                                                                                        color: Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                    Text(
+                                                                                                      snapshot.data!,
+                                                                                                      style: TextStyle(
+                                                                                                        fontSize: Get.textTheme.labelMedium!.fontSize!,
+                                                                                                        color: Colors.red,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ],
+                                                                                                );
+                                                                                              } else {
+                                                                                                return SizedBox.shrink();
+                                                                                              }
+                                                                                            },
+                                                                                      ),
                                                                               ],
                                                                             ),
                                                                           ],
@@ -2938,6 +3004,11 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
         selectedRepeat = 'Onetime';
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!showArchived) {
+        _scrollToAddForm();
+      }
+    });
   }
 
   Future<Map<String, dynamic>> _createTaskAPI(
@@ -3414,7 +3485,6 @@ class TodayPageState extends State<TodayPage> with WidgetsBindingObserver {
                       setState(() => showArchived = !showArchived);
                       hideMenus();
                       loadDataAsync();
-                      _scrollToAddForm();
                     },
                   ),
                 ],

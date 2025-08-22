@@ -3,11 +3,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -18,7 +16,6 @@ import 'package:mydayplanner/config/config.dart';
 import 'package:mydayplanner/models/response/allDataUserGetResponst.dart'
     as data;
 import 'package:mydayplanner/shared/appData.dart';
-import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -69,7 +66,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   XFile? image;
   File? savedFile;
 
-  List<StreamSubscription> _streamSubscriptions = [];
+  final List<StreamSubscription> _streamSubscriptions = [];
 
   Future<String> loadAPIEndpoint() async {
     var config = await Configuration.getConfig();
@@ -122,6 +119,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
   Future<void> loadDataAsync({VoidCallback? onDataLoaded}) async {
     log('Loading data for taskId: ${widget.taskId}');
+    if (!mounted) return;
     setState(() => isLoading = true);
 
     try {
@@ -132,6 +130,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         return;
       }
 
+      if (!mounted) return;
       final appData = Provider.of<Appdata>(context, listen: false);
       final tasksData = data.AllDataUserGetResponst.fromJson(rawData);
 
@@ -192,8 +191,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
 
           log('พบใน Individual Board: ${board.boardName}');
-          _taskNameController.text = foundTask.taskName ?? '';
-          _descriptionController.text = foundTask.description ?? '';
+          _taskNameController.text = foundTask.taskName;
+          _descriptionController.text = foundTask.description;
           appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
           foundBoard = true;
         } catch (e) {
@@ -253,8 +252,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       } else {
         // กรณี Today task
         log('เป็น Today task');
-        _taskNameController.text = foundTask.taskName ?? '';
-        _descriptionController.text = foundTask.description ?? '';
+        _taskNameController.text = foundTask.taskName;
+        _descriptionController.text = foundTask.description;
         appData.showDetailTask.setCurrentTask(foundTask, isGroup: false);
       }
     } catch (e, stackTrace) {
@@ -299,18 +298,18 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       boardDocRef.snapshots().listen((snapshot) {
         combinedData['board'] = snapshot.data();
         onData({...combinedData});
-        log('Combined data updated with board: ${combinedData['board']}');
+        // log('Combined data updated with board: ${combinedData['board']}');
       }),
     );
 
     _streamSubscriptions.add(
       boardDocRef.collection('BoardUsers').snapshots().listen((querySnapshot) {
         combinedData['boardUsers'] = querySnapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
-        log(
-          'Combined data updated with boardUsers: ${combinedData['boardUsers']}',
-        );
+        // log(
+        //   'Combined data updated with boardUsers: ${combinedData['boardUsers']}',
+        // );
         onData({...combinedData});
       }),
     );
@@ -318,7 +317,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     _streamSubscriptions.add(
       taskDocRef.snapshots().listen((snapshot) {
         combinedData['task'] = snapshot.data();
-        log('Combined data updated with task: ${combinedData['task']}');
+        // log('Combined data updated with task: ${combinedData['task']}');
         onData({...combinedData});
       }),
     );
@@ -326,7 +325,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     _streamSubscriptions.add(
       boardtaskDocRef.collection('Checklist').snapshots().listen((snapshot) {
         combinedData['checklist'] = snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
         // log('Combined data updated with checklist: ${combinedData['checklist']}');
         onData({...combinedData});
@@ -336,7 +335,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     _streamSubscriptions.add(
       boardtaskDocRef.collection('Attachments').snapshots().listen((snapshot) {
         combinedData['attachments'] = snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
         onData({...combinedData});
       }),
@@ -345,7 +344,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     _streamSubscriptions.add(
       boardtaskDocRef.collection('Assigned').snapshots().listen((snapshot) {
         combinedData['assigned'] = snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
         // log(combinedData['assigned'].toString());
         onData({...combinedData});
@@ -357,7 +356,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         snapshot,
       ) {
         combinedData['notifications'] = snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
         // log('Combined data updated with notification: ${combinedData['notifications']}');
         onData({...combinedData});
@@ -465,9 +464,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             // ปุ่ม 3 จุด
                             Builder(
                               builder: (context) {
-                                double height = MediaQuery.of(
-                                  context,
-                                ).size.height;
                                 return IconButton(
                                   key: iconKey,
                                   onPressed: () {
@@ -842,7 +838,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     var response = await sendRequest(token);
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       final newToken = box.read('accessToken');
       if (newToken != null) {
         response = await sendRequest(newToken);
@@ -1003,7 +999,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     final data = _getAppDataAndTask();
     final currentTask = data.currentTask;
-    final appData = data.appData;
     final newTaskName = _taskNameController.text.trim();
 
     String? oldName;
@@ -1026,7 +1021,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       } else {
         if (currentTask != null) {
-          final currentTaskName = currentTask.taskName ?? '';
+          final currentTaskName = currentTask.taskName;
           oldName = currentTaskName;
           taskId = currentTask.taskId;
           if (newTaskName != currentTaskName) {
@@ -1075,7 +1070,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
 
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.put(
           Uri.parse("$url/updatetask/$taskId"),
           headers: {
@@ -1131,14 +1126,13 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       final data = _getAppDataAndTask();
       final currentTask = data.currentTask;
       if (currentTask != null) {
-        currentStatus = currentTask.status ?? '0';
-        currentPriority = currentTask.priority ?? '1';
-        taskName = currentTask.taskName ?? '';
+        currentStatus = currentTask.status;
+        currentPriority = currentTask.priority;
+        taskName = currentTask.taskName;
       }
     }
 
     bool isCompleted = currentStatus == '2';
-    bool isInProgress = currentStatus == '1';
 
     // กำหนดสีและสถานะของปุ่ม
     Color backgroundColor;
@@ -1476,6 +1470,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
   // เปลี่ยน status งาน
   Future<void> _updateTaskStatus(bool isGroupTask, String newStatus) async {
+    if (!mounted) return;
+
     final existingData = _getUserData();
     if (existingData == null) return;
 
@@ -1486,9 +1482,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       log('Error: currentTask is null for individual task');
       return;
     }
+
     try {
       String? taskId;
       String? oldStatus;
+
       if (isGroupTask) {
         // ข้อมูลจาก combinedData (Firestore)
         final taskData = combinedData['task'];
@@ -1496,36 +1494,54 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           taskId = taskData['taskID']?.toString();
           oldStatus = taskData['status']?.toString() ?? '0';
 
-          // อัปเดตสถานะใน UI ทันที
-          setState(() {
-            combinedData['task']['status'] = newStatus;
-          });
+          // อัปเดตสถานะใน UI ทันที - เช็ค mounted ก่อน setState
+          if (mounted) {
+            setState(() {
+              combinedData['task']['status'] = newStatus;
+            });
+          }
         }
       } else {
         if (currentTask != null) {
           taskId = currentTask.taskId.toString();
-          oldStatus = currentTask.status ?? '0';
+          oldStatus = currentTask.status;
 
-          // อัปเดตสถานะใน UI ทันที
-          setState(() {
-            currentTask.status = newStatus;
-          });
+          // อัปเดตสถานะใน UI ทันที - เช็ค mounted ก่อน setState
+          if (mounted) {
+            setState(() {
+              currentTask.status = newStatus;
+            });
+          }
         }
       }
+
+      // เช็ค mounted หลังจาก UI update
+      if (!mounted) return;
 
       int? index = _findIndexCurrentTask(currentTask!);
       log('Current task index: $index');
 
-      existingData.tasks[index!].status = newStatus;
-      box.write('userDataAll', existingData.toJson());
+      if (index != null && index >= 0) {
+        existingData.tasks[index].status = newStatus;
+        box.write('userDataAll', existingData.toJson());
+      }
 
       // ตรวจสอบว่ามี taskId หรือไม่
       if (taskId == null) {
         log('Error: taskId is null');
         return;
       }
+
       log('Updating task status to $newStatus for taskId: $taskId');
+
+      // เช็ค mounted ก่อนทำ API call
+      if (!mounted) return;
+
       url = await loadAPIEndpoint();
+
+      // เช็ค mounted หลังจาก loadAPIEndpoint
+      if (!mounted) return;
+
       final body = jsonEncode({"status": newStatus});
 
       var response = await http.put(
@@ -1537,8 +1553,15 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         body: body,
       );
 
+      // เช็ค mounted หลังจาก HTTP call แรก
+      if (!mounted) return;
+
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+
+        // เช็ค mounted หลังจาก refresh token
+        if (!mounted) return;
+
         response = await http.put(
           Uri.parse("$url/updatestatus/$taskId"),
           headers: {
@@ -1549,31 +1572,37 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         );
       }
 
+      // เช็ค mounted หลังจาง HTTP call สุดท้าย
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         log('อัปเดตสถานะ task สำเร็จ: $newStatus');
 
         await loadDataAsync();
       } else {
         log('Error updating task status: ${response.statusCode}');
-        // กรณี error ให้ revert สถานะกลับ
-        setState(() {
-          if (isGroupTask) {
-            final taskData = combinedData['task'];
-            if (taskData != null) {
-              combinedData['task']['status'] = oldStatus ?? '0';
+        // กรณี error ให้ revert สถานะกลับ - เช็ค mounted ก่อน setState
+        if (mounted) {
+          setState(() {
+            if (isGroupTask) {
+              final taskData = combinedData['task'];
+              if (taskData != null) {
+                combinedData['task']['status'] = oldStatus ?? '0';
+              }
+            } else {
+              final appDataAndTask = _getAppDataAndTask();
+              final currentTask =
+                  appDataAndTask.appData.showDetailTask.currentTask;
+              if (currentTask != null) {
+                currentTask.status = oldStatus ?? '0';
+              }
             }
-          } else {
-            final appDataAndTask = _getAppDataAndTask();
-            final currentTask =
-                appDataAndTask.appData.showDetailTask.currentTask;
-            if (currentTask != null) {
-              currentTask.status = oldStatus ?? '0';
-            }
-          }
-        });
+          });
+        }
       }
     } catch (e) {
       log('Exception updating task status: $e');
+
       // กรณี exception ให้ revert สถานะกลับ
       String revertStatus = '0'; // default
 
@@ -1591,20 +1620,24 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       }
 
-      setState(() {
-        if (isGroupTask) {
-          final taskData = combinedData['task'];
-          if (taskData != null) {
-            combinedData['task']['status'] = revertStatus;
+      // เช็ค mounted ก่อน setState ใน catch block
+      if (mounted) {
+        setState(() {
+          if (isGroupTask) {
+            final taskData = combinedData['task'];
+            if (taskData != null) {
+              combinedData['task']['status'] = revertStatus;
+            }
+          } else {
+            final appDataAndTask = _getAppDataAndTask();
+            final currentTask =
+                appDataAndTask.appData.showDetailTask.currentTask;
+            if (currentTask != null) {
+              currentTask.status = revertStatus;
+            }
           }
-        } else {
-          final appDataAndTask = _getAppDataAndTask();
-          final currentTask = appDataAndTask.appData.showDetailTask.currentTask;
-          if (currentTask != null) {
-            currentTask.status = revertStatus;
-          }
-        }
-      });
+        });
+      }
     }
   }
 
@@ -1614,8 +1647,10 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     String selectedPriority,
   ) async {
     if (!mounted) return;
+
     final existingData = _getUserData();
     if (existingData == null) return;
+
     final appDataAndTask = _getAppDataAndTask();
     final currentTask = appDataAndTask.appData.showDetailTask.currentTask;
 
@@ -1623,18 +1658,18 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       log('Error: currentTask is null for individual task');
       return;
     }
+
     try {
-      String? taskId;
       String? oldPriority;
       log(selectedPriority);
+
       if (isGroupTask) {
         // ข้อมูลจาก combinedData (Firestore)
         final taskData = combinedData['task'];
         if (taskData != null) {
-          taskId = taskData['taskID']?.toString();
           oldPriority = taskData['priority']?.toString() ?? '1';
 
-          // อัปเดตสถานะใน UI ทันที
+          // อัปเดตสถานะใน UI ทันที - เช็ค mounted ก่อน setState
           if (mounted) {
             setState(() {
               combinedData['task']['priority'] = selectedPriority;
@@ -1643,41 +1678,59 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       } else {
         if (currentTask != null) {
-          taskId = currentTask.taskId.toString();
-          oldPriority = currentTask.priority ?? '1';
+          oldPriority = currentTask.priority;
 
-          // อัปเดตสถานะใน UI ทันที
-          setState(() {
-            currentTask?.priority = selectedPriority;
-          });
+          // อัปเดตสถานะใน UI ทันที - เช็ค mounted ก่อน setState
+          if (mounted) {
+            setState(() {
+              currentTask.priority = selectedPriority;
+            });
+          }
         }
       }
+
+      // เช็ค mounted อีกครั้งหลังจาก UI update
+      if (!mounted) return;
 
       int? index = _findIndexCurrentTask(currentTask!);
       log('Current task index: $index');
 
-      existingData.tasks[index!].priority = selectedPriority;
-      box.write('userDataAll', existingData.toJson());
+      if (index != null && index >= 0) {
+        existingData.tasks[index].priority = selectedPriority;
+        box.write('userDataAll', existingData.toJson());
+      }
 
       url = await loadAPIEndpoint();
 
+      // เช็ค mounted ก่อนทำ API call
+      if (!mounted) return;
+
       final body = jsonEncode({
-        "task_name": currentTask?.taskName ?? "",
-        "description": currentTask?.description ?? "",
+        "task_name": currentTask.taskName,
+        "description": currentTask.description,
         "priority": selectedPriority,
       });
+
       var response = await http.put(
-        Uri.parse("$url/updatetask/${currentTask?.taskId}"),
+        Uri.parse("$url/updatetask/${currentTask.taskId}"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
         },
         body: body,
       );
+
+      // เช็ค mounted หลังจาก HTTP call แรก
+      if (!mounted) return;
+
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
-        var response = await http.put(
-          Uri.parse("$url/updatetask/${currentTask?.taskId}"),
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+
+        // เช็ค mounted หลังจาก refresh token
+        if (!mounted) return;
+
+        response = await http.put(
+          Uri.parse("$url/updatetask/${currentTask.taskId}"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
@@ -1685,29 +1738,41 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           body: body,
         );
       }
+
+      // เช็ค mounted หลังจาก HTTP call สุดท้าย
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         log('อัปเดต priority task สำเร็จ: $selectedPriority');
         await loadDataAsync();
+
+        // เช็ค mounted ก่อน setState สุดท้าย
+        if (mounted) {
+          setState(() {});
+        }
       } else {
         log('Error updating task priority: ${response.statusCode}');
-        // กรณี error ให้ revert priority กลับ
-        setState(() {
-          if (isGroupTask) {
-            final taskData = combinedData['task'];
-            if (taskData != null) {
-              combinedData['task']['priority'] = oldPriority ?? '1';
+        // กรณี error ให้ revert priority กลับ - เช็ک mounted ก่อน setState
+        if (mounted) {
+          setState(() {
+            if (isGroupTask) {
+              final taskData = combinedData['task'];
+              if (taskData != null) {
+                combinedData['task']['priority'] = oldPriority ?? '1';
+              }
+            } else {
+              final appData = _getAppDataAndTask();
+              final currentTask = appData.appData.showDetailTask.currentTask;
+              if (currentTask != null) {
+                currentTask.priority = oldPriority ?? '1';
+              }
             }
-          } else {
-            final appData = _getAppDataAndTask();
-            final currentTask = appData.appData.showDetailTask.currentTask;
-            if (currentTask != null) {
-              currentTask.priority = oldPriority ?? '1';
-            }
-          }
-        });
+          });
+        }
       }
     } catch (e) {
-      log('Exception updating task status: $e');
+      log('Exception updating task priority: $e');
+
       // กรณี exception ให้ revert สถานะกลับ
       String revertPriority = '1'; // default
 
@@ -1725,6 +1790,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         }
       }
 
+      // เช็ค mounted ก่อน setState ใน catch block
       if (mounted) {
         setState(() {
           if (isGroupTask) {
@@ -1757,9 +1823,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     if (isGroupTask) {
       // สำหรับ Group Task ใช้ข้อมูลจาก combinedData
-      if (combinedData != null) {
-        notification = combinedData['notifications'] as List<dynamic>? ?? [];
-      }
+      notification = combinedData['notifications'] as List<dynamic>? ?? [];
     } else {
       // สำหรับ Individual Task ใช้ข้อมูลจาก currentTask
       if (currentTask != null) {
@@ -1779,13 +1843,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         // สำหรับ Group Task
         isSend = firstNotification['isSend'].toString();
         if (firstNotification['dueDate'] != null) {
-          // Handle Timestamp object
           final timestamp = firstNotification['dueDate'];
-          if (timestamp.runtimeType.toString().contains('Timestamp')) {
-            dueDate = DateTime.fromMillisecondsSinceEpoch(
-              timestamp.seconds * 1000 +
-                  (timestamp.nanoseconds / 1000000).round(),
-            );
+          if (timestamp is Timestamp) {
+            dueDate = timestamp.toDate();
           }
         }
       } else {
@@ -1823,7 +1883,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     // ฟังก์ชันสำหรับสร้างอวตารของ user
     Widget buildUserAvatar(Map<String, dynamic> user) {
       final profileUrl = user['Profile'] as String?;
-      final userName = user['Name'] as String? ?? '';
 
       return Container(
         width: 32,
@@ -1909,7 +1968,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     )
                   : label == 'Set due date' &&
                         notification.isNotEmpty &&
-                        isSend != "2" &&
                         dueDate != null
                   ? _buildDueDateReminderWidget(notification.first, isGroupTask)
                   : Text(
@@ -1933,42 +1991,39 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     if (dueDate == null) return Text('Set due date');
 
     final now = DateTime.now();
-    final difference = dueDate.difference(now);
+    // แปลง dueDate เป็น GMT+7 ก่อนฟอร์แมต
+    final dueDateGmt7 = dueDate.toLocal();
+    final formattedTime = DateFormat('HH:mm').format(dueDateGmt7);
 
-    // ฟอร์แมตวันที่เป็น dd/MM/yyyy (พ.ศ.)
-    final buddhistYear = dueDate.year + 543;
-    final formattedDate =
-        '${dueDate.day.toString().padLeft(2, '0')}/${dueDate.month.toString().padLeft(2, '0')}/$buddhistYear';
-
-    String timeText;
-    if (difference.inDays > 0) {
-      timeText =
-          'remind in ${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ';
-    } else if (difference.inHours > 0) {
-      timeText =
-          'remind in ${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ';
-    } else if (difference.inMinutes > 0) {
-      timeText =
-          'remind in ${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ';
-    } else if (difference.inSeconds > 0) {
-      timeText =
-          'remind in ${difference.inSeconds} second${difference.inSeconds > 1 ? 's' : ''} ';
-    } else {
-      timeText = 'overdue ';
-    }
+    // 🟢 เช็ค overdue ด้วยเวลา GMT+7
+    bool isOverdue = dueDateGmt7.isBefore(now);
 
     return Text.rich(
       TextSpan(
-        children: [
-          TextSpan(
-            text: timeText,
-            style: TextStyle(color: Colors.black),
-          ),
-          TextSpan(
-            text: '($formattedDate)',
-            style: TextStyle(color: Colors.red),
-          ),
-        ],
+        children: isOverdue
+            ? [
+                TextSpan(
+                  text: 'overdue ',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(
+                  text: '($formattedTime )',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ]
+            : [
+                TextSpan(
+                  text: 'remind at ',
+                  style: TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '$formattedTime ',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ],
       ),
       overflow: TextOverflow.ellipsis,
       maxLines: 2,
@@ -1979,12 +2034,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   DateTime? _getDueDate(Map<String, dynamic> notification, bool isGroupTask) {
     if (isGroupTask) {
       if (notification['dueDate'] != null) {
-        final timestamp = notification['dueDate'];
-        if (timestamp.runtimeType.toString().contains('Timestamp')) {
-          return DateTime.fromMillisecondsSinceEpoch(
-            timestamp.seconds * 1000 +
-                (timestamp.nanoseconds / 1000000).round(),
-          );
+        if (notification['dueDate'] != null) {
+          final timestamp = notification['dueDate'];
+          if (timestamp is Timestamp) {
+            return timestamp.toDate();
+          }
         }
       }
     } else {
@@ -2749,7 +2803,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // ตรวจสอบว่า notification มีอยู่จริง
       if (existingData.tasks[index].notifications.isEmpty) {
-        log('Error: No notifications found for this task');
         final url = await loadAPIEndpoint();
         var requestBody = {
           "due_date": newDueDateString,
@@ -2771,7 +2824,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
         if (response.statusCode == 403) {
           log("Token expired, refreshing...");
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           headers["Authorization"] = "Bearer ${box.read('accessToken')}";
 
           response = await http.put(
@@ -2833,7 +2886,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       box.write('userDataAll', existingData.toJson());
 
       // 2. อัพเดท currentTask ใน showDetailTask
-      if (!isGroupTask && currentTask != null) {
+      if (!isGroupTask) {
         // สร้าง Task object ใหม่ที่มีข้อมูลอัปเดท
         final updatedTask = data.Task(
           attachments: currentTask.attachments,
@@ -2905,7 +2958,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       // Handle token refresh
       if (response.statusCode == 403) {
         log("Token expired, refreshing...");
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         headers["Authorization"] = "Bearer ${box.read('accessToken')}";
 
         response = await http.put(
@@ -2952,7 +3005,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         box.write('userDataAll', originalData.toJson());
 
         // Rollback currentTask ใน showDetailTask
-        if (!isGroupTask && currentTask != null) {
+        if (!isGroupTask) {
           // สร้าง Task object เดิมกลับคืนมา
           final originalTask = originalData.tasks[index];
           appData.showDetailTask.setCurrentTask(
@@ -2990,6 +3043,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           // หรือใช้ข้อมูล backup ที่เตรียมไว้
 
           // Rollback currentTask หาก exception เกิดขึ้นหลังจากอัปเดท
+          if (!mounted) return;
           final appData = Provider.of<Appdata>(context, listen: false);
           final currentTask = appData.showDetailTask.currentTask;
           bool isGroupTask = appData.showDetailTask.isGroupTask;
@@ -3189,14 +3243,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   return true;
                 });
 
-                // ตรวจสอบว่า combinedData มีค่าหรือไม่
-                if (combinedData == null) {
-                  return Container(
-                    height: 200,
-                    child: Center(child: Text('No data available')),
-                  );
-                }
-
                 final userinBoard =
                     combinedData['boardUsers'] as List<dynamic>? ?? [];
                 final userAssigned =
@@ -3226,7 +3272,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
                 // ตรวจสอบว่า taskId มีค่าหรือไม่
                 if (taskId == null) {
-                  return Container(
+                  return SizedBox(
                     height: 200,
                     child: Center(child: Text('Task ID not found')),
                   );
@@ -3275,7 +3321,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             ),
                           ),
                           SizedBox(height: 8),
-                          Container(
+                          SizedBox(
                             height: 80,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -3287,7 +3333,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                 final userId = u['UserID'];
                                 final name = u['Name'] ?? 'Unknown';
                                 final profileUrl = u['Profile'] ?? '';
-                                final isSelected = selectedMap[userId] ?? false;
 
                                 return GestureDetector(
                                   onTap: () async {
@@ -3362,7 +3407,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                           // ถ้าผู้ใช้ยืนยัน จึงทำการ process
                                           if (shouldProceed == true) {
                                             await _deleteAssignedUser(
-                                              assId,
+                                              taskName.toString(),
+                                              taskId.toString(),
+                                              assId.toString(),
                                               safeSetModalState,
                                               selectedMap,
                                               userId,
@@ -3760,11 +3807,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
 
       // Call notify API
-      final notifyResponse = await _postWithAuthRetry(
-        "$url/assignedtaskNotify",
-        headers,
-        notifyBody,
-      );
+      await _postWithAuthRetry("$url/assignedtaskNotify", headers, notifyBody);
 
       if (assignResponse.statusCode == 201) {
         final batch = FirebaseFirestore.instance.batch();
@@ -3831,7 +3874,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       headers["Authorization"] = "Bearer ${box.read('accessToken')}";
       response = await http.post(Uri.parse(url), headers: headers, body: body);
     }
@@ -3849,7 +3892,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
   // ฟังก์ชั่นลบ assigned
   Future<void> _deleteAssignedUser(
-    int assId,
+    String taskName,
+    String taskId,
+    String assId,
     StateSetter setModalState,
     Map<int, bool> selectedMap,
     int userId,
@@ -3866,8 +3911,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // 🔔 เรียก notify เฉพาะตอนลบสำเร็จ
       final notifyBody = jsonEncode({
-        "recieveid": userId.toString(),
-        "assign_id": assId.toString(),
+        "recieveID": userId.toString(),
+        "task_name": assId.toString(),
       });
 
       final responseUnassignNotify = await http.post(
@@ -3881,16 +3926,16 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       }
 
       var response = await http.delete(
-        Uri.parse("$url/assigned/$assId"),
+        Uri.parse("$url/assigned/$taskId/$assId"),
         headers: headers,
       );
 
       // ถ้า token หมดอายุ ลอง refresh แล้วเรียกใหม่
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         headers["Authorization"] = "Bearer ${box.read('accessToken')}";
         response = await http.delete(
-          Uri.parse("$url/assigned/$assId"),
+          Uri.parse("$url/assigned/$taskId/$assId"),
           headers: headers,
         );
       }
@@ -4006,13 +4051,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     switch (selectedTabIndex) {
       case 0: // Description
-        // ดึงข้อมูล description จาก group หรือ individual
-        String currentDescription = '';
-        if (isGroupTask && combinedData['task'] != null) {
-          currentDescription = combinedData['task']['description'] ?? '';
-        } else {
-          currentDescription = currentTask.description ?? '';
-        }
 
         return Container(
           height: 200,
@@ -4076,7 +4114,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         if (isGroupTask && combinedData['checklist'] != null) {
           checklistItems = combinedData['checklist'];
         } else {
-          checklistItems = currentTask.checklists ?? [];
+          checklistItems = currentTask.checklists;
         }
 
         return Container(
@@ -4211,7 +4249,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         if (isGroupTask && combinedData['attachments'] != null) {
           attachments = combinedData['attachments'];
         } else {
-          attachments = currentTask.attachments ?? [];
+          attachments = currentTask.attachments;
         }
 
         return Container(
@@ -4357,46 +4395,42 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           }
         }
       } else {
-        if (currentTask != null) {
-          final currentDescription = currentTask.description ?? '';
-          oldDescription = currentDescription;
-          taskId = currentTask.taskId;
-          if (newDescription != currentDescription) {
-            hasChanges = true;
-            setState(() {
-              currentTask.description = newDescription;
-              _isEditingDescription = false;
-              FocusScope.of(context).unfocus();
-            });
-          } else {
-            setState(() {
-              _isEditingDescription = false;
-              FocusScope.of(context).unfocus();
-            });
-            log("ไม่มีการเปลี่ยนแปลง description");
-            return; // ออกจาก method ทันที
-          }
+        final currentDescription = currentTask.description;
+        oldDescription = currentDescription;
+        taskId = currentTask.taskId;
+        if (newDescription != currentDescription) {
+          hasChanges = true;
+          setState(() {
+            currentTask.description = newDescription;
+            _isEditingDescription = false;
+            FocusScope.of(context).unfocus();
+          });
+        } else {
+          setState(() {
+            _isEditingDescription = false;
+            FocusScope.of(context).unfocus();
+          });
+          log("ไม่มีการเปลี่ยนแปลง description");
+          return; // ออกจาก method ทันที
         }
       }
 
       // ถ้าไม่มีการเปลี่ยนแปลง จะไม่ถึงจุดนี้
       if (!hasChanges) return;
 
-      if (currentTask != null) {
-        int? index = _findIndexCurrentTask(currentTask);
-        log('Current task index: $index');
-        if (index != null) {
-          existingData.tasks[index].description = newDescription;
-          box.write('userDataAll', existingData.toJson());
-        }
+      int? index = _findIndexCurrentTask(currentTask);
+      log('Current task index: $index');
+      if (index != null) {
+        existingData.tasks[index].description = newDescription;
+        box.write('userDataAll', existingData.toJson());
       }
 
       url = await loadAPIEndpoint();
 
       final body = jsonEncode({
-        "task_name": currentTask?.taskName ?? "",
+        "task_name": currentTask.taskName,
         "description": newDescription,
-        "priority": currentTask?.priority ?? "",
+        "priority": currentTask.priority,
       });
 
       var response = await http.put(
@@ -4409,7 +4443,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
 
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.put(
           Uri.parse("$url/updatetask/$taskId"),
           headers: {
@@ -4430,7 +4464,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           if (isgroup) {
             combinedData['task']['description'] = oldDescription ?? "";
           } else {
-            currentTask?.description = oldDescription ?? "";
+            currentTask.description = oldDescription ?? "";
           }
           _isEditingDescription = false;
           FocusScope.of(context).unfocus();
@@ -4443,7 +4477,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         if (isgroup) {
           combinedData['task']['description'] = oldDescription ?? "";
         } else {
-          currentTask?.description = oldDescription ?? "";
+          currentTask.description = oldDescription ?? "";
         }
         _isEditingDescription = false;
         FocusScope.of(context).unfocus();
@@ -4474,7 +4508,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     }
 
     return Container(
-      key: ValueKey('checklist_${checklistId}'), // เพิ่ม unique key
+      key: ValueKey('checklist_$checklistId'), // เพิ่ม unique key
       padding: EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
@@ -4653,7 +4687,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // จัดการ token หมดอายุ
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.post(
           Uri.parse("$url/checklist/$taskId"),
           headers: {
@@ -4858,9 +4892,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     bool isCompleted = value == true;
     String newStatus = isCompleted ? '1' : '0';
 
-    // // เก็บสถานะเดิมไว้สำหรับ revert
-    String oldStatus = item['status']?.toString() ?? '0';
-
     // อัปเดตสถานะใน UI ทันที - อัปเดตเฉพาะ item นี้
     if (isGroupTask == true) {
       // กรณี checklist มาจาก combinedData (Group Task)
@@ -4917,7 +4948,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
         // กรณี token หมดอายุ
         if (response.statusCode == 403) {
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           response = await http.put(
             Uri.parse("$url/checklistfinish/$checklistId"),
             headers: {
@@ -4980,7 +5011,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     if (currentTask != null) {
       index = _findIndexCurrentTask(currentTask);
       // 🔧 วิธีที่ถูกต้องในการดึง taskId
-      if (isgroupTask && combinedData?['checklist'] != null) {
+      if (isgroupTask && combinedData['checklist'] != null) {
         // สำหรับ Group Task: พยายามหา taskId จาก checklist item ใดๆ
         final checklistList = combinedData['checklist'] as List<dynamic>;
         if (checklistList.isNotEmpty) {
@@ -5002,7 +5033,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     if (isgroupTask) {
       // กรณี Group Task - filter จาก combinedData
-      if (combinedData != null && combinedData['checklist'] != null) {
+      if (combinedData['checklist'] != null) {
         final checklistList = combinedData['checklist'] as List<dynamic>;
 
         // หา checklist item ที่ต้องการลบ
@@ -5035,7 +5066,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
 
           log(
-            'Group task - Found checklist to delete: ${removedChecklist?.toJson()}',
+            'Group task - Found checklist to delete: ${removedChecklist.toJson()}',
           );
         }
       }
@@ -5049,7 +5080,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         );
 
         log(
-          'Individual task - Found checklist to delete: ${removedChecklist?.toJson()}',
+          'Individual task - Found checklist to delete: ${removedChecklist.toJson()}',
         );
       }
     }
@@ -5060,7 +5091,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     );
     box.write('userDataAll', existingData.toJson());
 
-    if (isgroupTask == true && combinedData?['checklist'] != null) {
+    if (isgroupTask == true && combinedData['checklist'] != null) {
       final checklistList = combinedData['checklist'] as List<dynamic>;
       checklistList.removeWhere((item) {
         final itemId = item['ChecklistID'] ?? item['checklist_id'];
@@ -5092,7 +5123,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     try {
       url = await loadAPIEndpoint();
       var response = await http.delete(
-        Uri.parse("$url/checklist/${taskId}/${checklistId}"),
+        Uri.parse("$url/checklist/$taskId/$checklistId"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -5100,9 +5131,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
       // ตรวจสอบและ refresh token ถ้า access denied
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.delete(
-          Uri.parse("$url/checklist/${taskId}/${checklistId}"),
+          Uri.parse("$url/checklist/$taskId/$checklistId"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
@@ -5179,7 +5210,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     String filePath = '';
     String fileType = '';
     String uploadAt = '';
-    int? attachmentId;
 
     if (attachment is data.Attachment) {
       // ข้อมูลจาก local (Attachment class)
@@ -5187,7 +5217,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       fileType = attachment.fileType;
       filePath = attachment.filePath;
       uploadAt = attachment.uploadAt;
-      attachmentId = attachment.attachmentId;
     } else if (attachment is Map<String, dynamic>) {
       // ข้อมูลจาก Firestore
       fileName = attachment['file_name'] ?? 'Unknown file';
@@ -5205,8 +5234,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       } else {
         uploadAt = '';
       }
-
-      attachmentId = attachment['AttachmentID'] ?? attachment['attachment_id'];
     }
 
     // กำหนดไอคอนตามประเภทไฟล์
@@ -5310,7 +5337,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     _copyFile(attachment, isGroupTask);
                     break;
                   case 'delete':
-                    _showDeleteFileDialog(attachment, isGroupTask);
+                    _showDeleteFileDialog(attachment, isGroupTask, filePath);
                     break;
                 }
               },
@@ -5418,6 +5445,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         await Clipboard.setData(ClipboardData(text: filePath));
 
         // Show SnackBar to notify user
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('File link copied to clipboard'),
@@ -5452,6 +5480,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   Future<void> _showDeleteFileDialog(
     dynamic attachment,
     bool? isgroupTask,
+    String filePath,
   ) async {
     final userDataJson = box.read('userDataAll');
     if (userDataJson == null) return;
@@ -5474,7 +5503,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     if (currentTask != null) {
       index = _findIndexCurrentTask(currentTask);
-      if (isgroupTask == true && combinedData?['attachments'] != null) {
+      if (isgroupTask == true && combinedData['attachments'] != null) {
         final attachmentList = combinedData['attachments'] as List<dynamic>;
         if (attachmentList.isNotEmpty) {
           final firstItem = attachmentList.first;
@@ -5499,7 +5528,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
     if (isgroupTask == true) {
       // กรณี Group Task - filter จาก combinedData
-      if (combinedData != null && combinedData['attachments'] != null) {
+      if (combinedData['attachments'] != null) {
         final attachmentList = combinedData['attachments'] as List<dynamic>;
 
         // หา attachment item ที่ต้องการลบ
@@ -5536,7 +5565,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
 
           log(
-            'Group task - Found attachment to delete: ${removedAttachment?.toJson()}',
+            'Group task - Found attachment to delete: ${removedAttachment.toJson()}',
           );
         }
       }
@@ -5551,7 +5580,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
 
           log(
-            'Individual task - Found attachment to delete: ${removedAttachment?.toJson()}',
+            'Individual task - Found attachment to delete: ${removedAttachment.toJson()}',
           );
         } catch (e) {
           log('Attachment not found in individual task: $e');
@@ -5601,7 +5630,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     box.write('userDataAll', existingData.toJson());
 
     // สำหรับ Group Task: ลบจาก combinedData ด้วย
-    if (isgroupTask == true && combinedData?['attachments'] != null) {
+    if (isgroupTask == true && combinedData['attachments'] != null) {
       final attachmentList = combinedData['attachments'] as List<dynamic>;
       attachmentList.removeWhere((item) {
         final itemId = item['AttachmentID'] ?? item['attachment_id'];
@@ -5633,7 +5662,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     try {
       url = await loadAPIEndpoint();
       var response = await http.delete(
-        Uri.parse("$url/attachment/delete/${taskId}/${attachmentId}"),
+        Uri.parse("$url/attachment/delete/$taskId/$attachmentId"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Authorization": "Bearer ${box.read('accessToken')}",
@@ -5642,9 +5671,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // ตรวจสอบและ refresh token ถ้า access denied
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.delete(
-          Uri.parse("$url/attachment/delete/${taskId}/${attachmentId}"),
+          Uri.parse("$url/attachment/delete/$taskId/$attachmentId"),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": "Bearer ${box.read('accessToken')}",
@@ -5653,6 +5682,14 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       }
 
       if (response.statusCode == 200) {
+        // แปลง URL เป็น path
+        final uri = Uri.parse(filePath);
+        final decodedPath = Uri.decodeFull(
+          uri.pathSegments.sublist(4).join('/'),
+        );
+        final ref = FirebaseStorage.instance.ref().child(decodedPath);
+        await ref.delete();
+
         Get.snackbar(
           'Success',
           'Attachment deleted successfully',
@@ -5667,7 +5704,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
         // สำหรับ Group Task: rollback combinedData กลับด้วย
         if (isgroupTask == true &&
-            combinedData?['attachments'] != null &&
+            combinedData['attachments'] != null &&
             removedAttachmentFromCombined != null) {
           final attachmentList = combinedData['attachments'] as List<dynamic>;
           attachmentList.add(removedAttachmentFromCombined);
@@ -5704,7 +5741,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
       // สำหรับ Group Task: rollback combinedData กลับด้วย
       if (isgroupTask == true &&
-          combinedData?['attachments'] != null &&
+          combinedData['attachments'] != null &&
           removedAttachmentFromCombined != null) {
         final attachmentList = combinedData['attachments'] as List<dynamic>;
         attachmentList.add(removedAttachmentFromCombined);
@@ -5817,8 +5854,8 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
               onPressed: () {
                 Navigator.of(context).pop(); // ปิด popup
               },
-              child: Text('Cancel'),
               style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              child: Text('Cancel'),
             ),
           ],
         );
@@ -5873,6 +5910,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () async {
+                        if (!mounted) return;
                         try {
                           // เลือกไฟล์จากเครื่อง
                           FilePickerResult? result = await FilePicker.platform
@@ -5886,7 +5924,9 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
                             // ✅ ตรวจสอบขนาดไฟล์ (ไม่เกิน 10 MB)
                             const maxFileSize = 10 * 1024 * 1024; // 10 MB
+
                             if (file.size > maxFileSize) {
+                              if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -5911,6 +5951,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             }
                           }
                         } catch (e) {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Error selecting file: $e'),
@@ -5981,17 +6022,17 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     Navigator.of(context).pop(); // ปิด popup ปัจจุบัน
                     _uploadFileDialog(isgroupTask); // กลับไปที่ popup หลัก
                   },
-                  child: Text('Back'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey[600],
                   ),
+                  child: Text('Back'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey[600],
                   ),
+                  child: Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: selectedFilePath.isEmpty
@@ -6007,11 +6048,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             );
                           });
                         },
-                  child: Text('Upload'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[600],
                     foregroundColor: Colors.white,
                   ),
+                  child: Text('Upload'),
                 ),
               ],
             );
@@ -6070,7 +6111,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       final uploadTask = storageReference.putFile(savedFile!);
       final snapshot = await uploadTask;
       downloadUrl = await snapshot.ref.getDownloadURL();
-
+      if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
       // บันทึกข้อมูลไฟล์ลงฐานข้อมูล
@@ -6081,7 +6122,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
     } catch (e) {
       log('Upload error: $e');
-
+      if (!mounted) return;
       // ปิด loading dialog
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -6202,7 +6243,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
 
       if (response.statusCode == 403) {
-        await loadNewRefreshToken();
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
         response = await http.post(
           Uri.parse("$url/attachment/create/$taskId"),
           headers: {
@@ -6288,7 +6329,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     final TextEditingController pictureNameController = TextEditingController();
     String selectedImageName = '';
     String selectedImagePath = '';
-    XFile? selectedImage;
 
     return showDialog<void>(
       context: context,
@@ -6336,7 +6376,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                           setState,
                           pictureNameController,
                           (image, imageName, imagePath) {
-                            selectedImage = image;
                             selectedImageName = imageName;
                             selectedImagePath = imagePath;
                           },
@@ -6428,17 +6467,17 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                     Navigator.of(context).pop(); // ปิด popup ปัจจุบัน
                     _uploadFileDialog(isgroupTask); // กลับไปที่ popup หลัก
                   },
-                  child: Text('Back'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey[600],
                   ),
+                  child: Text('Back'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.grey[600],
                   ),
+                  child: Text('Cancel'),
                 ),
                 ElevatedButton(
                   onPressed: selectedImagePath.isEmpty
@@ -6454,11 +6493,11 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                             );
                           });
                         },
-                  child: Text('Upload'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[600],
                     foregroundColor: Colors.white,
                   ),
+                  child: Text('Upload'),
                 ),
               ],
             );
@@ -6546,6 +6585,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       // จัดการ error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -6617,7 +6657,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       downloadUrl = await snapshot.ref.getDownloadURL();
 
       log('Image uploaded successfully. Download URL: $downloadUrl');
-
+      if (!mounted) return;
       // ปิด loading dialog
       Navigator.of(context, rootNavigator: true).pop();
 
@@ -6629,7 +6669,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
       );
     } catch (e) {
       log('Upload error: $e');
-
+      if (!mounted) return;
       // ปิด loading dialog
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -6696,13 +6736,13 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                 Navigator.of(context).pop(); // ปิด popup ปัจจุบัน
                 _uploadFileDialog(isgroupTask); // กลับไปที่ popup หลัก
               },
-              child: Text('Back'),
               style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              child: Text('Back'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
               style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              child: Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -6724,24 +6764,22 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                   url = 'https://$url'; // เพิ่ม https:// หากไม่มี
                 }
 
-                try {
-                  // ส่งข้อมูลไปบันทึกในฐานข้อมูล
-                  Future.microtask(() {
-                    _saveFileToDatabase(
-                      fileName: linkNameController.text.trim(),
-                      filePath: url,
-                      fileType: 'link', // กำหนดประเภทเป็น 'link'
-                    );
-                  });
+                // ส่งข้อมูลไปบันทึกในฐานข้อมูล
+                Future.microtask(() {
+                  _saveFileToDatabase(
+                    fileName: linkNameController.text.trim(),
+                    filePath: url,
+                    fileType: 'link', // กำหนดประเภทเป็น 'link'
+                  );
+                });
 
-                  Navigator.of(context).pop(); // ปิด popup
-                } catch (e) {}
+                Navigator.of(context).pop(); // ปิด popup
               },
-              child: Text('Add'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange[600],
                 foregroundColor: Colors.white,
               ),
+              child: Text('Add'),
             ),
           ],
         );
@@ -7201,7 +7239,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                               // Add some bottom padding to prevent overlap with button
                               SizedBox(
                                 height:
@@ -7289,7 +7327,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         );
 
         if (response.statusCode == 403) {
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           headers["Authorization"] = "Bearer ${box.read('accessToken')}";
 
           response = await http.put(
@@ -7331,7 +7369,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
     );
 
     if (response.statusCode == 403) {
-      await loadNewRefreshToken();
+      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
       response = await http.delete(
         Uri.parse("$url/board/boarduser"),
         headers: {
@@ -7431,7 +7469,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
 
         // Handle token refresh if needed
         if (response.statusCode == 403) {
-          await loadNewRefreshToken();
+          await AppDataLoadNewRefreshToken().loadNewRefreshToken();
           response = await http.post(
             Uri.parse("$url/user/search"),
             headers: {
@@ -7586,7 +7624,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
           );
 
           if (response.statusCode == 403) {
-            await loadNewRefreshToken();
+            await AppDataLoadNewRefreshToken().loadNewRefreshToken();
             response = await http.post(
               Uri.parse("$url/inviteboardNotify"),
               headers: {
@@ -7652,6 +7690,7 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
         if (confirm != true) return; // 🛑 ถ้าไม่ยืนยันก็ไม่ทำต่อ
 
         // ✅ ดำเนินการเพิ่มผู้ใช้
+        if (!mounted) return;
         await addUserToBoard(user, dialogContext);
 
         // ✅ รีเซ็ต UI และแสดงข้อความสำเร็จ
@@ -8004,108 +8043,6 @@ class _TasksdetailPageState extends State<TasksdetailPage> {
   }
 
   // =========================================================
-
-  Future<void> loadNewRefreshToken() async {
-    url = await loadAPIEndpoint();
-    var value = await storage.read(key: 'refreshToken');
-    var loadtoketnew = await http.post(
-      Uri.parse("$url/auth/newaccesstoken"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer $value",
-      },
-    );
-    if (loadtoketnew.statusCode == 200) {
-      var reponse = jsonDecode(loadtoketnew.body);
-      box.write('accessToken', reponse['accessToken']);
-    } else if (loadtoketnew.statusCode == 403) {
-      Get.defaultDialog(
-        title: '',
-        titlePadding: EdgeInsets.zero,
-        backgroundColor: Colors.white,
-        barrierDismissible: false,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-          vertical: MediaQuery.of(context).size.height * 0.02,
-        ),
-        content: WillPopScope(
-          onWillPop: () async => false,
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/images/aleart/warning.png",
-                height: MediaQuery.of(context).size.height * 0.1,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01),
-              Text(
-                'Waring!!',
-                style: TextStyle(
-                  fontSize:
-                      Get.textTheme.headlineSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              Text(
-                'The system has expired. Please log in again.',
-                style: TextStyle(
-                  fontSize:
-                      Get.textTheme.titleSmall!.fontSize! *
-                      MediaQuery.of(context).textScaleFactor,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () async {
-              final currentUserProfile = box.read('userProfile');
-              if (currentUserProfile != null && currentUserProfile is Map) {
-                await FirebaseFirestore.instance
-                    .collection('usersLogin')
-                    .doc(currentUserProfile['email'])
-                    .update({'deviceName': FieldValue.delete()});
-              }
-              box.remove('userDataAll');
-              box.remove('userLogin');
-              box.remove('userProfile');
-              box.remove('accessToken');
-              await googleSignIn.initialize();
-              await googleSignIn.signOut();
-              await FirebaseAuth.instance.signOut();
-              await storage.deleteAll();
-              Get.offAll(() => SplashPage(), arguments: {'fromLogout': true});
-            },
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(
-                MediaQuery.of(context).size.width,
-                MediaQuery.of(context).size.height * 0.05,
-              ),
-              backgroundColor: Color(0xFF007AFF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 1,
-            ),
-            child: Text(
-              'Login',
-              style: TextStyle(
-                fontSize:
-                    Get.textTheme.titleMedium!.fontSize! *
-                    MediaQuery.of(context).textScaleFactor,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-  }
 }
 
 class SearchUserModel {

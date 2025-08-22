@@ -752,6 +752,7 @@ class _LoginPageState extends State<LoginPage> {
             .get();
         final data = results.data();
         if (data != null && data['password'] == 'needToChange') {
+          if (!mounted) return;
           Get.defaultDialog(
             title: "",
             titlePadding: EdgeInsets.zero,
@@ -844,6 +845,7 @@ class _LoginPageState extends State<LoginPage> {
         } else {
           showNotification('Your account must verify your email first');
         }
+        if (!mounted) return;
         Get.defaultDialog(
           title: "",
           titlePadding: EdgeInsets.zero,

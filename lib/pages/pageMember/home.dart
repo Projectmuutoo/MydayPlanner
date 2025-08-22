@@ -23,6 +23,7 @@ import 'package:http/http.dart' as http;
 import 'package:mydayplanner/shared/appData.dart';
 import 'package:mydayplanner/splash.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -1674,49 +1675,68 @@ class HomePageState extends State<HomePage> {
                                                                     Positioned(
                                                                       right: 6,
                                                                       top: 4,
-                                                                      child: ClipOval(
-                                                                        child:
-                                                                            board.createdByUser.profile ==
-                                                                                'none-url'
-                                                                            ? Container(
-                                                                                width:
-                                                                                    height *
-                                                                                    0.035,
-                                                                                height:
-                                                                                    height *
-                                                                                    0.035,
-                                                                                decoration: BoxDecoration(
-                                                                                  shape: BoxShape.circle,
-                                                                                  color: Color(
-                                                                                    0xFFF2F2F6,
+                                                                      child: FutureBuilder<String>(
+                                                                        future: findProfileHeadBoard(
+                                                                          board,
+                                                                        ),
+                                                                        builder:
+                                                                            (
+                                                                              context,
+                                                                              snapshot,
+                                                                            ) {
+                                                                              final avatarSize =
+                                                                                  height *
+                                                                                  0.035;
+
+                                                                              Widget
+                                                                              defaultAvatar = ClipOval(
+                                                                                child: Container(
+                                                                                  width: avatarSize,
+                                                                                  height: avatarSize,
+                                                                                  decoration: const BoxDecoration(
+                                                                                    shape: BoxShape.circle,
+                                                                                    color: Color(
+                                                                                      0xFFF2F2F6,
+                                                                                    ),
+                                                                                  ),
+                                                                                  child: Icon(
+                                                                                    Icons.person,
+                                                                                    size:
+                                                                                        avatarSize *
+                                                                                        0.714,
+                                                                                    color: const Color(
+                                                                                      0xFF979595,
+                                                                                    ),
                                                                                   ),
                                                                                 ),
-                                                                                child: Icon(
-                                                                                  Icons.person,
-                                                                                  size:
-                                                                                      height *
-                                                                                      0.025,
-                                                                                  color: Color(
-                                                                                    0xFF979595,
+                                                                              );
+
+                                                                              if (snapshot.hasData &&
+                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                return ClipOval(
+                                                                                  child: Image.network(
+                                                                                    snapshot.data!,
+                                                                                    width: avatarSize,
+                                                                                    height: avatarSize,
+                                                                                    fit: BoxFit.cover,
+                                                                                    errorBuilder:
+                                                                                        (
+                                                                                          context,
+                                                                                          error,
+                                                                                          stackTrace,
+                                                                                        ) => defaultAvatar,
                                                                                   ),
-                                                                                ),
-                                                                              )
-                                                                            : Container(
-                                                                                decoration: BoxDecoration(
-                                                                                  shape: BoxShape.circle,
-                                                                                  color: Colors.black12,
-                                                                                ),
-                                                                                child: Image.network(
-                                                                                  board.createdByUser.profile,
-                                                                                  width:
-                                                                                      height *
-                                                                                      0.035,
-                                                                                  height:
-                                                                                      height *
-                                                                                      0.035,
-                                                                                  fit: BoxFit.cover,
-                                                                                ),
-                                                                              ),
+                                                                                );
+                                                                              } else {
+                                                                                return Shimmer.fromColors(
+                                                                                  baseColor: Color(
+                                                                                    0xFFF7F7F7,
+                                                                                  ),
+                                                                                  highlightColor: Colors.grey[300]!,
+                                                                                  child: defaultAvatar,
+                                                                                );
+                                                                              }
+                                                                            },
                                                                       ),
                                                                     ),
                                                                 Positioned(
@@ -2274,49 +2294,68 @@ class HomePageState extends State<HomePage> {
                                                                     Positioned(
                                                                       right: 4,
                                                                       top: 3,
-                                                                      child: ClipOval(
-                                                                        child:
-                                                                            board.createdByUser.profile ==
-                                                                                'none-url'
-                                                                            ? Container(
-                                                                                width:
-                                                                                    height *
-                                                                                    0.028,
-                                                                                height:
-                                                                                    height *
-                                                                                    0.028,
-                                                                                decoration: BoxDecoration(
-                                                                                  shape: BoxShape.circle,
-                                                                                  color: Color(
-                                                                                    0xFFF2F2F6,
+                                                                      child: FutureBuilder<String>(
+                                                                        future: findProfileHeadBoard(
+                                                                          board,
+                                                                        ),
+                                                                        builder:
+                                                                            (
+                                                                              context,
+                                                                              snapshot,
+                                                                            ) {
+                                                                              final avatarSize =
+                                                                                  height *
+                                                                                  0.025;
+
+                                                                              Widget
+                                                                              defaultAvatar = ClipOval(
+                                                                                child: Container(
+                                                                                  width: avatarSize,
+                                                                                  height: avatarSize,
+                                                                                  decoration: const BoxDecoration(
+                                                                                    shape: BoxShape.circle,
+                                                                                    color: Color(
+                                                                                      0xFFF2F2F6,
+                                                                                    ),
+                                                                                  ),
+                                                                                  child: Icon(
+                                                                                    Icons.person,
+                                                                                    size:
+                                                                                        avatarSize *
+                                                                                        0.714,
+                                                                                    color: const Color(
+                                                                                      0xFF979595,
+                                                                                    ),
                                                                                   ),
                                                                                 ),
-                                                                                child: Icon(
-                                                                                  Icons.person,
-                                                                                  size:
-                                                                                      height *
-                                                                                      0.025,
-                                                                                  color: Color(
-                                                                                    0xFF979595,
+                                                                              );
+
+                                                                              if (snapshot.hasData &&
+                                                                                  snapshot.data!.isNotEmpty) {
+                                                                                return ClipOval(
+                                                                                  child: Image.network(
+                                                                                    snapshot.data!,
+                                                                                    width: avatarSize,
+                                                                                    height: avatarSize,
+                                                                                    fit: BoxFit.cover,
+                                                                                    errorBuilder:
+                                                                                        (
+                                                                                          context,
+                                                                                          error,
+                                                                                          stackTrace,
+                                                                                        ) => defaultAvatar,
                                                                                   ),
-                                                                                ),
-                                                                              )
-                                                                            : Container(
-                                                                                decoration: BoxDecoration(
-                                                                                  shape: BoxShape.circle,
-                                                                                  color: Colors.black12,
-                                                                                ),
-                                                                                child: Image.network(
-                                                                                  board.createdByUser.profile,
-                                                                                  width:
-                                                                                      height *
-                                                                                      0.028,
-                                                                                  height:
-                                                                                      height *
-                                                                                      0.028,
-                                                                                  fit: BoxFit.cover,
-                                                                                ),
-                                                                              ),
+                                                                                );
+                                                                              } else {
+                                                                                return Shimmer.fromColors(
+                                                                                  baseColor: Color(
+                                                                                    0xFFF7F7F7,
+                                                                                  ),
+                                                                                  highlightColor: Colors.grey[300]!,
+                                                                                  child: defaultAvatar,
+                                                                                );
+                                                                              }
+                                                                            },
                                                                       ),
                                                                     ),
                                                                 Positioned(
@@ -2767,6 +2806,20 @@ class HomePageState extends State<HomePage> {
       }
     }
     return '';
+  }
+
+  Future<String> findProfileHeadBoard(dynamic board) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('Boards')
+        .doc(board.boardId.toString())
+        .collection('BoardUsers')
+        .where('UserID', isEqualTo: board.createdByUser.userId)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) return 'none-url';
+    final firstDoc = querySnapshot.docs.first.data();
+    final profileUrl = firstDoc['Profile'];
+    return profileUrl;
   }
 
   Future<String> showMembersCount(dynamic boards) async {

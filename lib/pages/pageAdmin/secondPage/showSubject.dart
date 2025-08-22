@@ -726,6 +726,7 @@ class _ShowsubjectPageState extends State<ShowsubjectPage> {
       readReportNos.remove('ID: $id');
       Get.back();
       Get.back();
+      if (!mounted) return;
       Get.defaultDialog(
         title: '',
         titlePadding: EdgeInsets.zero,

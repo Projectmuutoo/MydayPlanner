@@ -1530,38 +1530,49 @@ class AppDataShareShowEditInfo {
                             board.createdBy !=
                                 box.read('userProfile')['userid'])
                         ? SafeArea(
-                            child: Material(
-                              color: Color(0xFFF2F2F6),
-                              borderRadius: BorderRadius.circular(8),
-                              child: InkWell(
-                                onTap: () {
-                                  leaveBoard(context, board.boardId.toString());
-                                },
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: width * 0.03,
+                                right: width * 0.03,
+                                bottom: height * 0.01,
+                              ),
+                              child: Material(
+                                color: Color(0xFFF2F2F6),
                                 borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.01,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.logout_outlined,
-                                        color: Color(0xFFFF3A31),
-                                      ),
-                                      SizedBox(width: width * 0.01),
-                                      Text(
-                                        'Leave board',
-                                        style: TextStyle(
-                                          fontSize: Get
-                                              .textTheme
-                                              .titleMedium!
-                                              .fontSize!,
-                                          fontWeight: FontWeight.normal,
+                                child: InkWell(
+                                  onTap: () {
+                                    leaveBoard(
+                                      context,
+                                      board.boardId.toString(),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: height * 0.01,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.logout_outlined,
                                           color: Color(0xFFFF3A31),
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(width: width * 0.01),
+                                        Text(
+                                          'Leave board',
+                                          style: TextStyle(
+                                            fontSize: Get
+                                                .textTheme
+                                                .titleMedium!
+                                                .fontSize!,
+                                            fontWeight: FontWeight.normal,
+                                            color: Color(0xFFFF3A31),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

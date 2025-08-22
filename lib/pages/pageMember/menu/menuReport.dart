@@ -494,7 +494,7 @@ class _MenureportPageState extends State<MenureportPage> {
     if (responseSendReport.statusCode == 200) {
       selectedSubject = null;
       detailsCtl.clear();
-
+      if (!mounted) return;
       Get.defaultDialog(
         title: '',
         titlePadding: EdgeInsets.zero,

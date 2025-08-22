@@ -168,6 +168,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
                 children: [
                   Column(
                     children: [
+                      SizedBox(height: height * 0.02),
                       Row(
                         children: [
                           if (step == 1 || step == 2)
@@ -994,6 +995,7 @@ class _ResetpasswordPageState extends State<ResetpasswordPage> {
         });
 
         Future.delayed(Duration.zero, () {
+          if (!mounted) return;
           Get.defaultDialog(
             title: '',
             titlePadding: EdgeInsets.zero,

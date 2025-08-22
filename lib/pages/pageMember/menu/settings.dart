@@ -1033,7 +1033,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void changePassword() async {
     url = await loadAPIEndpoint();
-
+    if (!mounted) return;
     Get.defaultDialog(
       title: "",
       titlePadding: EdgeInsets.zero,
@@ -1515,6 +1515,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (mounted) {
           setState(() {});
         }
+        if (!mounted) return;
         Get.defaultDialog(
           title: "",
           titlePadding: EdgeInsets.zero,
@@ -1765,6 +1766,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (hasSuccess) {
           hasSuccess = false;
           setState(() {});
+          if (!mounted) return;
           Get.defaultDialog(
             title: "",
             titlePadding: EdgeInsets.zero,
@@ -2068,6 +2070,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       editNameFocusNode.unfocus();
       Future.delayed(Duration(milliseconds: 500), () {
+        if (!mounted) return;
         Get.defaultDialog(
           title: "",
           titlePadding: EdgeInsets.zero,
@@ -2217,6 +2220,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void deleteUser() async {
     url = await loadAPIEndpoint();
+    if (!mounted) return;
     //horizontal left right
     double width = MediaQuery.of(context).size.width;
     //vertical tob bottom
