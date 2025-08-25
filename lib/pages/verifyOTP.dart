@@ -1033,8 +1033,8 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
       );
       Get.back();
 
-      if (appData.keepEmailToUserPageVerifyOTP.cases == 'verifyEmail') {
-        if (responseIsverify.statusCode == 200) {
+      if (responseIsverify.statusCode == 200) {
+        if (appData.keepEmailToUserPageVerifyOTP.cases == 'verifyEmail') {
           setState(() {
             warning = '';
           });
@@ -1139,51 +1139,51 @@ class _VerifyotpPageState extends State<VerifyotpPage> {
             Get.offAll(() => NavbarPage());
             return false;
           }
-        } else {
-          setState(() {
-            warning = 'F21F1F';
-          });
+        } else if (appData.keepEmailToUserPageVerifyOTP.cases ==
+            'verifyEmail-Register') {
+          loadingDialog();
+          await FirebaseFirestore.instance
+              .collection('OTPRecords')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .collection('OTPRecords_verify')
+              .doc(appData.keepEmailToUserPageVerifyOTP.ref)
+              .delete();
+          await FirebaseFirestore.instance
+              .collection('EmailBlocked')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .collection('OTPRecords_verify')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .delete();
+          if (timer != null && timer!.isActive) {
+            timer!.cancel();
+          }
+          Get.back();
+          return true;
+        } else if (appData.keepEmailToUserPageVerifyOTP.cases ==
+            'verifyEmail-Admin') {
+          loadingDialog();
+          await FirebaseFirestore.instance
+              .collection('OTPRecords')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .collection('OTPRecords_verify')
+              .doc(appData.keepEmailToUserPageVerifyOTP.ref)
+              .delete();
+          await FirebaseFirestore.instance
+              .collection('EmailBlocked')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .collection('OTPRecords_verify')
+              .doc(appData.keepEmailToUserPageVerifyOTP.email)
+              .delete();
+          if (timer != null && timer!.isActive) {
+            timer!.cancel();
+          }
+          Get.back();
+          return true;
         }
-      } else if (appData.keepEmailToUserPageVerifyOTP.cases ==
-          'verifyEmail-Register') {
-        loadingDialog();
-        await FirebaseFirestore.instance
-            .collection('OTPRecords')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .collection('OTPRecords_verify')
-            .doc(appData.keepEmailToUserPageVerifyOTP.ref)
-            .delete();
-        await FirebaseFirestore.instance
-            .collection('EmailBlocked')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .collection('OTPRecords_verify')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .delete();
-        if (timer != null && timer!.isActive) {
-          timer!.cancel();
-        }
-        Get.back();
-        return true;
-      } else if (appData.keepEmailToUserPageVerifyOTP.cases ==
-          'verifyEmail-Admin') {
-        loadingDialog();
-        await FirebaseFirestore.instance
-            .collection('OTPRecords')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .collection('OTPRecords_verify')
-            .doc(appData.keepEmailToUserPageVerifyOTP.ref)
-            .delete();
-        await FirebaseFirestore.instance
-            .collection('EmailBlocked')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .collection('OTPRecords_verify')
-            .doc(appData.keepEmailToUserPageVerifyOTP.email)
-            .delete();
-        if (timer != null && timer!.isActive) {
-          timer!.cancel();
-        }
-        Get.back();
-        return true;
+      } else {
+        setState(() {
+          warning = 'F21F1F';
+        });
       }
     }
     return false;

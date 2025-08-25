@@ -1285,39 +1285,25 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void initCaptchaClient() async {
     try {
-      // เริ่มต้น reCAPTCHA client
       bool isInitialized = await RecaptchaEnterprise.initClient(siteKey);
-
-      if (isInitialized) {
-        log("reCAPTCHA Client Initialized Successfully");
-        executeCaptcha();
-      } else {
-        log("Failed to initialize reCAPTCHA Client");
-        // _showErrorDialog("Failed to initialize reCAPTCHA Client");
-      }
+      if (isInitialized) executeCaptcha();
     } catch (e) {
       log("Error initializing reCAPTCHA Client: $e");
-      // _showErrorDialog("Error initializing reCAPTCHA: $e");
     }
   }
 
   void executeCaptcha() async {
     try {
       final token = await RecaptchaEnterprise.execute(RecaptchaAction.SIGNUP());
-      // log("CAPTCHA Token: $token");
-
-      // ส่ง Token ไปตรวจสอบกับ Backend
       await verifyCaptchaOnServer(token);
     } catch (e) {
       log("Error executing reCAPTCHA: $e");
-      // _showErrorDialog("Error executing reCAPTCHA: $e");
     }
   }
 
   Future<void> verifyCaptchaOnServer(String token) async {
+    if (!mounted) return;
     try {
-      // ใช้ API endpoint ของคุณเพื่อยืนยัน reCAPTCHA token
-      // หมายเหตุ: แนะนำให้ยืนยัน reCAPTCHA บน server ของคุณไม่ใช่จาก client โดยตรง
       url = await loadAPIEndpoint();
       final response = await http.post(
         Uri.parse('$url/auth/captcha'),
@@ -1326,26 +1312,19 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        //ถ้า score มากกว่า 0.7 จะมองเป็นมนุษย์
         if (data['success'] == true && data['score'] > 0.7) {
-          if (!mounted) return;
           setState(() {
             isCaptchaVerified = true;
             iamHuman = false;
           });
-          log("CAPTCHA Verified Successfully");
         } else {
-          // แสดง button ให้ผู้ใช้ยืนยันตัวตนด้วยการกดปุ่ม
-          if (!mounted) return;
           setState(() {
             iamHuman = true;
           });
         }
-      } else {
-        // _showErrorDialog("Error verifying CAPTCHA: ${response.statusCode}");
       }
     } catch (e) {
-      // _showErrorDialog("Error connecting to server: $e");
+      log("Error connecting to server: $e");
     }
   }
 

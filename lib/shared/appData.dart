@@ -296,6 +296,8 @@ class AppDataShareBoardFunction {
           'UserID': result4.data()?['UserID'],
         });
       }
+      final uniqueUsers = {for (var user in boardUsers) user['UserID']: user};
+      boardUsers = uniqueUsers.values.toList();
       Get.back();
 
       showModalBottomSheet(
@@ -449,10 +451,6 @@ class AppDataShareBoardFunction {
                                   final userId = user['UserID'].toString();
                                   final response = user['Response'];
 
-                                  if (response != null &&
-                                      response != 'Waiting') {
-                                    return SizedBox.shrink();
-                                  }
                                   return Container(
                                     margin: EdgeInsets.only(bottom: 8),
                                     padding: EdgeInsets.all(12),
@@ -537,70 +535,249 @@ class AppDataShareBoardFunction {
                                         ),
                                         const SizedBox(width: 20),
                                         // แสดง delete icon กับทุกคน ยกเว้นเจ้าของบอร์ด
-                                        if (userIsownerboard &&
-                                            userId !=
-                                                data['CreatedBy'].toString())
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.delete,
-                                              color: Colors.red[400],
-                                            ),
-                                            onPressed: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (BuildContext dialogContext) {
-                                                  return AlertDialog(
-                                                    title: const Text(
-                                                      'Confirm Deletion',
-                                                    ),
-                                                    content: const Text(
-                                                      'Are you sure you want to remove this user from the board?',
-                                                    ),
-                                                    actions: <Widget>[
-                                                      TextButton(
-                                                        child: const Text(
-                                                          'Cancel',
-                                                        ),
-                                                        onPressed: () {
-                                                          Navigator.of(
+                                        if (response == 'Waiting') ...[
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Pending',
+                                                style: TextStyle(
+                                                  color: Colors.orange,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              if (userIsownerboard) ...[
+                                                SizedBox(width: 8),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder:
+                                                          (
+                                                            BuildContext
                                                             dialogContext,
-                                                          ).pop(); // Close dialog
-                                                        },
-                                                      ),
-                                                      TextButton(
-                                                        child: const Text(
-                                                          'Delete',
-                                                          style: TextStyle(
-                                                            color: Colors.red,
-                                                          ),
-                                                        ),
-                                                        onPressed: () {
-                                                          Navigator.of(
+                                                          ) {
+                                                            return AlertDialog(
+                                                              title: const Text(
+                                                                'Cancel Invitation',
+                                                              ),
+                                                              content: const Text(
+                                                                'Are you sure you want to cancel this invitation?',
+                                                              ),
+                                                              actions: <Widget>[
+                                                                TextButton(
+                                                                  child:
+                                                                      const Text(
+                                                                        'No',
+                                                                      ),
+                                                                  onPressed: () {
+                                                                    Navigator.of(
+                                                                      dialogContext,
+                                                                    ).pop();
+                                                                  },
+                                                                ),
+                                                                TextButton(
+                                                                  child: const Text(
+                                                                    'Yes',
+                                                                    style: TextStyle(
+                                                                      color: Colors
+                                                                          .red,
+                                                                    ),
+                                                                  ),
+                                                                  onPressed: () async {
+                                                                    Navigator.of(
+                                                                      dialogContext,
+                                                                    ).pop();
+                                                                    // ลบ user ออกจาก boardUsers ใน local state ทันที
+                                                                    boardUsers.removeWhere(
+                                                                      (user) =>
+                                                                          user['UserID']
+                                                                              .toString() ==
+                                                                          userId,
+                                                                    );
+
+                                                                    // อัปเดต modal UI ทันที
+                                                                    setModalState(
+                                                                      () {},
+                                                                    );
+
+                                                                    // ลบคำเชิญใน Firestore (เฉพาะที่เกี่ยวข้องกับ user นี้)
+                                                                    try {
+                                                                      final inviteQuery = await FirebaseFirestore
+                                                                          .instance
+                                                                          .collectionGroup(
+                                                                            'InviteJoin',
+                                                                          )
+                                                                          .where(
+                                                                            'BoardId',
+                                                                            isEqualTo:
+                                                                                boardid,
+                                                                          )
+                                                                          .where(
+                                                                            'recipient',
+                                                                            isEqualTo: boardUsers.firstWhere(
+                                                                              (
+                                                                                user,
+                                                                              ) =>
+                                                                                  user['UserID'].toString() ==
+                                                                                  userId,
+                                                                              orElse: () => {
+                                                                                'Email': '',
+                                                                              },
+                                                                            )['Email'],
+                                                                          )
+                                                                          .get();
+
+                                                                      for (var doc
+                                                                          in inviteQuery
+                                                                              .docs) {
+                                                                        await doc
+                                                                            .reference
+                                                                            .delete();
+                                                                      }
+                                                                    } catch (
+                                                                      e
+                                                                    ) {
+                                                                      log(
+                                                                        'Error deleting invitation: $e',
+                                                                      );
+                                                                    }
+
+                                                                    // โหลดข้อมูลใหม่จาก server เพื่อ sync
+                                                                    await loadDataAsync();
+
+                                                                    Get.snackbar(
+                                                                      'Success',
+                                                                      'User removed from board',
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .green,
+                                                                      colorText:
+                                                                          Colors
+                                                                              .white,
+                                                                    );
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            );
+                                                          },
+                                                    );
+                                                  },
+                                                  child: Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red[400],
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ] else if (response == 'Accept') ...[
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.check_circle,
+                                                color: Colors.green,
+                                                size: 16,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                'Member',
+                                                style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              // แสดง delete button เฉพาะเจ้าของบอร์ด และไม่ใช่ตัวเจ้าของเอง
+                                              if (userIsownerboard &&
+                                                  userId !=
+                                                      data['CreatedBy']
+                                                          .toString()) ...[
+                                                SizedBox(width: 8),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder:
+                                                          (
+                                                            BuildContext
                                                             dialogContext,
-                                                          ).pop(); // Close dialog
-                                                          deleteUserAssigned(
-                                                            userId,
-                                                            boardid,
-                                                            setModalState,
-                                                            loadDataAsync,
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
-                                            },
+                                                          ) {
+                                                            return AlertDialog(
+                                                              title: const Text(
+                                                                'Remove Member',
+                                                              ),
+                                                              content: Text(
+                                                                'Are you sure you want to remove $userName from this board?',
+                                                              ),
+                                                              actions: <Widget>[
+                                                                TextButton(
+                                                                  child:
+                                                                      const Text(
+                                                                        'Cancel',
+                                                                      ),
+                                                                  onPressed: () {
+                                                                    Navigator.of(
+                                                                      dialogContext,
+                                                                    ).pop();
+                                                                  },
+                                                                ),
+                                                                TextButton(
+                                                                  child: const Text(
+                                                                    'Remove',
+                                                                    style: TextStyle(
+                                                                      color: Colors
+                                                                          .red,
+                                                                    ),
+                                                                  ),
+                                                                  onPressed: () {
+                                                                    Navigator.of(
+                                                                      dialogContext,
+                                                                    ).pop();
+                                                                    deleteUserAssigned(
+                                                                      userId,
+                                                                      boardid,
+                                                                      setModalState,
+                                                                      loadDataAsync,
+                                                                    );
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            );
+                                                          },
+                                                    );
+                                                  },
+                                                  child: Icon(
+                                                    Icons.person_remove,
+                                                    color: Colors.red[400],
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
-                                        SizedBox(height: 8),
-                                        if (response != null &&
-                                            response == 'Waiting')
-                                          Text(
-                                            response,
-                                            style: TextStyle(
-                                              color: Colors.orange,
-                                            ),
+                                        ] else if (userId ==
+                                            data['CreatedBy'].toString()) ...[
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.star,
+                                                color: Colors.amber,
+                                                size: 16,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                'Owner',
+                                                style: TextStyle(
+                                                  color: Colors.amber[700],
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
+                                        ],
                                       ],
                                     ),
                                   );
@@ -688,21 +865,11 @@ class AppDataShareBoardFunction {
   ) async {
     if (userid == null) return;
 
-    url = await loadAPIEndpoint();
-    final body = jsonEncode({"board_id": boardid, "user_id": userid});
+    try {
+      url = await loadAPIEndpoint();
+      final body = jsonEncode({"board_id": boardid, "user_id": userid});
 
-    var response = await http.delete(
-      Uri.parse("$url/board/boarduser"),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Bearer ${box.read('accessToken')}",
-      },
-      body: body,
-    );
-
-    if (response.statusCode == 403) {
-      await AppDataLoadNewRefreshToken().loadNewRefreshToken();
-      response = await http.delete(
+      var response = await http.delete(
         Uri.parse("$url/board/boarduser"),
         headers: {
           "Content-Type": "application/json; charset=utf-8",
@@ -710,21 +877,73 @@ class AppDataShareBoardFunction {
         },
         body: body,
       );
-    }
 
-    if (response.statusCode == 200) {
-      // ลบ user ออกจาก combinedData ทันที
-      boardUsers = boardUsers
-          .where((user) => user['UserID'].toString() != userid)
-          .toList();
+      if (response.statusCode == 403) {
+        await AppDataLoadNewRefreshToken().loadNewRefreshToken();
+        response = await http.delete(
+          Uri.parse("$url/board/boarduser"),
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Bearer ${box.read('accessToken')}",
+          },
+          body: body,
+        );
+      }
 
-      // อัปเดต modal UI
-      setModalState(() {});
+      if (response.statusCode == 200) {
+        // ลบ user ออกจาก boardUsers ใน local state ทันที
+        boardUsers.removeWhere((user) => user['UserID'].toString() == userid);
 
-      // โหลดข้อมูลใหม่จาก server (optional - เพื่อ sync ข้อมูล)
-      await loadDataAsync();
-    } else {
-      log('error delete boarduser${response.statusCode}');
+        // อัปเดต modal UI ทันที
+        setModalState(() {});
+
+        // ลบคำเชิญใน Firestore (เฉพาะที่เกี่ยวข้องกับ user นี้)
+        try {
+          final inviteQuery = await FirebaseFirestore.instance
+              .collectionGroup('InviteJoin')
+              .where('BoardId', isEqualTo: boardid)
+              .where(
+                'recipient',
+                isEqualTo: boardUsers.firstWhere(
+                  (user) => user['UserID'].toString() == userid,
+                  orElse: () => {'Email': ''},
+                )['Email'],
+              )
+              .get();
+
+          for (var doc in inviteQuery.docs) {
+            await doc.reference.delete();
+          }
+        } catch (e) {
+          log('Error deleting invitation: $e');
+        }
+
+        // โหลดข้อมูลใหม่จาก server เพื่อ sync
+        await loadDataAsync();
+
+        Get.snackbar(
+          'Success',
+          'User removed from board',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
+        log('Error delete boarduser: ${response.statusCode}');
+        Get.snackbar(
+          'Error',
+          'Failed to remove user',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      log('Error in deleteUserAssigned: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to remove user: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -927,7 +1146,7 @@ class AppDataShareBoardFunction {
         }
 
         log(
-          'recive invitation to ${user.email} for board $boardId sending${box.read('userProfile')['email']}}',
+          'receive invitation to ${user.email} for board $boardId sending ${box.read('userProfile')['email']}',
         );
 
         // ส่งคำเชิญ
@@ -948,6 +1167,28 @@ class AppDataShareBoardFunction {
               'updatedAt': Timestamp.now(),
               'recipient': user.email,
             });
+
+        await FirebaseFirestore.instance
+            .collection('Notifications')
+            .doc(user.email)
+            .set({
+              'Name': user.name,
+              'Profile': user.profile,
+              'Email': user.email,
+              'UserID': user.userId,
+            });
+
+        // เพิ่มเฉพาะ user ที่เลือกลงใน boardUsers ทันที
+        boardUsers.add({
+          'Response': 'Waiting',
+          'Name': user.name,
+          'Profile': user.profile,
+          'Email': user.email,
+          'UserID': user.userId,
+        });
+
+        // อัปเดต UI ทันที
+        setModalState(() {});
 
         final reciverEmail = user.email;
         final sendingEmail = box.read('userProfile')['email'] ?? 'unknown';
@@ -980,39 +1221,13 @@ class AppDataShareBoardFunction {
           );
         }
 
-        if (response.statusCode == 200) {
-          await FirebaseFirestore.instance
-              .collection('Notifications')
-              .doc(user.email)
-              .set({
-                'Name': user.name,
-                'Profile': user.profile,
-                'Email': user.email,
-                'UserID': user.userId,
-              });
-          var result3 = await FirebaseFirestore.instance
-              .collectionGroup('InviteJoin')
-              .where('BoardId', isEqualTo: boardId)
-              .get();
-          for (var doc in result3.docs) {
-            final result4 = await FirebaseFirestore.instance
-                .collection('Notifications')
-                .doc(doc['recipient'])
-                .get();
-            boardUsers.add({
-              'Response': doc['Response'],
-              'Name': result4.data()?['Name'],
-              'Profile': result4.data()?['Profile'],
-              'Email': result4.data()?['Email'],
-              'UserID': result4.data()?['UserID'],
-            });
-          }
-          await loadDataAsync();
-          log('Invitation sent successfully to $reciverEmail');
-        } else {
-          log('Failed to send invitation: ${response.statusCode}');
-        }
+        // โหลดข้อมูลใหม่เพื่อ sync
+        await loadDataAsync();
       } catch (e) {
+        // ลบ user ออกจาก boardUsers หากเกิดข้อผิดพลาด
+        boardUsers.removeWhere((u) => u['UserID'] == selectedUser['UserID']);
+        setModalState(() {});
+
         if (isDialogMounted && !isControllerDisposed) {
           Get.snackbar(
             'Error',
